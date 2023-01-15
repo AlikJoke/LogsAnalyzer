@@ -10,7 +10,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-@RestController(value = "/api/logs")
+@RestController
+@RequestMapping("/api/logs")
 public class LogController {
 
     @Autowired
@@ -19,8 +20,8 @@ public class LogController {
     @PostMapping("/index")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void load(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("recordPattern") String recordPattern) throws IOException {
+            @RequestPart("file") MultipartFile file,
+            @RequestPart(value = "recordPattern", required = false) String recordPattern) throws IOException {
 
         final var fileName = file.getOriginalFilename();
         final var logFile = File.createTempFile(fileName, null);
@@ -32,7 +33,7 @@ public class LogController {
         }
     }
 
-    @DeleteMapping("/clear")
+    @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete() {
         this.service.dropIndex();

@@ -34,6 +34,6 @@ public class LogRecord {
     private String category;
     @Field(excludeFromSource = true)
     private String thread;
-    @Field(store = true)
+    @Field
     private String record;
 }

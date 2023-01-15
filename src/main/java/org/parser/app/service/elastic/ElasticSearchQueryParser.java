@@ -3,6 +3,7 @@ package org.parser.app.service.elastic;
 import lombok.NonNull;
 import org.parser.app.service.SearchQueryParser;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
+import org.springframework.stereotype.Component;
 
 /**
  * Commands:
@@ -21,6 +22,7 @@ import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
  * AND -c:"121212222332" -f:"record"
  * -c:"Some text" -all
  */
+@Component
 public class ElasticSearchQueryParser implements SearchQueryParser<CriteriaQuery> {
 
     @NonNull

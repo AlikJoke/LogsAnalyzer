@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +35,7 @@ public class ElasticLogRecordService implements LogRecordService {
     @Autowired
     private ZipUtil zipUtil;
     @Autowired
-    private SearchQueryParser<Query> queryParser;
+    private SearchQueryParser<CriteriaQuery> queryParser;
 
     @Override
     public void index(@NonNull File logFile, @NonNull String originalLogFileName, @Nullable String logRecordPattern) throws IOException {
