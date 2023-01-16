@@ -4,23 +4,24 @@ import lombok.NonNull;
 import org.parser.app.model.LogRecord;
 import org.parser.app.service.LogRecordParser;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 @Component
 public class ElasticLogRecordParser implements LogRecordParser {
@@ -35,53 +36,57 @@ public class ElasticLogRecordParser implements LogRecordParser {
 
     @Nonnull
     @Override
-    public List<LogRecord> parse(@Nonnull File logFile, @NonNull String fileName, @Nullable String recordFormat) {
+    public Flux<LogRecord> parse(
+            @Nonnull Mono<File> logFile,
+            @NonNull String fileName,
+            @Nullable String recordFormat) {
         final Pattern pattern = recordFormat == null ? defaultRecordPattern : this.patternsCache.computeIfAbsent(recordFormat, Pattern::compile);
-
-        final List<LogRecord> result = new ArrayList<>();
 
         // TODO support for another timestamp formats
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS");
 
-        StringBuilder additionalRecordPartsBuilder = null;
-        LogRecord record = null;
-        long idx = 0;
-        for (final var line : readAllLinesFromFile(logFile)) {
-            final var matcher = pattern.matcher(line);
-            if (matcher.matches()) {
-                if (record != null && additionalRecordPartsBuilder != null) {
-                    final String additionalRecordString = additionalRecordPartsBuilder.toString();
-                    record.setSource(record.getSource() + additionalRecordString);
-                    record.setRecord(record.getRecord() + additionalRecordString);
+        final ThreadLocal<LogRecord> lastRecord = new ThreadLocal<>();
 
-                    additionalRecordPartsBuilder = null;
-                }
+        return logFile
+                .map(File::toPath)
+                .flatMapMany(this::readAllLines)
+                .index()
+                .map(line2idx -> {
 
-                record = LogRecord
-                            .builder()
-                                .id(fileName + "@" + ++idx)
-                                .timestamp(parseTimestamp(sdf, matcher))
-                                .level(matcher.group("level"))
-                                .thread(matcher.group("thread"))
-                                .category(matcher.group("category"))
-                                .source(line)
-                                .record(matcher.group("text"))
-                            .build();
-                result.add(record);
-            } else if (record != null) {
-                additionalRecordPartsBuilder = additionalRecordPartsBuilder == null ? new StringBuilder(System.lineSeparator() + line) : additionalRecordPartsBuilder.append(System.lineSeparator() + line);
-            }
-        }
+                    final var line = line2idx.getT2();
+                    final var matcher = pattern.matcher(line);
+                    final var lastRecordLocal = lastRecord.get();
+                    if (matcher.matches()) {
+                        return LogRecord
+                                    .builder()
+                                        .id(fileName + "@" + line2idx.getT1())
+                                        .timestamp(parseTimestamp(sdf, matcher))
+                                        .level(matcher.group("level"))
+                                        .thread(matcher.group("thread"))
+                                        .category(matcher.group("category"))
+                                        .source(line2idx.getT2())
+                                        .record(matcher.group("text"))
+                                    .build();
+                    } else if (lastRecordLocal != null) {
+                        final String separatedLine = System.lineSeparator() + line;
+                        lastRecordLocal.setSource(lastRecordLocal.getSource() + separatedLine);
+                        lastRecordLocal.setRecord(lastRecordLocal.getRecord() + separatedLine);
 
-        return result;
+                        return lastRecordLocal;
+                    }
+
+                    return null;
+                })
+                .doOnNext(lastRecord::set)
+                .distinctUntilChanged();
     }
 
-    private List<String> readAllLinesFromFile(final File logFile) {
-        try {
-            return Files.readAllLines(logFile.toPath());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    private Flux<String> readAllLines(final Path path) {
+        return Flux.using(
+                () -> Files.lines(path),
+                Flux::fromStream,
+                Stream::close
+        );
     }
 
     private LocalDateTime parseTimestamp(final SimpleDateFormat sdf, final Matcher matcher) {

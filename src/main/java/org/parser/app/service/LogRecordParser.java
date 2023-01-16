@@ -1,14 +1,15 @@
 package org.parser.app.service;
 
 import org.parser.app.model.LogRecord;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
-import java.util.List;
 
 public interface LogRecordParser {
 
     @Nonnull
-    List<LogRecord> parse(@Nonnull File logFile, @Nonnull String fileName, @Nullable String recordFormat);
+    Flux<LogRecord> parse(@Nonnull Mono<File> logFile, @Nonnull String fileName, @Nullable String recordFormat);
 }

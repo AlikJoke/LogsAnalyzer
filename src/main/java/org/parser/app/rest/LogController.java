@@ -3,12 +3,14 @@ package org.parser.app.rest;
 import org.parser.app.service.LogRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.nio.file.Files;
 
 @RestController
 @RequestMapping("/api/logs")
@@ -19,40 +21,51 @@ public class LogController {
 
     @PostMapping("/index")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void load(
-            @RequestPart("file") MultipartFile file,
-            @RequestPart(value = "recordPattern", required = false) String recordPattern) throws IOException {
+    public Mono<Void> load(
+            @RequestPart("file") Flux<FilePart> file,
+            @RequestPart("recordPattern") String recordPattern) {
 
-        final var fileName = file.getOriginalFilename();
-        final var logFile = File.createTempFile(fileName, null);
-        try {
-            file.transferTo(logFile);
-            this.service.index(logFile, fileName, recordPattern);
-        } finally {
-            logFile.delete();
-        }
+        final Flux<File> tempFiles = file.flatMap(this::createTempFile);
+
+        return file
+                .zipWith(tempFiles)
+                .map(tuple ->
+                        this.service
+                                .index(Mono.just(tuple.getT2()), tuple.getT1().filename(), recordPattern)
+                                .doOnNext(v -> tuple.getT2().delete())
+                )
+                .then();
     }
 
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete() {
-        this.service.dropIndex();
+    public Mono<Void> delete() {
+        return this.service.dropIndex();
     }
 
     @GetMapping("/count")
-    public Long readAllCount() {
+    public Mono<Long> readAllCount() {
         return this.service.getAllRecordsCount();
     }
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<String> read(@RequestParam("query") String query) {
+    public Flux<String> read(@RequestParam("query") String query) {
         return this.service.getRecordsByFilter(query);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<String> read(@RequestBody RequestQuery query) {
+    public Flux<String> read(@RequestBody RequestQuery query) {
         return this.read(query.query());
+    }
+
+    private Mono<File> createTempFile(final FilePart filePart) {
+        try {
+            final File result = Files.createTempFile(filePart.filename(), null).toFile();
+            return filePart.transferTo(result).thenReturn(result);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

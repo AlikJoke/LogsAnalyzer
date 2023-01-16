@@ -3,6 +3,7 @@ package org.parser.app.model;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NonNull;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -19,21 +20,34 @@ public class LogRecord {
 
     @Id
     @EqualsAndHashCode.Include
+    @NonNull
     private String id;
+
     @Field(
             excludeFromSource = true,
             type = FieldType.Date,
             format = { DateFormat.date_hour_minute_second_millis, DateFormat.date_hour_minute_second }
     )
+    @NonNull
     private LocalDateTime timestamp;
+
     @Field(excludeFromSource = true)
+    @NonNull
     private String level;
+
     @Field(excludeFromSource = true)
+    @NonNull
     private String source;
+
     @Field(excludeFromSource = true)
+    @NonNull
     private String category;
+
     @Field(excludeFromSource = true)
+    @NonNull
     private String thread;
+
     @Field
+    @NonNull
     private String record;
 }

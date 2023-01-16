@@ -1,24 +1,37 @@
 package org.parser.app.config;
 
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchClients;
-import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
-import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
+import org.springframework.data.elasticsearch.client.elc.ReactiveElasticsearchClient;
+import org.springframework.data.elasticsearch.client.elc.ReactiveElasticsearchTemplate;
+import org.springframework.data.elasticsearch.core.convert.ElasticsearchConverter;
+import org.springframework.data.elasticsearch.core.convert.MappingElasticsearchConverter;
+import org.springframework.data.elasticsearch.core.mapping.SimpleElasticsearchMappingContext;
+import org.springframework.data.elasticsearch.repository.config.EnableReactiveElasticsearchRepositories;
 
 @Configuration
-@EnableElasticsearchRepositories(basePackages = "org.parser.app.dao")
+@EnableReactiveElasticsearchRepositories(basePackages = "org.parser.app.dao")
 public class ElasticConfig {
 
     @Bean
-    public ElasticsearchClient client(RestClientBuilder restClientBuilder) {
-        return ElasticsearchClients.createImperative(restClientBuilder.build());
+    public ReactiveElasticsearchClient client(RestClientBuilder restClientBuilder) {
+        return ElasticsearchClients.createReactive(restClientBuilder.build());
     }
 
     @Bean
-    public ElasticsearchTemplate elasticsearchTemplate(ElasticsearchClient client) {
-        return new ElasticsearchTemplate(client);
+    public ElasticsearchConverter elasticsearchConverter(SimpleElasticsearchMappingContext mappingContext) {
+        return new MappingElasticsearchConverter(mappingContext);
+    }
+
+    @Bean
+    public SimpleElasticsearchMappingContext elasticsearchMappingContext() {
+        return new SimpleElasticsearchMappingContext();
+    }
+
+    @Bean
+    public ReactiveElasticsearchTemplate reactiveElasticsearchTemplate(ReactiveElasticsearchClient client, ElasticsearchConverter converter) {
+        return new ReactiveElasticsearchTemplate(client, converter);
     }
 }

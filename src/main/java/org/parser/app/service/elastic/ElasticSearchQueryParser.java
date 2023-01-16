@@ -4,6 +4,7 @@ import lombok.NonNull;
 import org.parser.app.service.SearchQueryParser;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 /**
  * Commands:
@@ -27,8 +28,8 @@ public class ElasticSearchQueryParser implements SearchQueryParser<CriteriaQuery
 
     @NonNull
     @Override
-    public CriteriaQuery parse(@NonNull String queryString) {
+    public Mono<CriteriaQuery> parse(@NonNull String queryString) {
         // TODO
-        return null;
+        return Mono.empty();
     }
 }
