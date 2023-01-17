@@ -2,34 +2,19 @@ package org.parser.app.service.elastic;
 
 import lombok.NonNull;
 import org.parser.app.service.SearchQueryParser;
-import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
+import org.springframework.data.elasticsearch.core.query.StringQuery;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 /**
- * Commands:
- * -c:"str"
- * -eq:"str"
- * -between:"dt1"-"dt2"
- * -timestamp-gap|>|<|=|>=|<=|10ms|s|m|h
- * Areas:
- * -f:"str"
- * -all
- * Operations:
- * OR
- * AND
- * Examples:
- * -eq:"DEBUG" -f:"level" AND -between:"2022-01-10"-"2022-01-11" -f:"timestamp" AND -eq:"thread-1" -f:"thread"
- * AND -c:"121212222332" -f:"record"
- * -c:"Some text" -all
+ * See <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax">...</a>
  */
 @Component
-public class ElasticSearchQueryParser implements SearchQueryParser<CriteriaQuery> {
+public class ElasticSearchQueryParser implements SearchQueryParser<StringQuery> {
 
     @NonNull
     @Override
-    public Mono<CriteriaQuery> parse(@NonNull String queryString) {
-        // TODO
-        return Mono.empty();
+    public Mono<StringQuery> parse(@NonNull String queryString) {
+        return Mono.just(new StringQuery(queryString));
     }
 }

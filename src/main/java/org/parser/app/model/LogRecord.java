@@ -25,27 +25,22 @@ public class LogRecord {
             type = FieldType.Date,
             format = { DateFormat.date_hour_minute_second_millis, DateFormat.date_hour_minute_second }
     )
-    @NonNull
     private LocalDateTime timestamp;
 
     @Field(excludeFromSource = true)
-    @NonNull
     private String level;
 
-    @Field(excludeFromSource = true)
+    @Field
     @NonNull
     @ToString.Exclude
     private String source;
 
     @Field(excludeFromSource = true)
-    @NonNull
     private String category;
 
     @Field(excludeFromSource = true)
-    @NonNull
     private String thread;
 
-    @Field
-    @NonNull
+    @Field(excludeFromSource = true)
     private String record;
 }

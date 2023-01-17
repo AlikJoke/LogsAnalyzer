@@ -11,7 +11,7 @@ import org.parser.app.service.util.ZipUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.client.elc.ReactiveElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
+import org.springframework.data.elasticsearch.core.query.StringQuery;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -33,7 +33,7 @@ public class ElasticLogRecordService implements LogRecordService {
     @Autowired
     private ZipUtil zipUtil;
     @Autowired
-    private SearchQueryParser<CriteriaQuery> queryParser;
+    private SearchQueryParser<StringQuery> queryParser;
 
     @Override
     public Mono<Void> index(@NonNull Mono<File> logFile, @NonNull String originalLogFileName, @Nullable String logRecordPattern) {
