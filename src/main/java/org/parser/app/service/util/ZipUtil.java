@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -20,7 +21,7 @@ public class ZipUtil {
     @NonNull
     public Flux<File> flat(@NonNull final Mono<File> zip) {
         return zip
-                .filter(this::isArchive)
+                .filter(Predicate.not(this::isArchive))
                 .flux()
                 .switchIfEmpty(
                         Flux.defer(

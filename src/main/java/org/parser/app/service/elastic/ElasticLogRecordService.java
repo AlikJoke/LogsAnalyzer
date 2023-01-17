@@ -43,7 +43,7 @@ public class ElasticLogRecordService implements LogRecordService {
                             .runOn(Schedulers.parallel())
                             .map(Mono::just)
                             .map(file -> this.parser.parse(file, originalLogFileName, logRecordPattern))
-                            .map(this.logRecordRepository::saveAll)
+                            .flatMap(this.logRecordRepository::saveAll)
                             .then();
     }
 

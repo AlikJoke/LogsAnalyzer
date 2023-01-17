@@ -32,7 +32,7 @@ public class ElasticLogRecordParser implements LogRecordParser {
      * Pattern for format like '2023-01-01 10:00:02,213 INFO  [org.example.SomeClass1] (thread-1) Any text'
      */
     private static final Pattern defaultRecordPattern =
-            Pattern.compile("^(?<timestamp>\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}[0-9,.]*?)\\s*(?<level>[A-Za-z]*)\\s*\\[(?<category>[A-Za-z0-9._]*)]\\s*\\((?<thread>[A-Za-z0-9.,\\-_]*)\\)\\s*(?<text>[\\S\\s]*)(\\n?)$");
+            Pattern.compile("^(?<timestamp>\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}[0-9,.]*?)\\s*(?<level>[A-Za-z]*)\\s*\\[(?<category>[A-Za-z0-9._]*)]\\s*\\((?<thread>[A-Za-z0-9.,\\-_\\s]*)\\)\\s*(?<text>[\\S\\s]*)(\\n?)$");
 
     @Nonnull
     @Override

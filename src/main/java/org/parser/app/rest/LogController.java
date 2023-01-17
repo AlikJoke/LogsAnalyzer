@@ -1,5 +1,6 @@
 package org.parser.app.rest;
 
+import lombok.extern.slf4j.Slf4j;
 import org.parser.app.service.LogRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import java.nio.file.Files;
 
 @RestController
 @RequestMapping("/api/logs")
+@Slf4j
 public class LogController {
 
     @Autowired
@@ -23,41 +25,51 @@ public class LogController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> load(
             @RequestPart("file") Flux<FilePart> file,
-            @RequestPart("recordPattern") String recordPattern) {
+            @RequestPart(value = "recordPattern", required = false) String recordPattern) {
 
         final Flux<File> tempFiles = file.flatMap(this::createTempFile);
 
         return file
                 .zipWith(tempFiles)
-                .map(tuple ->
+                .flatMap(tuple ->
                         this.service
                                 .index(Mono.just(tuple.getT2()), tuple.getT1().filename(), recordPattern)
                                 .doOnNext(v -> tuple.getT2().delete())
                 )
-                .then();
+                .then()
+                .onErrorResume(this::onError);
     }
 
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> delete() {
-        return this.service.dropIndex();
+        return this.service
+                        .dropIndex()
+                        .onErrorResume(this::onError);
     }
 
     @GetMapping("/count")
     public Mono<Long> readAllCount() {
-        return this.service.getAllRecordsCount();
+        return this.service.getAllRecordsCount()
+                            .onErrorResume(this::onError);
     }
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public Flux<String> read(@RequestParam("query") String query) {
-        return this.service.getRecordsByFilter(query);
+        return this.service.getRecordsByFilter(query)
+                            .onErrorResume(this::onError);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.OK)
     public Flux<String> read(@RequestBody RequestQuery query) {
         return this.read(query.query());
+    }
+
+    private <T> Mono<T> onError(final Throwable ex) {
+        log.error("", ex);
+        return Mono.error(ex);
     }
 
     private Mono<File> createTempFile(final FilePart filePart) {

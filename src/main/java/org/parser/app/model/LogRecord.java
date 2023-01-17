@@ -1,9 +1,6 @@
 package org.parser.app.model;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NonNull;
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -37,6 +34,7 @@ public class LogRecord {
 
     @Field(excludeFromSource = true)
     @NonNull
+    @ToString.Exclude
     private String source;
 
     @Field(excludeFromSource = true)
