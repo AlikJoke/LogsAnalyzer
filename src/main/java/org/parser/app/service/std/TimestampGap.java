@@ -32,6 +32,7 @@ public record TimestampGap(
     }
 
     @NonNull
+    @JsonIgnore
     public PredicateOperation getPredicateOp() {
         return PredicateOperation.value(operation());
     }

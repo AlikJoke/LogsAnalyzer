@@ -7,13 +7,13 @@ import java.util.function.LongPredicate;
 
 public enum PredicateOperation {
 
-    GT(">", (v1, v2) -> v1 - v2, v -> v > 0),
+    GT(">", (v1, v2) -> v2 - v1, v -> v > 0),
 
-    LT("<", (v1, v2) -> v1 - v2, v -> v < 0),
+    LT("<", (v1, v2) -> v2 - v1, v -> v < 0),
 
-    GTE(">=", (v1, v2) -> v1 - v2, v -> v >= 0),
+    GTE(">=", (v1, v2) -> v2 - v1, v -> v >= 0),
 
-    LTE("<=", (v1, v2) -> v1 - v2, v -> v <= 0);
+    LTE("<=", (v1, v2) -> v2 - v1, v -> v <= 0);
 
     private final String alias;
     private final LongBinaryOperator operator;

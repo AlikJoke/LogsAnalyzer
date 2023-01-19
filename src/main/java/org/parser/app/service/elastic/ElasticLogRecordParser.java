@@ -36,7 +36,7 @@ public class ElasticLogRecordParser implements LogRecordParser {
      * Pattern for format like '2023-01-01 10:00:02,213 INFO  [org.example.SomeClass1] (thread-1) Any text'
      */
     private static final Pattern defaultRecordPattern =
-            Pattern.compile("^(?<timestamp>(\\d{4}-\\d{2}-\\d{2}\\s)?\\d{2}:\\d{2}:\\d{2}[0-9,.]*?)\\s*(?<level>[A-Za-z]*)\\s*\\[(?<category>[A-Za-z0-9._]*)]\\s*\\((?<thread>[A-Za-z0-9.,\\-_\\s]*)\\)\\s*(?<text>[\\S\\s]*)(\\n?)$");
+            Pattern.compile("^(((?<date>\\d{4}-\\d{2}-\\d{2})\\s)?(?<time>\\d{2}:\\d{2}:\\d{2}[0-9,.]*?))\\s*(?<level>[A-Za-z]*)\\s*\\[(?<category>[A-Za-z0-9._]*)]\\s*\\((?<thread>[A-Za-z0-9.,\\-_\\s]*)\\)\\s*(?<text>[\\S\\s]*)(\\n?)$");
 
     private static final DateTimeFormatter defaultDateFormatter = DateTimeFormatter.ISO_DATE;
     private static final DateTimeFormatter defaultTimeFormatter
@@ -48,7 +48,8 @@ public class ElasticLogRecordParser implements LogRecordParser {
                     .appendLiteral(':')
                     .appendValue(SECOND_OF_MINUTE, 2)
                     .optionalStart()
-                    .appendFraction(MILLI_OF_SECOND, 0, 3, true)
+                    .appendLiteral(',')
+                    .appendValue(MILLI_OF_SECOND, 3)
                     .toFormatter();
 
     @Nonnull
@@ -124,7 +125,7 @@ public class ElasticLogRecordParser implements LogRecordParser {
 
     private LocalTime parseTime(final DateTimeFormatter timeFormatter, final Matcher matcher) {
         final String time = matcher.group("time");
-        if (StringUtils.hasLength(time)) {
+        if (!StringUtils.hasLength(time)) {
             return null;
         }
 
@@ -133,7 +134,7 @@ public class ElasticLogRecordParser implements LogRecordParser {
 
     private LocalDate parseDate(final DateTimeFormatter dateFormatter, final Matcher matcher) {
         final String date = matcher.group("date");
-        if (StringUtils.hasLength(date)) {
+        if (!StringUtils.hasLength(date)) {
             return null;
         }
 

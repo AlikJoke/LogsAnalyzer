@@ -31,7 +31,7 @@ public class LogRecord {
     @Field(
             excludeFromSource = true,
             type = FieldType.Date,
-            format = DateFormat.time
+            format = DateFormat.hour_minute_second_millis
     )
     private LocalTime time;
 
