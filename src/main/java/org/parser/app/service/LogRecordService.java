@@ -18,5 +18,5 @@ public interface LogRecordService {
     Mono<Long> getAllRecordsCount();
 
     @Nonnull
-    Flux<String> getRecordsByFilter(@Nonnull String filter);
+    Flux<String> searchByQuery(@Nonnull SearchQuery query);
 }

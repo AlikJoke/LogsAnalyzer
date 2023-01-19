@@ -7,5 +7,5 @@ import javax.annotation.Nonnull;
 public interface SearchQueryParser<T> {
 
     @Nonnull
-    Mono<T> parse(@Nonnull String queryString);
+    Mono<T> parse(@Nonnull SearchQuery query);
 }

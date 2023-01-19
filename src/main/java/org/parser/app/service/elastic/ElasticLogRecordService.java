@@ -4,9 +4,8 @@ import jakarta.annotation.PreDestroy;
 import lombok.NonNull;
 import org.parser.app.dao.LogRecordRepository;
 import org.parser.app.model.LogRecord;
-import org.parser.app.service.LogRecordParser;
-import org.parser.app.service.LogRecordService;
-import org.parser.app.service.SearchQueryParser;
+import org.parser.app.service.*;
+import org.parser.app.service.std.PostFiltersSequenceBuilder;
 import org.parser.app.service.util.ZipUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.client.elc.ReactiveElasticsearchTemplate;
@@ -20,6 +19,7 @@ import reactor.core.scheduler.Schedulers;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
+import java.util.function.Function;
 
 @Service
 public class ElasticLogRecordService implements LogRecordService {
@@ -34,6 +34,8 @@ public class ElasticLogRecordService implements LogRecordService {
     private ZipUtil zipUtil;
     @Autowired
     private SearchQueryParser<StringQuery> queryParser;
+    @Autowired
+    private PostFiltersSequenceBuilder postFiltersSequenceBuilder;
 
     @Override
     public Mono<Void> index(@NonNull Mono<File> logFile, @NonNull String originalLogFileName, @Nullable String logRecordPattern) {
@@ -49,7 +51,9 @@ public class ElasticLogRecordService implements LogRecordService {
 
     @Override
     public Mono<Void> dropIndex() {
-        return logRecordRepository.deleteAll();
+        return template.indexOps(LogRecord.class)
+                        .delete()
+                        .then();
     }
 
     @Override
@@ -59,11 +63,17 @@ public class ElasticLogRecordService implements LogRecordService {
 
     @Nonnull
     @Override
-    public Flux<String> getRecordsByFilter(@Nonnull String filterQuery) {
-        return this.queryParser.parse(filterQuery)
-                                .flatMapMany(query -> template.search(query, LogRecord.class))
-                                .map(SearchHit::getContent)
-                                .map(LogRecord::getRecord);
+    public Flux<String> searchByQuery(@Nonnull SearchQuery searchQuery) {
+
+        final Flux<LogRecord> records = this.queryParser.parse(searchQuery)
+                                                        .flatMapMany(query -> template.search(query, LogRecord.class))
+                                                        .map(SearchHit::getContent);
+
+        final Flux<PostFilter<?>> postFilters = this.postFiltersSequenceBuilder.build(searchQuery.postFilters());
+        return postFilters
+                    .reduce(Function.<Flux<LogRecord>> identity(), Function::andThen)
+                    .flatMapMany(f -> f.apply(records))
+                    .map(LogRecord::getSource);
     }
 
     @PreDestroy

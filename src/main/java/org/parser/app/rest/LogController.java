@@ -54,19 +54,13 @@ public class LogController {
                             .onErrorResume(this::onError);
     }
 
-    @GetMapping("/query")
-    @ResponseStatus(HttpStatus.OK)
-    public Mono<LogRecordsCollectionResource> read(@RequestParam("query") String query) {
-        return this.service.getRecordsByFilter(query)
-                            .collectList()
-                            .map(LogRecordsCollectionResource::new)
-                            .onErrorResume(this::onError);
-    }
-
     @PostMapping(value = "/query")
     @ResponseStatus(HttpStatus.OK)
     public Mono<LogRecordsCollectionResource> read(@RequestBody RequestQuery query) {
-        return this.read(query.query());
+        return this.service.searchByQuery(query)
+                            .collectList()
+                            .map(LogRecordsCollectionResource::new)
+                            .onErrorResume(this::onError);
     }
 
     private <T> Mono<T> onError(final Throwable ex) {
