@@ -83,10 +83,10 @@ public class TimestampGapPostFilter implements PostFilter<TimestampGap> {
     }
 
     private long getMillisFromDate(final LocalDate date) {
-        return TimeUnit.MILLISECONDS.convert(date.toEpochDay(), TimeUnit.DAYS);
+        return date == null ? 0 : TimeUnit.MILLISECONDS.convert(date.toEpochDay(), TimeUnit.DAYS);
     }
 
     private long getMillisFromTime(final LocalTime time) {
-        return Instant.from(time).toEpochMilli();
+        return time == null ? 0 : Instant.from(time).toEpochMilli();
     }
 }
