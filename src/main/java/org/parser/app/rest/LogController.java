@@ -25,7 +25,7 @@ public class LogController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> load(
             @RequestPart("file") Flux<FilePart> file,
-            @RequestPart(value = "recordPattern", required = false) String recordPattern) {
+            @RequestPart(value = "recordPatterns", required = false) LogRecordFormatResource recordPattern) {
 
         final Flux<File> tempFiles = file.flatMap(this::createTempFile);
 

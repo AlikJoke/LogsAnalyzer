@@ -10,7 +10,10 @@ import java.io.File;
 
 public interface LogRecordService {
 
-    Mono<Void> index(@Nonnull Mono<File> logFile, @Nonnull String originalLogFileName, @Nullable String logRecordPattern);
+    Mono<Void> index(
+            @Nonnull Mono<File> logFile,
+            @Nonnull String originalLogFileName,
+            @Nullable LogRecordFormat patternFormat);
 
     Mono<Void> dropIndex();
 

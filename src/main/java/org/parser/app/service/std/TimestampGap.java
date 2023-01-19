@@ -12,7 +12,10 @@ import java.util.concurrent.TimeUnit;
 
 @JsonAutoDetect
 @JsonSerialize
-public record TimestampGap(@Nonnegative long interval, @NonNull String unit) {
+public record TimestampGap(
+        @Nonnegative long interval,
+        @NonNull String unit,
+        @NonNull String operation) {
 
     private static final Map<String, TimeUnit> unitMapping = new HashMap<>(){{
         put("h", TimeUnit.HOURS);
@@ -26,5 +29,10 @@ public record TimestampGap(@Nonnegative long interval, @NonNull String unit) {
     @JsonIgnore
     public TimeUnit getTimeUnit() {
         return unitMapping.get(unit);
+    }
+
+    @NonNull
+    public PredicateOperation getPredicateOp() {
+        return PredicateOperation.value(operation());
     }
 }

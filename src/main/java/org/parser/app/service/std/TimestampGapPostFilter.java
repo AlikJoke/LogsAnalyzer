@@ -9,8 +9,9 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -24,6 +25,7 @@ public class TimestampGapPostFilter implements PostFilter<TimestampGap> {
 
     private TimestampGap parameters;
     private long gapInMillis;
+    private PredicateOperation predicateOperation;
 
     @NonNull
     @Override
@@ -49,6 +51,7 @@ public class TimestampGapPostFilter implements PostFilter<TimestampGap> {
     public void setParameters(@NonNull TimestampGap parameters) {
         this.parameters = parameters;
         this.gapInMillis = TimeUnit.MILLISECONDS.convert(parameters.interval(), parameters.getTimeUnit());
+        this.predicateOperation = parameters.getPredicateOp();
     }
 
     @NonNull
@@ -67,13 +70,23 @@ public class TimestampGapPostFilter implements PostFilter<TimestampGap> {
             return Collections.emptyList();
         }
 
-        final LocalDateTime first = elems.get(0).getTimestamp();
-        final LocalDateTime second = elems.get(1).getTimestamp();
+        final LogRecord record1 = elems.get(0);
+        final LogRecord record2 = elems.get(1);
 
-        final long diffMillis = ChronoUnit.MILLIS.between(first, second);
+        final long millis1 = getMillisFromDate(record1.getDate()) + getMillisFromTime(record1.getTime());
+        final long millis2 = getMillisFromDate(record2.getDate()) + getMillisFromTime(record2.getTime());
 
-        // TODO поддержка других операций сравнения
-        final boolean skip = diffMillis < this.gapInMillis;
+        final long diffMillis = millis2 - millis1;
+
+        final boolean skip = this.predicateOperation.compute(diffMillis, this.gapInMillis);
         return skip ? Collections.emptyList() : elems;
+    }
+
+    private long getMillisFromDate(final LocalDate date) {
+        return TimeUnit.MILLISECONDS.convert(date.toEpochDay(), TimeUnit.DAYS);
+    }
+
+    private long getMillisFromTime(final LocalTime time) {
+        return Instant.from(time).toEpochMilli();
     }
 }

@@ -38,13 +38,16 @@ public class ElasticLogRecordService implements LogRecordService {
     private PostFiltersSequenceBuilder postFiltersSequenceBuilder;
 
     @Override
-    public Mono<Void> index(@NonNull Mono<File> logFile, @NonNull String originalLogFileName, @Nullable String logRecordPattern) {
+    public Mono<Void> index(
+            @NonNull Mono<File> logFile,
+            @NonNull String originalLogFileName,
+            @Nullable LogRecordFormat recordFormat) {
 
         return this.zipUtil.flat(logFile)
                             .parallel()
                             .runOn(Schedulers.parallel())
                             .map(Mono::just)
-                            .map(file -> this.parser.parse(file, originalLogFileName, logRecordPattern))
+                            .map(file -> this.parser.parse(file, originalLogFileName, recordFormat))
                             .flatMap(this.logRecordRepository::saveAll)
                             .then();
     }

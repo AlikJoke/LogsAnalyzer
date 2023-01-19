@@ -7,7 +7,8 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Document(indexName = "logs")
 @Data
@@ -23,9 +24,16 @@ public class LogRecord {
     @Field(
             excludeFromSource = true,
             type = FieldType.Date,
-            format = { DateFormat.date_hour_minute_second_millis, DateFormat.date_hour_minute_second }
+            format = DateFormat.date
     )
-    private LocalDateTime timestamp;
+    private LocalDate date;
+
+    @Field(
+            excludeFromSource = true,
+            type = FieldType.Date,
+            format = DateFormat.time
+    )
+    private LocalTime time;
 
     @Field(excludeFromSource = true)
     private String level;
