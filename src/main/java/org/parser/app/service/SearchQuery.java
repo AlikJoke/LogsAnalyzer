@@ -1,9 +1,10 @@
 package org.parser.app.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.data.domain.Sort;
 
+import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Map;
 
 public interface SearchQuery {
@@ -13,6 +14,15 @@ public interface SearchQuery {
 
     boolean extendedFormat();
 
-    @Nullable
+    @Nonnull
     Map<String, JsonNode> postFilters();
+
+    @Nonnegative
+    int maxResults();
+
+    @Nonnull
+    Map<String, Sort.Direction> sorts();
+
+    @Nonnull
+    Map<String, JsonNode> aggregator();
 }

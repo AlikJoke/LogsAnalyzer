@@ -9,7 +9,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
-import javax.annotation.Nullable;
 import java.util.Map;
 
 @Component
@@ -23,19 +22,15 @@ public class PostFiltersSequenceBuilder {
     private NoFilterPostFilter noFilterPostFilter;
 
     @NonNull
-    public Flux<PostFilter<?>> build(@Nullable Map<String, JsonNode> postFilters) {
-        if (postFilters == null || postFilters.isEmpty()) {
-            return Flux.just(noFilterPostFilter);
-        } else {
-            return Flux.fromIterable(postFilters.entrySet())
-                        .map(this::createPostFilter);
-        }
+    public Flux<PostFilter> build(@NonNull Map<String, JsonNode> postFilters) {
+        return Flux.fromIterable(postFilters.entrySet())
+                    .map(this::createPostFilter)
+                    .defaultIfEmpty(this.noFilterPostFilter);
     }
 
-    private PostFilter<?> createPostFilter(final Map.Entry<String, JsonNode> pf) {
+    private PostFilter createPostFilter(final Map.Entry<String, JsonNode> pf) {
 
-        @SuppressWarnings("unchecked")
-        final PostFilter<Object> postFilter = this.applicationContext.getBean(pf.getKey(), PostFilter.class);
+        final PostFilter postFilter = this.applicationContext.getBean(pf.getKey(), PostFilter.class);
         final Object parameters = this.jsonConverter.convert(pf.getValue(), postFilter.getParametersClass());
         postFilter.setParameters(parameters);
 

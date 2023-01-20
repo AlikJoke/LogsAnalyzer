@@ -12,12 +12,15 @@ import reactor.core.publisher.Mono;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -140,4 +143,47 @@ public class ElasticLogRecordParser implements LogRecordParser {
 
         return LocalDate.from(dateFormatter.parse(date));
     }
+/*
+    public static void main(String[] args) throws IOException {
+
+        ElasticLogRecordParser p = new ElasticLogRecordParser();
+        final Pattern pattern = defaultRecordPattern;
+        final DateTimeFormatter dateFormatter = defaultDateFormatter;
+        final DateTimeFormatter timeFormatter = defaultTimeFormatter;
+
+        final ThreadLocal<LogRecord> lastRecord = new ThreadLocal<>();
+
+        final List<LogRecord> result = new ArrayList<>();
+        int i = 0;
+        for (final String line : Files.readAllLines(new File("C:\\Users\\velhe\\Downloads\\cm6-SGO-SED-AP103-Server_Common_log.log.2022-11-22_18").toPath())) {
+
+                    final var matcher = pattern.matcher(line);
+                    final var lastRecordLocal = lastRecord.get();
+                    var fsd = (LogRecord) null;
+                    if (matcher.matches()) {
+                        fsd = LogRecord
+                                .builder()
+                                .id("tf" + "@" + i++)
+                                .time(p.parseTime(timeFormatter, matcher))
+                                .date(p.parseDate(dateFormatter, matcher))
+                                .level(matcher.group("level"))
+                                .thread(matcher.group("thread"))
+                                .category(matcher.group("category"))
+                                .source(line)
+                                .record(matcher.group("text"))
+                                .build();
+                        result.add(fsd);
+                    } else if (lastRecordLocal != null) {
+                        final String separatedLine = System.lineSeparator() + line;
+                        lastRecordLocal.setSource(lastRecordLocal.getSource() + separatedLine);
+                        lastRecordLocal.setRecord(lastRecordLocal.getRecord() + separatedLine);
+
+                        result.add(lastRecordLocal);
+                    }
+
+                    lastRecord.set(lastRecordLocal);
+                }
+
+        System.out.println(result);
+    }*/
 }

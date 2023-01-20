@@ -1,9 +1,13 @@
 package org.parser.app.service.elastic;
 
 import lombok.NonNull;
+import org.parser.app.model.LogRecord;
 import org.parser.app.service.SearchQuery;
 import org.parser.app.service.SearchQueryParser;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.query.StringQuery;
+import org.springframework.data.elasticsearch.core.query.StringQueryBuilder;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -20,10 +24,26 @@ public class ElasticSearchQueryParser implements SearchQueryParser<StringQuery> 
                 }
             }""";
 
+    @Value("${elasticsearch.default.max_results:10000}")
+    private int maxResultsDefault;
+
     @NonNull
     @Override
     public Mono<StringQuery> parse(@NonNull SearchQuery query) {
-        final String resultQueryString = query.extendedFormat() ? query.query() : QUERY_STRING_BODY_TEMPLATE.formatted(query.query());
-        return Mono.just(new StringQuery(resultQueryString));
+        return Mono.fromSupplier(() -> {
+            final String resultQueryString = query.extendedFormat() ? query.query() : QUERY_STRING_BODY_TEMPLATE.formatted(query.query());
+
+            final Sort sort = query.sorts()
+                                    .entrySet()
+                                    .stream()
+                                    .map(e -> Sort.by(e.getValue(), e.getKey()))
+                                    .reduce(Sort::and)
+                                    .orElse(Sort.unsorted());
+
+            return new StringQueryBuilder(resultQueryString)
+                        .withMaxResults(query.maxResults() == 0 ? maxResultsDefault : query.maxResults())
+                        .withSort(sort)
+                        .build();
+        });
     }
 }

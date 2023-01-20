@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Collections;
@@ -19,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 @Component(TimestampGapPostFilter.NAME)
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @NotThreadSafe
-public class TimestampGapPostFilter implements PostFilter<TimestampGap> {
+public class TimestampGapPostFilter implements PostFilter {
 
     static final String NAME = "timestamp-gap";
 
@@ -48,10 +47,10 @@ public class TimestampGapPostFilter implements PostFilter<TimestampGap> {
     }
 
     @Override
-    public void setParameters(@NonNull TimestampGap parameters) {
-        this.parameters = parameters;
-        this.gapInMillis = TimeUnit.MILLISECONDS.convert(parameters.interval(), parameters.getTimeUnit());
-        this.predicateOperation = parameters.getPredicateOp();
+    public void setParameters(@NonNull Object parameters) {
+        this.parameters = (TimestampGap) parameters;
+        this.gapInMillis = TimeUnit.MILLISECONDS.convert(this.parameters.interval(), this.parameters.getTimeUnit());
+        this.predicateOperation = this.parameters.getPredicateOp();
     }
 
     @NonNull
@@ -65,6 +64,7 @@ public class TimestampGapPostFilter implements PostFilter<TimestampGap> {
     public String getName() {
         return NAME;
     }
+
     private List<LogRecord> compareWithFilter(final List<LogRecord> elems) {
         if (elems.size() < 2) {
             return Collections.emptyList();

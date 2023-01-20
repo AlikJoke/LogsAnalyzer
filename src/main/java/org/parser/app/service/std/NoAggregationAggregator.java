@@ -2,19 +2,19 @@ package org.parser.app.service.std;
 
 import lombok.NonNull;
 import org.parser.app.model.LogRecord;
-import org.parser.app.service.PostFilter;
+import org.parser.app.service.Aggregator;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
-@Component(NoFilterPostFilter.NAME)
-class NoFilterPostFilter implements PostFilter {
+@Component(NoAggregationAggregator.NAME)
+class NoAggregationAggregator implements Aggregator {
 
-    static final String NAME = "no-filter";
+    static final String NAME = "no-aggregation";
 
     @NonNull
     @Override
-    public Flux<LogRecord> apply(@NonNull Flux<LogRecord> records) {
-        return records;
+    public Flux<String> apply(@NonNull Flux<LogRecord> records) {
+        return records.map(LogRecord::getSource);
     }
 
     @NonNull

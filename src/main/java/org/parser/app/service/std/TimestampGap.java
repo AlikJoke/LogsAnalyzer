@@ -1,8 +1,6 @@
 package org.parser.app.service.std;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.NonNull;
 
 import javax.annotation.Nonnegative;
@@ -10,8 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-@JsonAutoDetect
-@JsonSerialize
 public record TimestampGap(
         @Nonnegative long interval,
         @NonNull String unit,

@@ -23,11 +23,7 @@ public class ZipUtil {
         return zip
                 .filter(Predicate.not(this::isArchive))
                 .flux()
-                .switchIfEmpty(
-                        Flux.defer(
-                                () -> zip.flatMapIterable(this::flatArchive)
-                        )
-                );
+                .switchIfEmpty(zip.flatMapIterable(this::flatArchive));
     }
 
     private List<File> flatArchive(@NonNull final File zip) {
