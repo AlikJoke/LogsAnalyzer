@@ -17,10 +17,9 @@ import java.util.function.Function;
 @Component(FrequencyAggregator.NAME)
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @NotThreadSafe
-public class FrequencyAggregator implements Aggregator {
+public class FrequencyAggregator implements Aggregator<Tuple2<String, Long>> {
 
     static final String NAME = "frequency";
-    static final String DEFAULT_OUTPUT_PATTERN = "%1$d @ %2$s";
 
     private Frequency parameters;
 
@@ -49,26 +48,18 @@ public class FrequencyAggregator implements Aggregator {
 
     @Override
     @NonNull
-    public Flux<String> apply(@NonNull Flux<LogRecord> recordFlux) {
+    public Flux<Tuple2<String, Long>> apply(@NonNull Flux<LogRecord> recordFlux) {
         Objects.requireNonNull(this.parameters, "Frequency parameters isn't specified");
 
         return recordFlux
                 .groupBy(getAggregatedFieldValueFunc())
                 .flatMap(
                         group -> Mono
-                                    .just(group.key())
+                                    .just(group.key().toString())
                                     .zipWith(group.count())
                 )
                 .filter(tuple -> tuple.getT2().intValue() >= this.parameters.minFrequency())
-                .sort((o1, o2) -> Long.compare(o2.getT2(), o1.getT2()))
-                .map(this::formatOutput);
-    }
-
-    private String formatOutput(final Tuple2<Object, Long> tuple) {
-        final String pattern = this.parameters.outputPattern() == null
-                                    ? DEFAULT_OUTPUT_PATTERN
-                                    : this.parameters.outputPattern();
-        return pattern.formatted(tuple.getT2(), tuple.getT1().toString());
+                .sort((o1, o2) -> Long.compare(o2.getT2(), o1.getT2()));
     }
 
     @NonNull
@@ -77,7 +68,7 @@ public class FrequencyAggregator implements Aggregator {
         return switch (field) {
             case "thread", "thread.keyword" -> LogRecord::getThread;
             case "category", "category.keyword" -> LogRecord::getCategory;
-            case "record", "record.keyword" -> LogRecord::getRecord;
+            case "record", "record.keyword" -> record -> "[" + record.getCategory() + "] " + record.getRecord();
             case "date", "date.keyword" -> LogRecord::getDate;
             case "time", "time.keyword" -> LogRecord::getTime;
             case "level", "level.keyword" -> LogRecord::getLevel;

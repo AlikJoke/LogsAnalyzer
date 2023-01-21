@@ -17,7 +17,7 @@ public record RequestSearchQuery(
         @JsonProperty("post_filters") @Nullable Map<String, JsonNode> postFilters,
         @JsonProperty("max_results") @Nonnegative int maxResults,
         @JsonProperty("sorts") @Nullable Map<String, Sort.Direction> sorts,
-        @JsonProperty("result_aggregation") @Nullable Map<String, JsonNode> aggregator) implements SearchQuery {
+        @JsonProperty("aggregations") @Nullable Map<String, JsonNode> aggregations) implements SearchQuery {
 
     @Override
     public int maxResults() {
@@ -38,7 +38,7 @@ public record RequestSearchQuery(
 
     @NonNull
     @Override
-    public Map<String, JsonNode> aggregator() {
-        return aggregator == null ? Collections.emptyMap() : aggregator;
+    public Map<String, JsonNode> aggregations() {
+        return aggregations == null ? Collections.emptyMap() : aggregations;
     }
 }

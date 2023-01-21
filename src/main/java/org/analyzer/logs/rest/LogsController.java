@@ -6,12 +6,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
 
 @RestController
 @RequestMapping("/api/logs")
@@ -20,6 +23,25 @@ public class LogsController {
 
     @Autowired
     private LogsService service;
+    @Autowired
+    private WebUtils webUtils;
+
+    @PostMapping("/analyze")
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<Map<String, Object>> analyze(@RequestBody RequestSearchQuery query) {
+        return this.service.analyze(query)
+                            .flatMapIterable(Map::entrySet)
+                            .flatMap(
+                                    e -> Mono.just(e.getKey())
+                                                .zipWith(e.getValue()
+                                                                .collectList()
+                                                                .filter(Predicate.not(List::isEmpty))
+                                                                .map(this.webUtils::prepareToResponse)
+                                                )
+                            )
+                            .collectMap(Tuple2::getT1, Tuple2::getT2)
+                            .onErrorResume(this::onError);
+    }
 
     @PostMapping("/index")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -27,7 +49,7 @@ public class LogsController {
             @RequestPart("file") Flux<FilePart> file,
             @RequestPart(value = "recordPatterns", required = false) LogRecordFormatResource recordPattern) {
 
-        final Flux<File> tempFiles = file.flatMap(this::createTempFile);
+        final Flux<File> tempFiles = file.flatMap(this.webUtils::createTempFile);
 
         return file
                 .zipWith(tempFiles)
@@ -40,9 +62,13 @@ public class LogsController {
                 .onErrorResume(this::onError);
     }
 
-    @PostMapping(value = "/query")
+    @PostMapping("/query")
     @ResponseStatus(HttpStatus.OK)
     public Mono<LogRecordsCollectionResource> read(@RequestBody RequestSearchQuery query) {
+        if (!query.aggregations().isEmpty()) {
+            return onError(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Aggregation isn't allowed in search query"));
+        }
+
         return this.service.searchByQuery(query)
                             .collectList()
                             .map(LogRecordsCollectionResource::new)
@@ -52,14 +78,5 @@ public class LogsController {
     private <T> Mono<T> onError(final Throwable ex) {
         log.error("", ex);
         return Mono.error(ex);
-    }
-
-    private Mono<File> createTempFile(final FilePart filePart) {
-        try {
-            final File result = Files.createTempFile(filePart.filename(), null).toFile();
-            return filePart.transferTo(result).thenReturn(result);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

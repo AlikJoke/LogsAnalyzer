@@ -6,7 +6,7 @@ import reactor.core.publisher.Flux;
 import javax.annotation.Nonnull;
 import java.util.function.Function;
 
-public interface Aggregator extends Function<Flux<LogRecord>, Flux<String>> {
+public interface Aggregator<T> extends Function<Flux<LogRecord>, Flux<T>> {
 
     @Nonnull
     Object getParameters();

@@ -6,13 +6,8 @@ import org.analyzer.logs.service.Aggregator;
 import org.analyzer.logs.service.util.JsonConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.util.Map;
 
 @Component
 public class AggregatorFactory {
@@ -21,24 +16,18 @@ public class AggregatorFactory {
     private ApplicationContext applicationContext;
     @Autowired
     private JsonConverter jsonConverter;
-    @Autowired
-    private NoAggregationAggregator noAggregationAggregator;
 
     @NonNull
-    public Mono<Aggregator> create(@NonNull Map<String, JsonNode> aggregator) {
-        if (aggregator.size() > 1) {
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "More than one aggregator isn't allowed");
-        }
-
-        return Flux.fromIterable(aggregator.entrySet())
-                    .map(this::createAggregator)
-                    .single(this.noAggregationAggregator);
+    public <T> Mono<Aggregator<T>> create(@NonNull String aggregatorKey, @NonNull JsonNode parameters) {
+        return Mono.just(aggregatorKey)
+                    .map(key -> createAggregator(key, parameters));
     }
 
-    private Aggregator createAggregator(final Map.Entry<String, JsonNode> aggregatorEntry) {
+    private <T> Aggregator<T> createAggregator(final String aggregatorKey, final JsonNode parametersJson) {
 
-        final Aggregator aggregator = this.applicationContext.getBean(aggregatorEntry.getKey(), Aggregator.class);
-        final Object parameters = this.jsonConverter.convert(aggregatorEntry.getValue(), aggregator.getParametersClass());
+        @SuppressWarnings("unchecked")
+        final Aggregator<T> aggregator = this.applicationContext.getBean(aggregatorKey, Aggregator.class);
+        final Object parameters = this.jsonConverter.convert(parametersJson, aggregator.getParametersClass());
         aggregator.setParameters(parameters);
 
         return aggregator;

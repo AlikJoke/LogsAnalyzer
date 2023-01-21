@@ -17,4 +17,7 @@ public interface LogsService {
 
     @Nonnull
     Flux<String> searchByQuery(@Nonnull SearchQuery query);
+
+    @Nonnull
+    Mono<LogsStatistics> analyze(@Nonnull SearchQuery query);
 }
