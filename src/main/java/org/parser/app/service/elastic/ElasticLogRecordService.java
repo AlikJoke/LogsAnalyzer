@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.Logger;
+import reactor.util.Loggers;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -24,6 +26,8 @@ import java.util.function.Function;
 
 @Service
 public class ElasticLogRecordService implements LogRecordService {
+
+    private static final Logger logger = Loggers.getLogger(ElasticLogRecordService.class);
 
     private static final int BUFFER_SIZE = 2_500;
 
@@ -49,13 +53,15 @@ public class ElasticLogRecordService implements LogRecordService {
             @Nullable LogRecordFormat recordFormat) {
 
         return this.zipUtil.flat(logFile)
+                            .log(logger)
                             .parallel()
                             .runOn(Schedulers.parallel())
                             .map(Mono::just)
                             .map(file -> this.parser.parse(file, originalLogFileName, recordFormat))
                             .flatMap(records -> records
                                                     .buffer(BUFFER_SIZE)
-                                                    .map(this.logRecordRepository::saveAll))
+                                                    .map(this.logRecordRepository::saveAll)
+                                                    .log(logger))
                             .flatMap(Flux::then)
                             .then();
     }
@@ -64,6 +70,7 @@ public class ElasticLogRecordService implements LogRecordService {
     public Mono<Void> dropIndex() {
         return template.indexOps(LogRecord.class)
                         .delete()
+                        .log(logger)
                         .then();
     }
 

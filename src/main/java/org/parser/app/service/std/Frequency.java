@@ -6,7 +6,7 @@ import javax.annotation.Nonnegative;
 import javax.annotation.Nullable;
 
 public record Frequency(
-        @Nullable String field,
-        @JsonProperty("more_than") @Nonnegative int onlyMoreThan,
+        @JsonProperty("group_by") @Nullable String groupBy,
+        @JsonProperty("min_frequency") @Nonnegative int minFrequency,
         @JsonProperty("output_pattern") @Nullable String outputPattern) {
 }

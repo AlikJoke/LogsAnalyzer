@@ -56,7 +56,7 @@ public class LogController {
 
     @PostMapping(value = "/query")
     @ResponseStatus(HttpStatus.OK)
-    public Mono<LogRecordsCollectionResource> read(@RequestBody RequestQuery query) {
+    public Mono<LogRecordsCollectionResource> read(@RequestBody RequestSearchQuery query) {
         return this.service.searchByQuery(query)
                             .collectList()
                             .map(LogRecordsCollectionResource::new)

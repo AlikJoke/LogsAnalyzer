@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Component(TimestampGapPostFilter.NAME)
@@ -29,9 +30,7 @@ public class TimestampGapPostFilter implements PostFilter {
     @NonNull
     @Override
     public Flux<LogRecord> apply(@NonNull Flux<LogRecord> records) {
-        if (this.parameters == null) {
-            throw new IllegalStateException("Gap interval not specified");
-        }
+        Objects.requireNonNull(this.parameters, "Gap interval isn't specified");
 
         return records
                     .cache(1)

@@ -11,13 +11,13 @@ import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Map;
 
-public record RequestQuery(
+public record RequestSearchQuery(
         @NonNull String query,
         @JsonProperty("extended_format") boolean extendedFormat,
         @JsonProperty("post_filters") @Nullable Map<String, JsonNode> postFilters,
         @JsonProperty("max_results") @Nonnegative int maxResults,
         @JsonProperty("sorts") @Nullable Map<String, Sort.Direction> sorts,
-        @JsonProperty("result_aggregator") @Nullable Map<String, JsonNode> aggregator) implements SearchQuery {
+        @JsonProperty("result_aggregation") @Nullable Map<String, JsonNode> aggregator) implements SearchQuery {
 
     @Override
     public int maxResults() {
