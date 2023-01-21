@@ -1,7 +1,7 @@
 package org.parser.app.rest;
 
 import lombok.extern.slf4j.Slf4j;
-import org.parser.app.service.LogRecordService;
+import org.parser.app.service.LogsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.codec.multipart.FilePart;
@@ -16,10 +16,10 @@ import java.nio.file.Files;
 @RestController
 @RequestMapping("/api/logs")
 @Slf4j
-public class LogController {
+public class LogsController {
 
     @Autowired
-    private LogRecordService service;
+    private LogsService service;
 
     @PostMapping("/index")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -38,20 +38,6 @@ public class LogController {
                 )
                 .then()
                 .onErrorResume(this::onError);
-    }
-
-    @DeleteMapping
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> delete() {
-        return this.service
-                        .dropIndex()
-                        .onErrorResume(this::onError);
-    }
-
-    @GetMapping("/count")
-    public Mono<Long> readAllCount() {
-        return this.service.getAllRecordsCount()
-                            .onErrorResume(this::onError);
     }
 
     @PostMapping(value = "/query")

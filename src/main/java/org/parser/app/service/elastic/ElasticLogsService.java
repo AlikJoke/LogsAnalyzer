@@ -1,6 +1,5 @@
 package org.parser.app.service.elastic;
 
-import jakarta.annotation.PreDestroy;
 import lombok.NonNull;
 import org.parser.app.dao.LogRecordRepository;
 import org.parser.app.model.LogRecord;
@@ -25,9 +24,9 @@ import java.io.File;
 import java.util.function.Function;
 
 @Service
-public class ElasticLogRecordService implements LogRecordService {
+public class ElasticLogsService implements LogsService {
 
-    private static final Logger logger = Loggers.getLogger(ElasticLogRecordService.class);
+    private static final Logger logger = Loggers.getLogger(ElasticLogsService.class);
 
     private static final int BUFFER_SIZE = 2_500;
 
@@ -36,7 +35,7 @@ public class ElasticLogRecordService implements LogRecordService {
     @Autowired
     private LogRecordRepository logRecordRepository;
     @Autowired
-    private LogRecordParser parser;
+    private LogRecordsParser parser;
     @Autowired
     private ZipUtil zipUtil;
     @Autowired
@@ -47,7 +46,7 @@ public class ElasticLogRecordService implements LogRecordService {
     private AggregatorFactory aggregatorsFactory;
 
     @Override
-    public Mono<Void> index(
+    public @NonNull Mono<Void> index(
             @NonNull Mono<File> logFile,
             @NonNull String originalLogFileName,
             @Nullable LogRecordFormat recordFormat) {
@@ -66,19 +65,6 @@ public class ElasticLogRecordService implements LogRecordService {
                             .then();
     }
 
-    @Override
-    public Mono<Void> dropIndex() {
-        return template.indexOps(LogRecord.class)
-                        .delete()
-                        .log(logger)
-                        .then();
-    }
-
-    @Override
-    public Mono<Long> getAllRecordsCount() {
-        return this.logRecordRepository.count();
-    }
-
     @Nonnull
     @Override
     public Flux<String> searchByQuery(@Nonnull SearchQuery searchQuery) {
@@ -95,10 +81,5 @@ public class ElasticLogRecordService implements LogRecordService {
                                                     .flatMapMany(f -> f.apply(records));
         return aggregator
                 .flatMapMany(a -> a.apply(filteredRecords));
-    }
-
-    @PreDestroy
-    private void close() {
-        dropIndex().block();
     }
 }

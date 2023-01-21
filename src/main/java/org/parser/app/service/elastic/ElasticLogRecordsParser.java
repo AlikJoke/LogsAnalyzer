@@ -3,7 +3,7 @@ package org.parser.app.service.elastic;
 import lombok.NonNull;
 import org.parser.app.model.LogRecord;
 import org.parser.app.service.LogRecordFormat;
-import org.parser.app.service.LogRecordParser;
+import org.parser.app.service.LogRecordsParser;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 import static java.time.temporal.ChronoField.*;
 
 @Component
-public class ElasticLogRecordParser implements LogRecordParser {
+public class ElasticLogRecordsParser implements LogRecordsParser {
 
     private final Map<String, Pattern> patternsCache = new ConcurrentHashMap<>();
     private final Map<String, DateTimeFormatter> dateTimeFormattersCache = new ConcurrentHashMap<>();
