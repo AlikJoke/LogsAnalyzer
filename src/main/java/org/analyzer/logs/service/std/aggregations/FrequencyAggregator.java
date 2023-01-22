@@ -13,6 +13,7 @@ import reactor.util.function.Tuple2;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 @Component(FrequencyAggregator.NAME)
@@ -24,7 +25,7 @@ public class FrequencyAggregator implements Aggregator<Tuple2<String, Long>> {
 
     private Frequency parameters;
 
-    private String additionalFilterBy = "record";
+    private String additionalFilterBy;
     private Object additionalFilterValue;
 
     @NonNull
@@ -64,7 +65,8 @@ public class FrequencyAggregator implements Aggregator<Tuple2<String, Long>> {
         Objects.requireNonNull(this.parameters, "Frequency parameters isn't specified");
 
         final Predicate<LogRecord> filterPredicate =
-                record -> this.additionalFilterBy == null || Objects.equals(this.additionalFilterValue, LogRecord.field2FieldValueFunction(this.additionalFilterBy));
+                record -> this.additionalFilterBy == null
+                        || Objects.equals(this.additionalFilterValue, LogRecord.field2FieldValueFunction(this.additionalFilterBy).apply(record));
 
         return recordFlux
                 .filter(filterPredicate)

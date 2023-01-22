@@ -20,7 +20,7 @@ public class AggregatorFactory {
     @NonNull
     public <T> Mono<Aggregator<T>> create(@NonNull String aggregatorKey, @NonNull Object parameters) {
         return Mono.just(aggregatorKey)
-                .map(key -> createAggregator(key, parameters));
+                    .map(key -> createAggregator(key, parameters));
     }
 
     @NonNull

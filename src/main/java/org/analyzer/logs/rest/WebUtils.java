@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,7 +26,7 @@ class WebUtils {
                     .stream()
                     .filter(v -> v instanceof Tuple2<?,?>)
                     .map(Tuple2.class::cast)
-                    .collect(Collectors.toMap(Tuple2::getT1, Tuple2::getT2));
+                    .collect(Collectors.toMap(Tuple2::getT1, Tuple2::getT2, (v1, v2) -> v1, LinkedHashMap::new));
         }
 
         return values.size() == 1 ? firstElem : values;
