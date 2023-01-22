@@ -1,9 +1,12 @@
 package org.analyzer.logs.service.elastic;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import lombok.NonNull;
 import org.analyzer.logs.model.LogRecord;
 import org.analyzer.logs.service.LogRecordFormat;
 import org.analyzer.logs.service.LogRecordsParser;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
@@ -18,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -28,9 +32,6 @@ import static java.time.temporal.ChronoField.*;
 
 @Component
 public class ElasticLogRecordsParser implements LogRecordsParser {
-
-    private final Map<String, Pattern> patternsCache = new ConcurrentHashMap<>();
-    private final Map<String, DateTimeFormatter> dateTimeFormattersCache = new ConcurrentHashMap<>();
 
     /**
      * Pattern for format like '2023-01-01 10:00:02,213 INFO  [org.example.SomeClass1] (thread-1) Any text'
@@ -51,6 +52,25 @@ public class ElasticLogRecordsParser implements LogRecordsParser {
                     .appendLiteral(',')
                     .appendValue(MILLI_OF_SECOND, 3)
                     .toFormatter();
+
+    private final Map<String, Pattern> patternsCache;
+    private final Map<String, DateTimeFormatter> dateTimeFormattersCache;
+
+    @Autowired
+    public ElasticLogRecordsParser(@NonNull MeterRegistry meterRegistry) {
+        this.patternsCache = new ConcurrentHashMap<>();
+        this.dateTimeFormattersCache = new ConcurrentHashMap<>();
+
+        meterRegistry.gaugeMapSize(
+                "logs.parser.records.patterns",
+                Collections.singleton(Tag.of("description", "Number of used custom record patterns")),
+                this.patternsCache);
+
+        meterRegistry.gaugeMapSize(
+                "logs.parser.records.date-time.formatters",
+                Collections.singleton(Tag.of("description", "Number of used custom date-time formatters for timestamp of records")),
+                this.dateTimeFormattersCache);
+    }
 
     @Nonnull
     @Override
