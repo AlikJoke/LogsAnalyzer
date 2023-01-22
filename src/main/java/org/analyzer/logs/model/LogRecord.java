@@ -9,6 +9,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.function.Function;
 
 @Document(indexName = "logs")
 @Data
@@ -51,4 +52,18 @@ public class LogRecord {
 
     @Field(excludeFromSource = true)
     private String record;
+
+    @NonNull
+    public static Function<LogRecord, Object> field2FieldValueFunction(@NonNull final String fieldName) {
+        return switch (fieldName) {
+            case "thread", "thread.keyword" -> LogRecord::getThread;
+            case "category", "category.keyword" -> LogRecord::getCategory;
+            case "record", "record.keyword" -> LogRecord::getRecord;
+            case "date", "date.keyword" -> LogRecord::getDate;
+            case "time", "time.keyword" -> LogRecord::getTime;
+            case "level", "level.keyword" -> LogRecord::getLevel;
+            case "id", "id.keyword" -> LogRecord::getId;
+            default -> throw new IllegalArgumentException("Unsupported field: " + fieldName);
+        };
+    }
 }

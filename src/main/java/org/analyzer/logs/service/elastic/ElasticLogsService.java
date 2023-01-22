@@ -4,8 +4,8 @@ import lombok.NonNull;
 import org.analyzer.logs.dao.LogRecordRepository;
 import org.analyzer.logs.model.LogRecord;
 import org.analyzer.logs.service.*;
-import org.analyzer.logs.service.std.LogsAnalyzer;
-import org.analyzer.logs.service.std.PostFiltersSequenceBuilder;
+import org.analyzer.logs.service.std.DefaultLogsAnalyzer;
+import org.analyzer.logs.service.std.postfilters.PostFiltersSequenceBuilder;
 import org.analyzer.logs.service.util.ZipUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,7 +42,7 @@ public class ElasticLogsService implements LogsService {
     @Autowired
     private PostFiltersSequenceBuilder postFiltersSequenceBuilder;
     @Autowired
-    private LogsAnalyzer logsAnalyzer;
+    private DefaultLogsAnalyzer logsAnalyzer;
 
     @Value("${elasticsearch.default.indexing.buffer_size:2500}")
     private int elasticIndexBufferSize;

@@ -12,16 +12,16 @@ import java.util.HashMap;
 @NotThreadSafe
 public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsStatistics {
 
-    private static final String ERRORS_FREQUENCIES = "errors-frequencies";
-    private static final String MOST_FREQUENT_ERRORS = "most-frequent-errors";
-    private static final String ERRORS_AVERAGE_INTERVAL = "errors-average-interval";
-    private static final String ERRORS_FREQUENCIES_BY_CATEGORY = "errors-frequencies-by-category";
-    private static final String ERRORS_COUNT = "errors-count";
-    private static final String WARNS_COUNT = "warns-count";
-    private static final String MOST_FREQUENT_WARNS = "most-frequent-warns";
-    private static final String AVERAGE_WRITE_RATE = "average-write-rage";
-    private static final String RECORDS_FREQUENCY_BY_CATEGORY = "records-frequency-by-category";
-    private static final String RECORDS_FREQUENCY_BY_THREAD = "records-frequency-by-thread";
+    public static final String ERRORS_FREQUENCIES = "errors-frequencies";
+    public static final String MOST_FREQUENT_ERRORS = "most-frequent-errors";
+    public static final String ERRORS_COUNT = "errors-count";
+    public static final String WARNS_COUNT = "warns-count";
+    public static final String MOST_FREQUENT_WARNS = "most-frequent-warns";
+    public static final String ERRORS_AVERAGE_INTERVAL = "errors-average-interval";
+    public static final String ERRORS_FREQUENCIES_BY_CATEGORY = "errors-frequencies-by-category";
+    public static final String AVERAGE_WRITE_RATE = "average-write-rage";
+    public static final String RECORDS_FREQUENCY_BY_CATEGORY = "records-frequency-by-category";
+    public static final String RECORDS_FREQUENCY_BY_THREAD = "records-frequency-by-thread";
 
     @NonNull
     @Override
@@ -140,6 +140,12 @@ public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsS
     @NonNull
     public MapLogsStatistics recordsByThreadFrequencies(@NonNull Flux<Tuple2<String, Long>> recordsByThreadFrequencies) {
         put(RECORDS_FREQUENCY_BY_THREAD, recordsByThreadFrequencies);
+        return this;
+    }
+
+    @NonNull
+    public MapLogsStatistics putOne(@NonNull final String statisticKey, @NonNull final Flux<?> value) {
+        put(statisticKey, value);
         return this;
     }
 

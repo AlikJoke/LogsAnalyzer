@@ -1,4 +1,4 @@
-package org.analyzer.logs.service.std;
+package org.analyzer.logs.service.std.postfilters;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.NonNull;

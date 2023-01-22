@@ -1,4 +1,4 @@
-package org.analyzer.logs.service.std;
+package org.analyzer.logs.service.std.aggregations;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.NonNull;
@@ -18,6 +18,12 @@ public class AggregatorFactory {
     private JsonConverter jsonConverter;
 
     @NonNull
+    public <T> Mono<Aggregator<T>> create(@NonNull String aggregatorKey, @NonNull Object parameters) {
+        return Mono.just(aggregatorKey)
+                .map(key -> createAggregator(key, parameters));
+    }
+
+    @NonNull
     public <T> Mono<Aggregator<T>> create(@NonNull String aggregatorKey, @NonNull JsonNode parameters) {
         return Mono.just(aggregatorKey)
                     .map(key -> createAggregator(key, parameters));
@@ -28,6 +34,15 @@ public class AggregatorFactory {
         @SuppressWarnings("unchecked")
         final Aggregator<T> aggregator = this.applicationContext.getBean(aggregatorKey, Aggregator.class);
         final Object parameters = this.jsonConverter.convert(parametersJson, aggregator.getParametersClass());
+        aggregator.setParameters(parameters);
+
+        return aggregator;
+    }
+
+    private <T> Aggregator<T> createAggregator(final String aggregatorKey, final Object parameters) {
+
+        @SuppressWarnings("unchecked")
+        final Aggregator<T> aggregator = this.applicationContext.getBean(aggregatorKey, Aggregator.class);
         aggregator.setParameters(parameters);
 
         return aggregator;
