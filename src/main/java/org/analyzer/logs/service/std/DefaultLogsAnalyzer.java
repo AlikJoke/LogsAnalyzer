@@ -45,15 +45,15 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
                             tuple -> tuple
                                         .mapT2(a -> a.apply(records))
                     )
-                    .transform(this::composeStatistics)
-                    .singleOrEmpty();
+                    .as(this::composeStatistics);
     }
 
     private Mono<LogsStatistics> composeStatistics(final Flux<Tuple2<String, Flux<Object>>> statistics) {
         return Mono.fromSupplier(MapLogsStatistics::new)
-                    .doOnNext(
+                    .flatMap(
                             mapStats -> statistics
-                                            .doOnNext(tuple -> mapStats.put(tuple.getT1(), tuple.getT2()))
+                                            .map(tuple -> mapStats.putOne(tuple.getT1(), tuple.getT2()))
+                                            .then(Mono.just(mapStats))
                     )
                     .cast(LogsStatistics.class);
     }
@@ -83,9 +83,12 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
                         .zipWith(this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("category", 1, Collections.emptyMap(), Integer.MAX_VALUE))),
 
                 Mono.just(MapLogsStatistics.RECORDS_FREQUENCY_BY_THREAD)
-                        .zipWith(this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("thread", 1, Collections.emptyMap(), Integer.MAX_VALUE)))
-                // TODO AVERAGE_WRITE_RATE & ERRORS_AVERAGE_INTERVAL
-                );
+                        .zipWith(this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("thread", 1, Collections.emptyMap(), Integer.MAX_VALUE))),
+
+                Mono.just(MapLogsStatistics.ERRORS_AVERAGE_INTERVAL)
+                        .zipWith(this.aggregatorsFactory.create(ErrorsAverageIntervalAggregator.NAME, new Object()))
+                )
+                .cache();
     }
 
     private Map<String, Object> createAdditionalFilterErrors() {

@@ -23,20 +23,18 @@ public class LogRecord {
     private String id;
 
     @Field(
-            excludeFromSource = true,
             type = FieldType.Date,
             format = DateFormat.date
     )
     private LocalDate date;
 
     @Field(
-            excludeFromSource = true,
             type = FieldType.Date,
             format = DateFormat.hour_minute_second_millis
     )
     private LocalTime time;
 
-    @Field(excludeFromSource = true)
+    @Field
     private String level;
 
     @Field
@@ -44,13 +42,13 @@ public class LogRecord {
     @ToString.Exclude
     private String source;
 
-    @Field(excludeFromSource = true)
+    @Field
     private String category;
 
-    @Field(excludeFromSource = true)
+    @Field
     private String thread;
 
-    @Field(excludeFromSource = true)
+    @Field
     private String record;
 
     @NonNull

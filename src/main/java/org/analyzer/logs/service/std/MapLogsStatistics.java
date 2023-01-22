@@ -49,12 +49,12 @@ public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsS
 
     @NonNull
     @Override
-    public Mono<Long> errorsAverageInterval() {
+    public Mono<Double> errorsAverageInterval() {
         return getStatByKey(ERRORS_AVERAGE_INTERVAL, true);
     }
 
     @NonNull
-    public MapLogsStatistics errorsAverageInterval(@NonNull Mono<Long> errorsAverageInterval) {
+    public MapLogsStatistics errorsAverageInterval(@NonNull Mono<Double> errorsAverageInterval) {
         put(ERRORS_AVERAGE_INTERVAL, errorsAverageInterval.flux());
         return this;
     }
@@ -109,12 +109,12 @@ public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsS
 
     @NonNull
     @Override
-    public Mono<Long> averageWriteRate() {
+    public Mono<Double> averageWriteRate() {
         return getStatByKey(AVERAGE_WRITE_RATE, true);
     }
 
     @NonNull
-    public MapLogsStatistics averageWriteRate(@NonNull Mono<Long> averageWriteRate) {
+    public MapLogsStatistics averageWriteRate(@NonNull Mono<Double> averageWriteRate) {
         put(AVERAGE_WRITE_RATE, averageWriteRate.flux());
         return this;
     }

@@ -16,7 +16,7 @@ public interface LogsStatistics extends Map<String, Flux<?>> {
     Flux<Tuple2<String, Long>> mostFrequentErrors();
 
     @Nonnull
-    Mono<Long> errorsAverageInterval();
+    Mono<Double> errorsAverageInterval();
 
     @Nonnull
     Flux<Tuple2<String, Long>> errorsByCategoryFrequencies();
@@ -31,7 +31,7 @@ public interface LogsStatistics extends Map<String, Flux<?>> {
     Flux<Tuple2<String, Long>> mostFrequentWarns();
 
     @Nonnull
-    Mono<Long> averageWriteRate();
+    Mono<Double> averageWriteRate();
 
     @Nonnull
     Flux<Tuple2<String, Long>> recordsByCategoryFrequencies();
