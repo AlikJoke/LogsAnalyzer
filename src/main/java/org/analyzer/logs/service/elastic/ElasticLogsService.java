@@ -5,10 +5,13 @@ import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
 import lombok.NonNull;
 import org.analyzer.logs.dao.LogRecordRepository;
-import org.analyzer.logs.model.LogRecord;
+import org.analyzer.logs.dao.LogsStatisticsRepository;
+import org.analyzer.logs.model.LogRecordEntity;
+import org.analyzer.logs.model.LogsStatisticsEntity;
 import org.analyzer.logs.service.*;
 import org.analyzer.logs.service.std.DefaultLogsAnalyzer;
 import org.analyzer.logs.service.std.postfilters.PostFiltersSequenceBuilder;
+import org.analyzer.logs.service.util.LongRunningTaskExecutor;
 import org.analyzer.logs.service.util.ZipUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +28,9 @@ import reactor.util.Loggers;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Service
@@ -48,6 +54,10 @@ public class ElasticLogsService implements LogsService {
     private DefaultLogsAnalyzer logsAnalyzer;
     @Autowired
     private MeterRegistry meterRegistry;
+    @Autowired
+    private LogsStatisticsRepository statisticsRepository;
+    @Autowired
+    private LongRunningTaskExecutor taskExecutor;
 
     @Value("${elasticsearch.default.indexing.buffer_size:2500}")
     private int elasticIndexBufferSize;
@@ -73,22 +83,26 @@ public class ElasticLogsService implements LogsService {
     @NonNull
     public Mono<Void> index(
             @NonNull Mono<File> logFile,
-            @NonNull String originalLogFileName,
-            @Nullable LogRecordFormat recordFormat) {
+            @Nullable LogRecordFormat recordFormat,
+            final boolean preAnalyze) {
+
+        final String uuidKey = UUID.randomUUID().toString();
 
         return this.zipUtil.flat(logFile)
                             .log(logger)
                             .doOnNext(file -> this.indexedFilesCounter.increment())
                             .parallel()
                             .runOn(Schedulers.parallel())
-                            .map(Mono::just)
-                            .map(file -> this.parser.parse(file, originalLogFileName, recordFormat))
+                            .map(file -> this.parser.parse(composeSearchKey(file, uuidKey), file, recordFormat))
                             .flatMap(records -> records
+                                                    .cache()
+                                                    .transform(recordsFlux -> sendToAnalyzeLogsIfNeed(preAnalyze, recordsFlux, uuidKey))
                                                     .buffer(this.elasticIndexBufferSize)
                                                     .doOnNext(buffer -> this.indexedRecordsCounter.increment(buffer.size()))
                                                     .doOnNext(buffer -> this.elasticIndexRequestsCounter.increment())
                                                     .map(this.logRecordRepository::saveAll)
-                                                    .log(logger))
+                                                    .log(logger)
+                            )
                             .flatMap(Flux::then)
                             .then();
     }
@@ -97,28 +111,64 @@ public class ElasticLogsService implements LogsService {
     @Override
     public Flux<String> searchByQuery(@Nonnull SearchQuery searchQuery) {
         return searchByFilterQuery(searchQuery)
-                    .map(LogRecord::getSource);
+                    .map(LogRecordEntity::getSource);
     }
 
     @NonNull
     @Override
     public Mono<LogsStatistics> analyze(@NonNull AnalyzeQuery analyzeQuery) {
         final var filteredRecords = searchByFilterQuery(analyzeQuery).cache();
-        return this.logsAnalyzer.analyze(filteredRecords, analyzeQuery.aggregations())
-                                .doOnNext(stat -> logsAnalyzeCounter.increment());
+        return analyze(filteredRecords, analyzeQuery);
     }
 
-    private Flux<LogRecord> searchByFilterQuery(@Nonnull SearchQuery searchQuery) {
+    private Mono<LogsStatistics> analyze(
+            final Flux<LogRecordEntity> recordFlux,
+            final AnalyzeQuery analyzeQuery) {
+
+        return this.logsAnalyzer.analyze(recordFlux, analyzeQuery)
+                                .doOnNext(stats -> logsAnalyzeCounter.increment())
+                                .flatMap(stats -> processStatsSaving(analyzeQuery, stats));
+    }
+
+    private Mono<LogsStatistics> processStatsSaving(
+            final AnalyzeQuery analyzeQuery,
+            final LogsStatistics stats) {
+
+        if (!analyzeQuery.save()) {
+            return Mono.just(stats);
+        }
+
+        return stats.toResultMap()
+                    .flatMap(statsMap -> saveStatsEntity(analyzeQuery, statsMap))
+                    .thenReturn(stats);
+    }
+
+    private Mono<LogsStatisticsEntity> saveStatsEntity(
+            final AnalyzeQuery analyzeQuery,
+            final Map<String, Object> stats) {
+
+        final LogsStatisticsEntity entity =
+                LogsStatisticsEntity.builder()
+                                    .id(UUID.randomUUID().toString())
+                                    .created(LocalDateTime.now())
+                                    .title(analyzeQuery.analyzeResultName())
+                                    .dataQuery(analyzeQuery.toSearchQuery().toJson())
+                                    .stats(stats)
+                                    .build();
+        return this.statisticsRepository.save(entity);
+    }
+
+    private Flux<LogRecordEntity> searchByFilterQuery(@Nonnull SearchQuery searchQuery) {
 
         final var records = this.queryParser.parse(searchQuery)
                                             .doOnNext(query -> (searchQuery.extendedFormat() ? extendedSearchRequestsCounter : simpleSearchRequestsCounter).increment())
-                                            .flatMapMany(query -> template.search(query, LogRecord.class))
+                                            .flatMapMany(query -> template.search(query, LogRecordEntity.class))
                                             .map(SearchHit::getContent);
 
         final var postFilters = this.postFiltersSequenceBuilder.build(searchQuery.postFilters());
 
         return postFilters
-                .reduce(Function.<Flux<LogRecord>> identity(), Function::andThen)
+                .reduce(Function.<Flux<LogRecordEntity>> identity(), Function::andThen)
                 .flatMapMany(f -> f.apply(records));
     }
 
@@ -133,5 +183,23 @@ public class ElasticLogsService implements LogsService {
         }
 
         return builder.register(this.meterRegistry);
+    }
+
+    private Flux<LogRecordEntity> sendToAnalyzeLogsIfNeed(
+            final boolean preAnalyze,
+            final Flux<LogRecordEntity> records,
+            final String searchKey) {
+        if (preAnalyze) {
+            final AnalyzeQuery analyzeQuery = new AnalyzeQueryOnIndexWrapper(searchKey);
+            this.taskExecutor.execute(
+                    () -> analyze(records, analyzeQuery).subscribe()
+            );
+        }
+
+        return records;
+    }
+
+    private String composeSearchKey(final File file, final String key) {
+        return file.getName() + "$" + key;
     }
 }

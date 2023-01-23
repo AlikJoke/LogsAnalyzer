@@ -1,6 +1,7 @@
 package org.analyzer.logs.rest;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Getter;
@@ -8,6 +9,7 @@ import lombok.NonNull;
 import lombok.ToString;
 import lombok.experimental.Accessors;
 import org.analyzer.logs.service.SearchQuery;
+import org.analyzer.logs.service.util.JsonConverter;
 import org.springframework.data.domain.Sort;
 
 import javax.annotation.Nonnegative;
@@ -49,6 +51,13 @@ public class RequestSearchQuery implements SearchQuery {
     @Override
     public Map<String, Sort.Direction> sorts() {
         return sorts == null ? Collections.emptyMap() : sorts;
+    }
+
+    @NonNull
+    @Override
+    @JsonIgnore
+    public String toJson() {
+        return JsonConverter.get().convertToJson(this);
     }
 
     @NonNull

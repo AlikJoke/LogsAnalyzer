@@ -22,4 +22,7 @@ public interface SearchQuery {
 
     @Nonnull
     Map<String, Sort.Direction> sorts();
+
+    @Nonnull
+    String toJson();
 }

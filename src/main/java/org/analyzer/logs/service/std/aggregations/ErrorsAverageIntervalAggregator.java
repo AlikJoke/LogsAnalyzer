@@ -1,7 +1,7 @@
 package org.analyzer.logs.service.std.aggregations;
 
 import lombok.NonNull;
-import org.analyzer.logs.model.LogRecord;
+import org.analyzer.logs.model.LogRecordEntity;
 import org.analyzer.logs.service.Aggregator;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.logging.LogLevel;
@@ -48,7 +48,7 @@ public class ErrorsAverageIntervalAggregator implements Aggregator<Double> {
 
     @Override
     @NonNull
-    public Flux<Double> apply(@NonNull Flux<LogRecord> recordFlux) {
+    public Flux<Double> apply(@NonNull Flux<LogRecordEntity> recordFlux) {
         return recordFlux
                 .filter(record -> LogLevel.ERROR.name().equalsIgnoreCase(record.getLevel()))
                 .cache(1)
@@ -58,7 +58,7 @@ public class ErrorsAverageIntervalAggregator implements Aggregator<Double> {
                 .flux();
     }
 
-    private long getDiffInterval(final List<LogRecord> records) {
+    private long getDiffInterval(final List<LogRecordEntity> records) {
         if (records.size() < 2) {
             return 0;
         }

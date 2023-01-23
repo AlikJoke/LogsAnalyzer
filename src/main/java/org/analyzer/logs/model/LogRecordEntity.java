@@ -15,7 +15,7 @@ import java.util.function.Function;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
-public class LogRecord {
+public class LogRecordEntity {
 
     @Id
     @EqualsAndHashCode.Include
@@ -52,15 +52,15 @@ public class LogRecord {
     private String record;
 
     @NonNull
-    public static Function<LogRecord, Object> field2FieldValueFunction(@NonNull final String fieldName) {
+    public static Function<LogRecordEntity, Object> field2FieldValueFunction(@NonNull final String fieldName) {
         return switch (fieldName) {
-            case "thread", "thread.keyword" -> LogRecord::getThread;
-            case "category", "category.keyword" -> LogRecord::getCategory;
-            case "record", "record.keyword" -> LogRecord::getRecord;
-            case "date", "date.keyword" -> LogRecord::getDate;
-            case "time", "time.keyword" -> LogRecord::getTime;
-            case "level", "level.keyword" -> LogRecord::getLevel;
-            case "id", "id.keyword" -> LogRecord::getId;
+            case "thread", "thread.keyword" -> LogRecordEntity::getThread;
+            case "category", "category.keyword" -> LogRecordEntity::getCategory;
+            case "record", "record.keyword" -> LogRecordEntity::getRecord;
+            case "date", "date.keyword" -> LogRecordEntity::getDate;
+            case "time", "time.keyword" -> LogRecordEntity::getTime;
+            case "level", "level.keyword" -> LogRecordEntity::getLevel;
+            case "id", "id.keyword" -> LogRecordEntity::getId;
             default -> throw new IllegalArgumentException("Unsupported field: " + fieldName);
         };
     }

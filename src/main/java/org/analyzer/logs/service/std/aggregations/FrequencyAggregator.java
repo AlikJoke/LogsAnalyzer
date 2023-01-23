@@ -1,7 +1,7 @@
 package org.analyzer.logs.service.std.aggregations;
 
 import lombok.NonNull;
-import org.analyzer.logs.model.LogRecord;
+import org.analyzer.logs.model.LogRecordEntity;
 import org.analyzer.logs.service.Aggregator;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -13,7 +13,6 @@ import reactor.util.function.Tuple2;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 @Component(FrequencyAggregator.NAME)
@@ -61,16 +60,16 @@ public class FrequencyAggregator implements Aggregator<Tuple2<String, Long>> {
 
     @Override
     @NonNull
-    public Flux<Tuple2<String, Long>> apply(@NonNull Flux<LogRecord> recordFlux) {
+    public Flux<Tuple2<String, Long>> apply(@NonNull Flux<LogRecordEntity> recordFlux) {
         Objects.requireNonNull(this.parameters, "Frequency parameters isn't specified");
 
-        final Predicate<LogRecord> filterPredicate =
+        final Predicate<LogRecordEntity> filterPredicate =
                 record -> this.additionalFilterBy == null
-                        || Objects.equals(this.additionalFilterValue, LogRecord.field2FieldValueFunction(this.additionalFilterBy).apply(record));
+                        || Objects.equals(this.additionalFilterValue, LogRecordEntity.field2FieldValueFunction(this.additionalFilterBy).apply(record));
 
         return recordFlux
                 .filter(filterPredicate)
-                .groupBy(LogRecord.field2FieldValueFunction(this.parameters.groupBy() == null ? "record" : this.parameters.groupBy()))
+                .groupBy(LogRecordEntity.field2FieldValueFunction(this.parameters.groupBy() == null ? "record" : this.parameters.groupBy()))
                 .flatMap(
                         group -> Mono
                                     .just(group.key().toString())

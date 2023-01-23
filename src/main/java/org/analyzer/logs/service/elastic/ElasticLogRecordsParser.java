@@ -3,14 +3,13 @@ package org.analyzer.logs.service.elastic;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import lombok.NonNull;
-import org.analyzer.logs.model.LogRecord;
+import org.analyzer.logs.model.LogRecordEntity;
 import org.analyzer.logs.service.LogRecordFormat;
 import org.analyzer.logs.service.LogRecordsParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -74,9 +73,9 @@ public class ElasticLogRecordsParser implements LogRecordsParser {
 
     @Nonnull
     @Override
-    public Flux<LogRecord> parse(
-            @Nonnull Mono<File> logFile,
-            @NonNull String fileName,
+    public Flux<LogRecordEntity> parse(
+            @Nonnull String logKey,
+            @Nonnull File logFile,
             @Nullable LogRecordFormat recordFormat) {
         final var pattern = recordFormat == null || !StringUtils.hasLength(recordFormat.pattern())
                                     ? defaultRecordPattern
@@ -88,11 +87,9 @@ public class ElasticLogRecordsParser implements LogRecordsParser {
                                                     ? defaultTimeFormatter
                                                     : computeFormatter(recordFormat.timeFormat());
 
-        final ThreadLocal<LogRecord> lastRecord = new ThreadLocal<>();
+        final ThreadLocal<LogRecordEntity> lastRecord = new ThreadLocal<>();
 
-        return logFile
-                .map(File::toPath)
-                .flatMapMany(this::readAllLines)
+        return readAllLines(logFile.toPath())
                 .index()
                 .map(line2idx -> {
 
@@ -100,9 +97,9 @@ public class ElasticLogRecordsParser implements LogRecordsParser {
                     final var matcher = pattern.matcher(line);
                     final var lastRecordLocal = lastRecord.get();
                     if (matcher.matches()) {
-                        return LogRecord
+                        return LogRecordEntity
                                     .builder()
-                                        .id(fileName + "@" + line2idx.getT1())
+                                        .id(logKey + "@" + line2idx.getT1())
                                         .time(parseTime(timeFormatter, matcher))
                                         .date(parseDate(dateFormatter, matcher))
                                         .level(matcher.group("level"))

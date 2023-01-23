@@ -2,7 +2,7 @@ package org.analyzer.logs.service.std.postfilters;
 
 import lombok.NonNull;
 import org.analyzer.logs.service.PostFilter;
-import org.analyzer.logs.model.LogRecord;
+import org.analyzer.logs.model.LogRecordEntity;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -29,7 +29,7 @@ public class TimestampGapPostFilter implements PostFilter {
 
     @NonNull
     @Override
-    public Flux<LogRecord> apply(@NonNull Flux<LogRecord> records) {
+    public Flux<LogRecordEntity> apply(@NonNull Flux<LogRecordEntity> records) {
         Objects.requireNonNull(this.parameters, "Gap interval isn't specified");
 
         return records
@@ -64,7 +64,7 @@ public class TimestampGapPostFilter implements PostFilter {
         return NAME;
     }
 
-    private List<LogRecord> compareWithFilter(final List<LogRecord> elems) {
+    private List<LogRecordEntity> compareWithFilter(final List<LogRecordEntity> elems) {
         if (elems.size() < 2) {
             return Collections.emptyList();
         }

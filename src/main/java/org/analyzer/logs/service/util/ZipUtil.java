@@ -38,6 +38,7 @@ public class ZipUtil {
 
             try (final var fis = new FileInputStream(zip);
                  final var zipIn = new ZipInputStream(fis)) {
+
                 var entry = zipIn.getNextEntry();
 
                 while (entry != null) {

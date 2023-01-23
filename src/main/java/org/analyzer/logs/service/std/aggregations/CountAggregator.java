@@ -1,7 +1,7 @@
 package org.analyzer.logs.service.std.aggregations;
 
 import lombok.NonNull;
-import org.analyzer.logs.model.LogRecord;
+import org.analyzer.logs.model.LogRecordEntity;
 import org.analyzer.logs.service.Aggregator;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -57,11 +57,11 @@ public class CountAggregator implements Aggregator<Long> {
 
     @Override
     @NonNull
-    public Flux<Long> apply(@NonNull Flux<LogRecord> recordFlux) {
+    public Flux<Long> apply(@NonNull Flux<LogRecordEntity> recordFlux) {
         Objects.requireNonNull(this.parameters, "Count parameters isn't specified");
 
         return recordFlux
-                .map(LogRecord.field2FieldValueFunction(this.additionalFilterBy))
+                .map(LogRecordEntity.field2FieldValueFunction(this.additionalFilterBy))
                 .filter(value -> Objects.equals(value, this.additionalFilterValue))
                 .count()
                 .flux();

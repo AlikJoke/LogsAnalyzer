@@ -2,17 +2,15 @@ package org.analyzer.logs.rest;
 
 import lombok.extern.slf4j.Slf4j;
 import org.analyzer.logs.service.LogsService;
+import org.analyzer.logs.service.LogsStatistics;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 
-import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 
 @RestController
 @RequestMapping("/api/logs")
@@ -28,16 +26,7 @@ public class LogsController {
     @ResponseStatus(HttpStatus.OK)
     public Mono<Map<String, Object>> analyze(@RequestBody RequestAnalyzeQuery query) {
         return this.service.analyze(query)
-                            .flatMapIterable(Map::entrySet)
-                            .flatMap(
-                                    e -> Mono.just(e.getKey())
-                                                .zipWith(e.getValue()
-                                                                .collectList()
-                                                                .filter(Predicate.not(List::isEmpty))
-                                                                .map(this.webUtils::prepareToResponse)
-                                                )
-                            )
-                            .collectMap(Tuple2::getT1, Tuple2::getT2)
+                            .flatMap(LogsStatistics::toResultMap)
                             .onErrorResume(this::onError);
     }
 
@@ -48,14 +37,13 @@ public class LogsController {
             @RequestPart(value = "recordPatterns", required = false) LogRecordFormatResource recordPattern,
             @RequestParam(value = "pre-analyze", required = false) boolean preAnalyze) {
 
-        // TODO analyze and save stats
         final var tempFiles = file.flatMap(this.webUtils::createTempFile);
 
         return file
                 .zipWith(tempFiles)
                 .flatMap(tuple ->
                         this.service
-                                .index(Mono.just(tuple.getT2()), tuple.getT1().filename(), recordPattern)
+                                .index(Mono.just(tuple.getT2()), recordPattern, preAnalyze)
                                 .doOnNext(v -> tuple.getT2().delete())
                 )
                 .then()

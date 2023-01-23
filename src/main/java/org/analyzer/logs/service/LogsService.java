@@ -12,8 +12,8 @@ public interface LogsService {
     @Nonnull
     Mono<Void> index(
             @Nonnull Mono<File> logFile,
-            @Nonnull String originalLogFileName,
-            @Nullable LogRecordFormat patternFormat);
+            @Nullable LogRecordFormat patternFormat,
+            boolean preAnalyze);
 
     @Nonnull
     Flux<String> searchByQuery(@Nonnull SearchQuery query);

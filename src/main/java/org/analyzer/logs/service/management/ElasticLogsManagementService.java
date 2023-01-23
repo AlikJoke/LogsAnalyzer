@@ -2,7 +2,7 @@ package org.analyzer.logs.service.management;
 
 import lombok.NonNull;
 import org.analyzer.logs.dao.LogRecordRepository;
-import org.analyzer.logs.model.LogRecord;
+import org.analyzer.logs.model.LogRecordEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.client.elc.ReactiveElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.ReactiveIndexOperations;
@@ -28,7 +28,7 @@ public class ElasticLogsManagementService implements LogsManagementService {
             @NonNull ReactiveElasticsearchTemplate template,
             @NonNull LogRecordRepository logsRepository) {
         this.logsRepository = logsRepository;
-        this.indexOps = template.indexOps(LogRecord.class);
+        this.indexOps = template.indexOps(LogRecordEntity.class);
     }
 
     @NonNull

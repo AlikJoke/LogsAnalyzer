@@ -11,7 +11,7 @@ import java.util.Map;
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
-public class LogsStatistics {
+public class LogsStatisticsEntity {
 
     @Id
     @EqualsAndHashCode.Include
@@ -24,4 +24,5 @@ public class LogsStatistics {
     @NonNull
     @ToString.Exclude
     private Map<String, Object> stats;
+    private String title;
 }

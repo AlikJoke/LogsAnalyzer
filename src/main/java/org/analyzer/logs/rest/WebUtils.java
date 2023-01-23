@@ -1,41 +1,25 @@
 package org.analyzer.logs.rest;
 
-import lombok.NonNull;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Component
 class WebUtils {
 
-    @Nullable
-    Object prepareToResponse(@NonNull final List<?> values) {
-
-        final var firstElem = values.get(0);
-        if (firstElem instanceof Tuple2<?,?>) {
-            return values
-                    .stream()
-                    .filter(v -> v instanceof Tuple2<?,?>)
-                    .map(Tuple2.class::cast)
-                    .collect(Collectors.toMap(Tuple2::getT1, Tuple2::getT2, (v1, v2) -> v1, LinkedHashMap::new));
-        }
-
-        return values.size() == 1 ? firstElem : values;
-    }
-
     Mono<File> createTempFile(final FilePart filePart) {
         try {
-            final var result = Files.createTempFile(filePart.filename(), null).toFile();
-            return filePart.transferTo(result).thenReturn(result);
+            final var destDirPath = Files.createTempDirectory(UUID.randomUUID().toString());
+            final var destDir = destDirPath.toFile();
+            destDir.deleteOnExit();
+
+            final var result = destDirPath.resolveSibling(filePart.filename());
+            return filePart.transferTo(result).thenReturn(result.toFile());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

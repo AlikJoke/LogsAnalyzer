@@ -15,4 +15,7 @@ public interface AnalyzeQuery extends SearchQuery {
 
     @Nullable
     String analyzeResultName();
+
+    @Nonnull
+    SearchQuery toSearchQuery();
 }

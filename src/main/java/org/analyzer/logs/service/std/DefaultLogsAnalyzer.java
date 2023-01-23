@@ -1,9 +1,9 @@
 package org.analyzer.logs.service.std;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.NonNull;
-import org.analyzer.logs.model.LogRecord;
+import org.analyzer.logs.model.LogRecordEntity;
 import org.analyzer.logs.service.Aggregator;
+import org.analyzer.logs.service.AnalyzeQuery;
 import org.analyzer.logs.service.LogsAnalyzer;
 import org.analyzer.logs.service.LogsStatistics;
 import org.analyzer.logs.service.std.aggregations.*;
@@ -32,10 +32,10 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
     @Override
     @NonNull
     public Mono<LogsStatistics> analyze(
-            @NonNull Flux<LogRecord> records,
-            @NonNull Map<String, JsonNode> aggregations) {
+            @NonNull Flux<LogRecordEntity> records,
+            @NonNull AnalyzeQuery analyzeQuery) {
 
-        return Flux.fromIterable(aggregations.entrySet())
+        return Flux.fromIterable(analyzeQuery.aggregations().entrySet())
                     .flatMap(
                             e -> Mono.just(e.getKey())
                                         .zipWith(this.aggregatorsFactory.create(e.getKey(), e.getValue()))
@@ -52,7 +52,7 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
         return Mono.fromSupplier(MapLogsStatistics::new)
                     .flatMap(
                             mapStats -> statistics
-                                            .map(tuple -> mapStats.putOne(tuple.getT1(), tuple.getT2()))
+                                            .map(tuple -> mapStats.putOne(tuple.getT1(), tuple.getT2().cache()))
                                             .then(Mono.just(mapStats))
                     )
                     .cast(LogsStatistics.class);

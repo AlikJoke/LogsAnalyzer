@@ -8,6 +8,7 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.Accessors;
 import org.analyzer.logs.service.AnalyzeQuery;
+import org.analyzer.logs.service.SearchQuery;
 import org.springframework.data.domain.Sort;
 
 import javax.annotation.Nonnegative;
@@ -44,5 +45,11 @@ public class RequestAnalyzeQuery extends RequestSearchQuery implements AnalyzeQu
     @Override
     public Map<String, JsonNode> aggregations() {
         return aggregations == null ? Collections.emptyMap() : aggregations;
+    }
+
+    @NonNull
+    @Override
+    public SearchQuery toSearchQuery() {
+        return new RequestSearchQuery(query(), extendedFormat(), postFilters(), maxResults(), sorts());
     }
 }
