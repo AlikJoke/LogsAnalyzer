@@ -30,8 +30,8 @@ public class PostFiltersSequenceBuilder {
 
     private PostFilter createPostFilter(final Map.Entry<String, JsonNode> pf) {
 
-        final PostFilter postFilter = this.applicationContext.getBean(pf.getKey(), PostFilter.class);
-        final Object parameters = this.jsonConverter.convert(pf.getValue(), postFilter.getParametersClass());
+        final var postFilter = this.applicationContext.getBean(pf.getKey(), PostFilter.class);
+        final var parameters = this.jsonConverter.convert(pf.getValue(), postFilter.getParametersClass());
         postFilter.setParameters(parameters);
 
         return postFilter;

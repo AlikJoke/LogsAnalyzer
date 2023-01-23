@@ -102,20 +102,20 @@ public class ElasticLogsService implements LogsService {
 
     @NonNull
     @Override
-    public Mono<LogsStatistics> analyze(@NonNull SearchQuery searchQuery) {
-        final Flux<LogRecord> filteredRecords = searchByFilterQuery(searchQuery).cache();
-        return this.logsAnalyzer.analyze(filteredRecords, searchQuery.aggregations())
+    public Mono<LogsStatistics> analyze(@NonNull AnalyzeQuery analyzeQuery) {
+        final var filteredRecords = searchByFilterQuery(analyzeQuery).cache();
+        return this.logsAnalyzer.analyze(filteredRecords, analyzeQuery.aggregations())
                                 .doOnNext(stat -> logsAnalyzeCounter.increment());
     }
 
     private Flux<LogRecord> searchByFilterQuery(@Nonnull SearchQuery searchQuery) {
 
-        final Flux<LogRecord> records = this.queryParser.parse(searchQuery)
-                                                        .doOnNext(query -> (searchQuery.extendedFormat() ? extendedSearchRequestsCounter : simpleSearchRequestsCounter).increment())
-                                                        .flatMapMany(query -> template.search(query, LogRecord.class))
-                                                        .map(SearchHit::getContent);
+        final var records = this.queryParser.parse(searchQuery)
+                                            .doOnNext(query -> (searchQuery.extendedFormat() ? extendedSearchRequestsCounter : simpleSearchRequestsCounter).increment())
+                                            .flatMapMany(query -> template.search(query, LogRecord.class))
+                                            .map(SearchHit::getContent);
 
-        final Flux<PostFilter> postFilters = this.postFiltersSequenceBuilder.build(searchQuery.postFilters());
+        final var postFilters = this.postFiltersSequenceBuilder.build(searchQuery.postFilters());
 
         return postFilters
                 .reduce(Function.<Flux<LogRecord>> identity(), Function::andThen)
@@ -126,8 +126,8 @@ public class ElasticLogsService implements LogsService {
             final String metricName,
             final String description,
             final String type) {
-        final Counter.Builder builder = Counter.builder(metricName)
-                                                .description(description);
+        final var builder = Counter.builder(metricName)
+                                    .description(description);
         if (type != null) {
             builder.tag("type", type);
         }

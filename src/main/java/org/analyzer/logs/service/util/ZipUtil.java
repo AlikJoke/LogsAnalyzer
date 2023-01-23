@@ -91,7 +91,7 @@ public class ZipUtil {
 
         try (final var bos = new BufferedOutputStream(new FileOutputStream(filePath))) {
 
-            final byte[] bytesIn = new byte[1024];
+            final var bytesIn = new byte[1024];
             int read;
             while ((read = zipIn.read(bytesIn)) != -1) {
                 bos.write(bytesIn, 0, read);

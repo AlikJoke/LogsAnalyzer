@@ -1,8 +1,12 @@
 package org.analyzer.logs.rest;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.ToString;
+import lombok.experimental.Accessors;
 import org.analyzer.logs.service.SearchQuery;
 import org.springframework.data.domain.Sort;
 
@@ -11,13 +15,30 @@ import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Map;
 
-public record RequestSearchQuery(
-        @NonNull String query,
-        @JsonProperty("extended_format") boolean extendedFormat,
-        @JsonProperty("post_filters") @Nullable Map<String, JsonNode> postFilters,
-        @JsonProperty("max_results") @Nonnegative int maxResults,
-        @JsonProperty("sorts") @Nullable Map<String, Sort.Direction> sorts,
-        @JsonProperty("aggregations") @Nullable Map<String, JsonNode> aggregations) implements SearchQuery {
+@Getter
+@ToString
+@Accessors(fluent = true)
+public class RequestSearchQuery implements SearchQuery {
+
+    private final String query;
+    private final boolean extendedFormat;
+    private final Map<String, JsonNode> postFilters;
+    private final int maxResults;
+    private final Map<String, Sort.Direction> sorts;
+
+    @JsonCreator
+    protected RequestSearchQuery(
+            @JsonProperty("query") @NonNull String query,
+            @JsonProperty("extended_format") boolean extendedFormat,
+            @JsonProperty("post_filters") @Nullable Map<String, JsonNode> postFilters,
+            @JsonProperty("max_results") @Nonnegative int maxResults,
+            @JsonProperty("sorts") @Nullable Map<String, Sort.Direction> sorts) {
+        this.query = query;
+        this.extendedFormat = extendedFormat;
+        this.postFilters = postFilters;
+        this.maxResults = maxResults;
+        this.sorts = sorts;
+    }
 
     @Override
     public int maxResults() {
@@ -34,11 +55,5 @@ public record RequestSearchQuery(
     @Override
     public Map<String, JsonNode> postFilters() {
         return postFilters == null ? Collections.emptyMap() : postFilters;
-    }
-
-    @NonNull
-    @Override
-    public Map<String, JsonNode> aggregations() {
-        return aggregations == null ? Collections.emptyMap() : aggregations;
     }
 }

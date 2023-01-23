@@ -33,7 +33,7 @@ public class AggregatorFactory {
 
         @SuppressWarnings("unchecked")
         final Aggregator<T> aggregator = this.applicationContext.getBean(aggregatorKey, Aggregator.class);
-        final Object parameters = this.jsonConverter.convert(parametersJson, aggregator.getParametersClass());
+        final var parameters = this.jsonConverter.convert(parametersJson, aggregator.getParametersClass());
         aggregator.setParameters(parameters);
 
         return aggregator;

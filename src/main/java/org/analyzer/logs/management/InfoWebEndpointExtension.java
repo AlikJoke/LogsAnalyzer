@@ -26,8 +26,8 @@ public class InfoWebEndpointExtension {
     public Mono<WebEndpointResponse<Map<String, Object>>> info() {
         return Mono.fromSupplier(() -> {
 
-            final Map<String, Object> info = this.delegate.info();
-            final Optional<Boolean> indexExists = this.managementService.existsIndex().blockOptional();
+            final var info = this.delegate.info();
+            final var indexExists = this.managementService.existsIndex().blockOptional();
             info.put("elasticsearch", indexExists.isPresent()
                     ? this.managementService.indexInfo().block()
                     : Collections.singletonMap("index-exists", false));

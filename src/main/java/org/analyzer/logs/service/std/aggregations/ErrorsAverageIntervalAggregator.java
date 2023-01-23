@@ -63,11 +63,11 @@ public class ErrorsAverageIntervalAggregator implements Aggregator<Double> {
             return 0;
         }
 
-        final LogRecord record1 = records.get(0);
-        final LogRecord record2 = records.get(1);
+        final var record1 = records.get(0);
+        final var record2 = records.get(1);
 
-        final long millis1 = getMillisFromDate(record1.getDate()) + getMillisFromTime(record1.getTime());
-        final long millis2 = getMillisFromDate(record2.getDate()) + getMillisFromTime(record2.getTime());
+        final var millis1 = getMillisFromDate(record1.getDate()) + getMillisFromTime(record1.getTime());
+        final var millis2 = getMillisFromDate(record2.getDate()) + getMillisFromTime(record2.getTime());
 
         return millis2 - millis1;
     }

@@ -22,7 +22,4 @@ public interface SearchQuery {
 
     @Nonnull
     Map<String, Sort.Direction> sorts();
-
-    @Nonnull
-    Map<String, JsonNode> aggregations();
 }

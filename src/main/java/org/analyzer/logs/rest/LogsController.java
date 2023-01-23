@@ -6,12 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
-import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -28,7 +26,7 @@ public class LogsController {
 
     @PostMapping("/analyze")
     @ResponseStatus(HttpStatus.OK)
-    public Mono<Map<String, Object>> analyze(@RequestBody RequestSearchQuery query) {
+    public Mono<Map<String, Object>> analyze(@RequestBody RequestAnalyzeQuery query) {
         return this.service.analyze(query)
                             .flatMapIterable(Map::entrySet)
                             .flatMap(
@@ -47,9 +45,11 @@ public class LogsController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> load(
             @RequestPart("file") Flux<FilePart> file,
-            @RequestPart(value = "recordPatterns", required = false) LogRecordFormatResource recordPattern) {
+            @RequestPart(value = "recordPatterns", required = false) LogRecordFormatResource recordPattern,
+            @RequestParam(value = "pre-analyze", required = false) boolean preAnalyze) {
 
-        final Flux<File> tempFiles = file.flatMap(this.webUtils::createTempFile);
+        // TODO analyze and save stats
+        final var tempFiles = file.flatMap(this.webUtils::createTempFile);
 
         return file
                 .zipWith(tempFiles)
@@ -65,10 +65,6 @@ public class LogsController {
     @PostMapping("/query")
     @ResponseStatus(HttpStatus.OK)
     public Mono<LogRecordsCollectionResource> read(@RequestBody RequestSearchQuery query) {
-        if (!query.aggregations().isEmpty()) {
-            return onError(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Aggregation isn't allowed in search query"));
-        }
-
         return this.service.searchByQuery(query)
                             .collectList()
                             .map(LogRecordsCollectionResource::new)

@@ -30,9 +30,9 @@ public class ElasticSearchQueryParser implements SearchQueryParser<StringQuery> 
     @Override
     public Mono<StringQuery> parse(@NonNull SearchQuery query) {
         return Mono.fromSupplier(() -> {
-            final String resultQueryString = query.extendedFormat() ? query.query() : QUERY_STRING_BODY_TEMPLATE.formatted(query.query());
+            final var resultQueryString = query.extendedFormat() ? query.query() : QUERY_STRING_BODY_TEMPLATE.formatted(query.query());
 
-            final Sort sort = query.sorts()
+            final var sort = query.sorts()
                                     .entrySet()
                                     .stream()
                                     .map(e -> Sort.by(e.getValue(), e.getKey()))

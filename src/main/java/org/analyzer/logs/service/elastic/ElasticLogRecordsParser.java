@@ -78,13 +78,13 @@ public class ElasticLogRecordsParser implements LogRecordsParser {
             @Nonnull Mono<File> logFile,
             @NonNull String fileName,
             @Nullable LogRecordFormat recordFormat) {
-        final Pattern pattern = recordFormat == null || !StringUtils.hasLength(recordFormat.pattern())
+        final var pattern = recordFormat == null || !StringUtils.hasLength(recordFormat.pattern())
                                     ? defaultRecordPattern
                                     : this.patternsCache.computeIfAbsent(recordFormat.pattern(), Pattern::compile);
-        final DateTimeFormatter dateFormatter = recordFormat == null || !StringUtils.hasLength(recordFormat.dateFormat())
+        final var dateFormatter = recordFormat == null || !StringUtils.hasLength(recordFormat.dateFormat())
                                                     ? defaultDateFormatter
                                                     : computeFormatter(recordFormat.dateFormat());
-        final DateTimeFormatter timeFormatter = recordFormat == null || !StringUtils.hasLength(recordFormat.timeFormat())
+        final var timeFormatter = recordFormat == null || !StringUtils.hasLength(recordFormat.timeFormat())
                                                     ? defaultTimeFormatter
                                                     : computeFormatter(recordFormat.timeFormat());
 
@@ -112,7 +112,7 @@ public class ElasticLogRecordsParser implements LogRecordsParser {
                                         .record(matcher.group("text"))
                                     .build();
                     } else if (lastRecordLocal != null) {
-                        final String separatedLine = System.lineSeparator() + line;
+                        final var separatedLine = System.lineSeparator() + line;
                         lastRecordLocal.setSource(lastRecordLocal.getSource() + separatedLine);
                         lastRecordLocal.setRecord(lastRecordLocal.getRecord() + separatedLine);
 
@@ -144,7 +144,7 @@ public class ElasticLogRecordsParser implements LogRecordsParser {
     }
 
     private LocalTime parseTime(final DateTimeFormatter timeFormatter, final Matcher matcher) {
-        final String time = matcher.group("time");
+        final var time = matcher.group("time");
         if (!StringUtils.hasLength(time)) {
             return null;
         }
@@ -153,7 +153,7 @@ public class ElasticLogRecordsParser implements LogRecordsParser {
     }
 
     private LocalDate parseDate(final DateTimeFormatter dateFormatter, final Matcher matcher) {
-        final String date = matcher.group("date");
+        final var date = matcher.group("date");
         if (!StringUtils.hasLength(date)) {
             return null;
         }

@@ -20,7 +20,7 @@ class WebUtils {
     @Nullable
     Object prepareToResponse(@NonNull final List<?> values) {
 
-        final Object firstElem = values.get(0);
+        final var firstElem = values.get(0);
         if (firstElem instanceof Tuple2<?,?>) {
             return values
                     .stream()
@@ -34,7 +34,7 @@ class WebUtils {
 
     Mono<File> createTempFile(final FilePart filePart) {
         try {
-            final File result = Files.createTempFile(filePart.filename(), null).toFile();
+            final var result = Files.createTempFile(filePart.filename(), null).toFile();
             return filePart.transferTo(result).thenReturn(result);
         } catch (IOException e) {
             throw new RuntimeException(e);

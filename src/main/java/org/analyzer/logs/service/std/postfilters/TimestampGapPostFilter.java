@@ -69,15 +69,15 @@ public class TimestampGapPostFilter implements PostFilter {
             return Collections.emptyList();
         }
 
-        final LogRecord record1 = elems.get(0);
-        final LogRecord record2 = elems.get(1);
+        final var record1 = elems.get(0);
+        final var record2 = elems.get(1);
 
-        final long millis1 = getMillisFromDate(record1.getDate()) + getMillisFromTime(record1.getTime());
-        final long millis2 = getMillisFromDate(record2.getDate()) + getMillisFromTime(record2.getTime());
+        final var millis1 = getMillisFromDate(record1.getDate()) + getMillisFromTime(record1.getTime());
+        final var millis2 = getMillisFromDate(record2.getDate()) + getMillisFromTime(record2.getTime());
 
-        final long diffMillis = millis2 - millis1;
+        final var diffMillis = millis2 - millis1;
 
-        final boolean skip = this.predicateOperation.compute(diffMillis, this.gapInMillis);
+        final var skip = this.predicateOperation.compute(diffMillis, this.gapInMillis);
         return skip ? Collections.emptyList() : elems;
     }
 
