@@ -81,7 +81,7 @@ public class ElasticLogsService implements LogsService {
 
     @Override
     @NonNull
-    public Mono<Void> index(
+    public Mono<String> index(
             @NonNull Mono<File> logFile,
             @Nullable LogRecordFormat recordFormat,
             final boolean preAnalyze) {
@@ -104,7 +104,8 @@ public class ElasticLogsService implements LogsService {
                                                     .log(logger)
                             )
                             .flatMap(Flux::then)
-                            .then();
+                            .then()
+                            .thenReturn(uuidKey);
     }
 
     @Nonnull
@@ -119,6 +120,13 @@ public class ElasticLogsService implements LogsService {
     public Mono<LogsStatistics> analyze(@NonNull AnalyzeQuery analyzeQuery) {
         final var filteredRecords = searchByFilterQuery(analyzeQuery).cache();
         return analyze(filteredRecords, analyzeQuery);
+    }
+
+    @NonNull
+    @Override
+    public Mono<Map<String, Object>> findStatisticsByKey(@NonNull String key) {
+        return this.statisticsRepository.findByDataQueryLike(key)
+                                        .map(LogsStatisticsEntity::getStats);
     }
 
     private Mono<LogsStatistics> analyze(
