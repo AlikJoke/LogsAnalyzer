@@ -1,4 +1,4 @@
-package org.analyzer.logs.rest;
+package org.analyzer.logs.rest.records;
 
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Component;

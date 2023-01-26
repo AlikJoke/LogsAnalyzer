@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @Builder
-public class UserSettingsEntity {
+public class UserSettings {
 
     @Field("cleaning_interval")
     private long cleaningInterval;

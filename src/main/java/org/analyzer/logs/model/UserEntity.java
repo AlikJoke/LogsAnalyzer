@@ -25,5 +25,5 @@ public class UserEntity {
 
     private boolean active;
 
-    private UserSettingsEntity settings;
+    private UserSettings settings;
 }

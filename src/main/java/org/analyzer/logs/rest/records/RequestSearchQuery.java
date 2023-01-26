@@ -1,4 +1,4 @@
-package org.analyzer.logs.rest;
+package org.analyzer.logs.rest.records;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -29,7 +29,7 @@ public class RequestSearchQuery implements SearchQuery {
     private final Map<String, Sort.Direction> sorts;
 
     @JsonCreator
-    protected RequestSearchQuery(
+    public RequestSearchQuery(
             @JsonProperty("query") @NonNull String query,
             @JsonProperty("extended_format") boolean extendedFormat,
             @JsonProperty("post_filters") @Nullable Map<String, JsonNode> postFilters,

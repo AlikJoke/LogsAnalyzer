@@ -1,4 +1,4 @@
-package org.analyzer.logs.rest;
+package org.analyzer.logs.rest.records;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.NonNull;

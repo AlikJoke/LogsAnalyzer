@@ -1,4 +1,4 @@
-package org.analyzer.logs.rest;
+package org.analyzer.logs.rest.stats;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.Accessors;
+import org.analyzer.logs.rest.records.RequestSearchQuery;
 import org.analyzer.logs.service.AnalyzeQuery;
 import org.analyzer.logs.service.SearchQuery;
 import org.springframework.data.domain.Sort;

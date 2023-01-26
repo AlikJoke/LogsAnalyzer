@@ -1,4 +1,4 @@
-package org.analyzer.logs.rest;
+package org.analyzer.logs.rest.records;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
