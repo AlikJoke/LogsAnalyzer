@@ -21,34 +21,22 @@ public class LogRecordEntity {
     @EqualsAndHashCode.Include
     @NonNull
     private String id;
-
     @Field(
             type = FieldType.Date,
             format = DateFormat.date
     )
     private LocalDate date;
-
     @Field(
             type = FieldType.Date,
             format = DateFormat.hour_minute_second_millis
     )
     private LocalTime time;
-
-    @Field
     private String level;
-
-    @Field
     @NonNull
     @ToString.Exclude
     private String source;
-
-    @Field
     private String category;
-
-    @Field
     private String thread;
-
-    @Field
     private String record;
 
     @NonNull

@@ -3,6 +3,8 @@ package org.analyzer.logs.service.elastic;
 import lombok.NonNull;
 import org.analyzer.logs.service.SearchQuery;
 import org.analyzer.logs.service.SearchQueryParser;
+import org.analyzer.logs.service.util.JsonConverter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.query.StringQuery;
@@ -19,18 +21,36 @@ public class ElasticSearchQueryParser implements SearchQueryParser<StringQuery> 
     private static final String QUERY_STRING_BODY_TEMPLATE = """
             {"query_string":
                 {
-                    "query": "%s"
+                    "query": "(%s) and id.keyword:%s#*"
+                }
+            }""";
+
+    private static final String QUERY_FULL_FILTERED_TEMPLATE = """
+            {"filtered":
+                {
+                    "filter":
+                        {
+                            "prefix":
+                                {
+                                    "id.keyword": "%s#"
+                                }
+                        },
+                    %s
                 }
             }""";
 
     @Value("${elasticsearch.default.max_results:10000}")
     private int maxResultsDefault;
+    @Autowired
+    private JsonConverter jsonConverter;
 
     @NonNull
     @Override
-    public Mono<StringQuery> parse(@NonNull SearchQuery query) {
+    public Mono<StringQuery> parse(@NonNull SearchQuery query, @NonNull String userKey) {
         return Mono.fromSupplier(() -> {
-            final var resultQueryString = query.extendedFormat() ? query.query() : QUERY_STRING_BODY_TEMPLATE.formatted(query.query());
+            final var resultQueryString = query.extendedFormat()
+                    ? QUERY_FULL_FILTERED_TEMPLATE.formatted(userKey, query.query())
+                    : QUERY_STRING_BODY_TEMPLATE.formatted(query.query(), userKey);
 
             final var sort = query.sorts()
                                     .entrySet()

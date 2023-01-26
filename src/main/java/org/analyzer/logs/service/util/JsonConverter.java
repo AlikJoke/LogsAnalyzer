@@ -29,6 +29,15 @@ public class JsonConverter {
     }
 
     @NonNull
+    public JsonNode convert(@NonNull String json) {
+        try {
+            return mapper.readTree(json);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @NonNull
     public String convertToJson(@NonNull Object object) {
         try {
             return mapper.writeValueAsString(object);

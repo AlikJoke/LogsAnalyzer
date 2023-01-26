@@ -91,21 +91,22 @@ public class ElasticLogRecordsParser implements LogRecordsParser {
 
         return readAllLines(logFile.toPath())
                 .index()
-                .map(line2idx -> {
+                .map(tuple -> {
 
-                    final var line = line2idx.getT2();
+                    final var counter = tuple.getT1();
+                    final var line = tuple.getT2();
                     final var matcher = pattern.matcher(line);
                     final var lastRecordLocal = lastRecord.get();
                     if (matcher.matches()) {
                         return LogRecordEntity
                                     .builder()
-                                        .id(logKey + "@" + line2idx.getT1())
+                                        .id(logKey + "@" + counter)
                                         .time(parseTime(timeFormatter, matcher))
                                         .date(parseDate(dateFormatter, matcher))
                                         .level(matcher.group("level"))
                                         .thread(matcher.group("thread"))
                                         .category(matcher.group("category"))
-                                        .source(line2idx.getT2())
+                                        .source(line)
                                         .record(matcher.group("text"))
                                     .build();
                     } else if (lastRecordLocal != null) {

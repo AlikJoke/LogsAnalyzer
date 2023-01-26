@@ -24,5 +24,7 @@ public class LogsStatisticsEntity {
     @NonNull
     @ToString.Exclude
     private Map<String, Object> stats;
+    @NonNull
+    private String userHash;
     private String title;
 }

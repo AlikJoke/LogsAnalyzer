@@ -8,6 +8,7 @@ import org.analyzer.logs.dao.LogRecordRepository;
 import org.analyzer.logs.dao.LogsStatisticsRepository;
 import org.analyzer.logs.model.LogRecordEntity;
 import org.analyzer.logs.model.LogsStatisticsEntity;
+import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.*;
 import org.analyzer.logs.service.std.DefaultLogsAnalyzer;
 import org.analyzer.logs.service.std.postfilters.PostFiltersSequenceBuilder;
@@ -58,6 +59,8 @@ public class ElasticLogsService implements LogsService {
     private LogsStatisticsRepository statisticsRepository;
     @Autowired
     private LongRunningTaskExecutor taskExecutor;
+    @Autowired
+    private CurrentUserAccessor userAccessor;
 
     @Value("${elasticsearch.default.indexing.buffer_size:2500}")
     private int elasticIndexBufferSize;
@@ -89,11 +92,12 @@ public class ElasticLogsService implements LogsService {
         final String uuidKey = UUID.randomUUID().toString();
 
         return this.zipUtil.flat(logFile)
+                            .zipWith(this.userAccessor.get().map(UserEntity::getHash))
                             .log(logger)
                             .doOnNext(file -> this.indexedFilesCounter.increment())
                             .parallel()
                             .runOn(Schedulers.parallel())
-                            .map(file -> this.parser.parse(composeSearchKey(file, uuidKey), file, recordFormat))
+                            .map(file2hash -> this.parser.parse(composeSearchKey(file2hash.getT1(), createIndexKey(file2hash.getT2(), uuidKey)), file2hash.getT1(), recordFormat))
                             .flatMap(records -> records
                                                     .cache()
                                                     .transform(recordsFlux -> sendToAnalyzeLogsIfNeed(preAnalyze, recordsFlux, uuidKey))
@@ -127,6 +131,10 @@ public class ElasticLogsService implements LogsService {
     public Mono<Map<String, Object>> findStatisticsByKey(@NonNull String key) {
         return this.statisticsRepository.findByDataQueryLike(key)
                                         .map(LogsStatisticsEntity::getStats);
+    }
+
+    private String createIndexKey(final String userHash, final String uuidKey) {
+        return userHash + "#" + uuidKey;
     }
 
     private Mono<LogsStatistics> analyze(
@@ -168,7 +176,8 @@ public class ElasticLogsService implements LogsService {
 
     private Flux<LogRecordEntity> searchByFilterQuery(@Nonnull SearchQuery searchQuery) {
 
-        final var records = this.queryParser.parse(searchQuery)
+        final var records = this.userAccessor.get()
+                                            .flatMap(user -> this.queryParser.parse(searchQuery, user.getHash()))
                                             .doOnNext(query -> (searchQuery.extendedFormat() ? extendedSearchRequestsCounter : simpleSearchRequestsCounter).increment())
                                             .flatMapMany(query -> template.search(query, LogRecordEntity.class))
                                             .map(SearchHit::getContent);
