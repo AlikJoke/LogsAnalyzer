@@ -1,4 +1,4 @@
-package org.analyzer.logs.config;
+package org.analyzer.logs.dao.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRepositories;

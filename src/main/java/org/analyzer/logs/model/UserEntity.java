@@ -1,13 +1,9 @@
 package org.analyzer.logs.model;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NonNull;
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.util.List;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 @Document("users")
 @Data
@@ -20,9 +16,14 @@ public class UserEntity {
     @NonNull
     private String username;
     @NonNull
-    private String password;
+    @ToString.Exclude
+    @Field("encoded_password")
+    private String encodedPassword;
     @NonNull
+    @ToString.Exclude
     private String hash;
+
     private boolean active;
-    private List<UserSettingsEntity> settings;
+
+    private UserSettingsEntity settings;
 }

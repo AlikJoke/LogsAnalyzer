@@ -3,6 +3,7 @@ package org.analyzer.logs.model;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -18,6 +19,7 @@ public class LogsStatisticsEntity {
     @NonNull
     private String id;
     @NonNull
+    @Field("data_query")
     private String dataQuery;
     @NonNull
     private LocalDateTime created;
@@ -25,6 +27,7 @@ public class LogsStatisticsEntity {
     @ToString.Exclude
     private Map<String, Object> stats;
     @NonNull
-    private String userHash;
+    @Field("user_key")
+    private String userKey;
     private String title;
 }

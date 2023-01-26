@@ -89,18 +89,21 @@ public class ElasticLogsService implements LogsService {
             @Nullable LogRecordFormat recordFormat,
             final boolean preAnalyze) {
 
-        final String uuidKey = UUID.randomUUID().toString();
-
-        return this.zipUtil.flat(logFile)
-                            .zipWith(this.userAccessor.get().map(UserEntity::getHash))
+        final Mono<String> uuidKey = Mono.fromSupplier(UUID.randomUUID()::toString);
+        final Mono<UserEntity> userEntity = this.userAccessor.get();
+        return userEntity
+                .map(UserEntity::getHash)
+                .zipWith(uuidKey)
+                .flatMap(indexingKey ->
+                        this.zipUtil.flat(logFile)
                             .log(logger)
                             .doOnNext(file -> this.indexedFilesCounter.increment())
                             .parallel()
                             .runOn(Schedulers.parallel())
-                            .map(file2hash -> this.parser.parse(composeSearchKey(file2hash.getT1(), createIndexKey(file2hash.getT2(), uuidKey)), file2hash.getT1(), recordFormat))
+                            .map(file -> this.parser.parse(composeSearchKey(file, createIndexKey(indexingKey.getT1(), indexingKey.getT2())), file, recordFormat))
                             .flatMap(records -> records
                                                     .cache()
-                                                    .transform(recordsFlux -> sendToAnalyzeLogsIfNeed(preAnalyze, recordsFlux, uuidKey))
+                                                    .transform(recordsFlux -> sendToAnalyzeLogsIfNeed(preAnalyze, recordsFlux, indexingKey.getT2()))
                                                     .buffer(this.elasticIndexBufferSize)
                                                     .doOnNext(buffer -> this.indexedRecordsCounter.increment(buffer.size()))
                                                     .doOnNext(buffer -> this.elasticIndexRequestsCounter.increment())
@@ -109,7 +112,9 @@ public class ElasticLogsService implements LogsService {
                             )
                             .flatMap(Flux::then)
                             .then()
-                            .thenReturn(uuidKey);
+                            .thenReturn(uuidKey)
+                )
+                .flatMap(Function.identity());
     }
 
     @Nonnull
@@ -141,27 +146,35 @@ public class ElasticLogsService implements LogsService {
             final Flux<LogRecordEntity> recordFlux,
             final AnalyzeQuery analyzeQuery) {
 
-        return this.logsAnalyzer.analyze(recordFlux, analyzeQuery)
-                                .doOnNext(stats -> logsAnalyzeCounter.increment())
-                                .flatMap(stats -> processStatsSaving(analyzeQuery, stats));
+        return this.logsAnalyzer
+                        .analyze(recordFlux, analyzeQuery)
+                        .doOnNext(stats -> logsAnalyzeCounter.increment())
+                        .flatMap(userStats ->
+                                this.userAccessor.get()
+                                                    .map(UserEntity::getHash)
+                                                    .map(userKey -> processStatsSaving(analyzeQuery, userStats, userKey))
+                                                    .flatMap(Mono::single)
+                        );
     }
 
     private Mono<LogsStatistics> processStatsSaving(
             final AnalyzeQuery analyzeQuery,
-            final LogsStatistics stats) {
+            final LogsStatistics stats,
+            final String userKey) {
 
         if (!analyzeQuery.save()) {
             return Mono.just(stats);
         }
 
         return stats.toResultMap()
-                    .flatMap(statsMap -> saveStatsEntity(analyzeQuery, statsMap))
+                    .flatMap(statsMap -> saveStatsEntity(analyzeQuery, statsMap, userKey))
                     .thenReturn(stats);
     }
 
     private Mono<LogsStatisticsEntity> saveStatsEntity(
             final AnalyzeQuery analyzeQuery,
-            final Map<String, Object> stats) {
+            final Map<String, Object> stats,
+            final String userKey) {
 
         final LogsStatisticsEntity entity =
                 LogsStatisticsEntity.builder()
@@ -169,6 +182,7 @@ public class ElasticLogsService implements LogsService {
                                     .created(LocalDateTime.now())
                                     .title(analyzeQuery.analyzeResultName())
                                     .dataQuery(analyzeQuery.toSearchQuery().toJson())
+                                    .userKey(userKey)
                                     .stats(stats)
                                     .build();
         return this.statisticsRepository.save(entity);

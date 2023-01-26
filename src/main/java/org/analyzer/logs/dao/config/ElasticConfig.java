@@ -1,4 +1,4 @@
-package org.analyzer.logs.config;
+package org.analyzer.logs.dao.config;
 
 import org.elasticsearch.client.RestClientBuilder;
 import org.springframework.context.annotation.Bean;

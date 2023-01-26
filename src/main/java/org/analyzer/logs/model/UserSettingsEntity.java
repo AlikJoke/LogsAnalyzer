@@ -2,6 +2,7 @@ package org.analyzer.logs.model;
 
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.List;
 
@@ -9,9 +10,8 @@ import java.util.List;
 @Builder
 public class UserSettingsEntity {
 
-    private boolean errorNotificationsEnabled;
-    private boolean aggregationNotificationsEnabled;
+    @Field("cleaning_interval")
     private long cleaningInterval;
-    private List<String> downloadLogsUrls;
-    private String notificationEmail;
+    @Field("scheduled_indexing_settings")
+    private List<ScheduledIndexingSettings> scheduledIndexingSettings;
 }

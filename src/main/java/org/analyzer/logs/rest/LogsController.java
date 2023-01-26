@@ -30,12 +30,11 @@ public class LogsController {
 
         final var tempFiles = file.flatMap(this.webUtils::createTempFile);
 
-        return file
-                .zipWith(tempFiles)
-                .flatMap(tuple ->
+        return tempFiles
+                .flatMap(tempFile ->
                         this.service
-                                .index(Mono.just(tuple.getT2()), recordPattern, preAnalyze)
-                                .doOnNext(v -> tuple.getT2().delete())
+                                .index(Mono.just(tempFile), recordPattern, preAnalyze)
+                                .doOnNext(v -> tempFile.delete())
                 )
                 .map(indexingKey -> Collections.singletonMap("indexing-key", indexingKey))
                 .onErrorResume(this::onError);

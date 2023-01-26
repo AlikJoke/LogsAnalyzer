@@ -1,4 +1,4 @@
-package org.analyzer.logs.service.std;
+package org.analyzer.logs.sec;
 
 import lombok.NonNull;
 import org.analyzer.logs.dao.UserRepository;
