@@ -20,7 +20,7 @@ public class LongRunningTaskExecutor {
 
     @Autowired
     public LongRunningTaskExecutor(
-            @Value("${logs.task.executor.pool-size:4}") final int poolSize,
+            @Value("${logs.task.executor.pool-size:8}") final int poolSize,
             @NonNull final MeterRegistry meterRegistry) {
         this.scheduler = Schedulers.newParallel("long-running-tasks-scheduler", poolSize);
         this.scheduler.init();
@@ -41,6 +41,6 @@ public class LongRunningTaskExecutor {
 
     @PreDestroy
     private void destroy() {
-        this.scheduler.dispose();
+        this.scheduler.disposeGracefully().block();
     }
 }

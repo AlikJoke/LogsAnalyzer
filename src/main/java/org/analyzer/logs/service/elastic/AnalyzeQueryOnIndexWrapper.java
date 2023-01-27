@@ -43,6 +43,12 @@ public final class AnalyzeQueryOnIndexWrapper implements AnalyzeQuery {
 
     @NonNull
     @Override
+    public String getId() {
+        return key;
+    }
+
+    @NonNull
+    @Override
     public String query() {
         return "id.keyword:*$" + key + "@*";
     }

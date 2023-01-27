@@ -25,15 +25,14 @@ public class LogsController {
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<Map<String, String>> load(
             @RequestPart("file") Mono<FilePart> file,
-            @RequestPart(value = "record_patterns", required = false) LogRecordFormatResource recordPattern,
-            @RequestParam(value = "pre_analyze", required = false) boolean preAnalyze) {
+            @RequestPart(value = "record_patterns", required = false) LogRecordFormatResource recordPattern) {
 
         final var tempFiles = file.flatMap(this.webUtils::createTempFile);
 
         return tempFiles
                 .flatMap(tempFile ->
                         this.service
-                                .index(Mono.just(tempFile), recordPattern, preAnalyze)
+                                .index(Mono.just(tempFile), recordPattern)
                                 .doOnNext(v -> tempFile.delete())
                 )
                 .map(indexingKey -> Collections.singletonMap("indexing-key", indexingKey))

@@ -1,9 +1,9 @@
 package org.analyzer.logs.sec;
 
 import lombok.NonNull;
-import org.analyzer.logs.dao.UserRepository;
 import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.CurrentUserAccessor;
+import org.analyzer.logs.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
 public class DefaultCurrentUserAccessor implements CurrentUserAccessor {
 
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     @NonNull
     @Override
@@ -23,7 +23,7 @@ public class DefaultCurrentUserAccessor implements CurrentUserAccessor {
         return ReactiveSecurityContextHolder.getContext()
                                             .map(SecurityContext::getAuthentication)
                                             .map(Authentication::getName)
-                                            .flatMap(this.userRepository::findById)
+                                            .flatMap(this.userService::findById)
                                             .cache();
     }
 }

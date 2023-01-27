@@ -1,9 +1,10 @@
-package org.analyzer.logs.service.elastic;
+package org.analyzer.logs.service.std;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import lombok.NonNull;
 import org.analyzer.logs.model.LogRecordEntity;
+import org.analyzer.logs.service.LogKeysFactory;
 import org.analyzer.logs.service.LogRecordFormat;
 import org.analyzer.logs.service.LogRecordsParser;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,7 @@ import java.util.stream.Stream;
 import static java.time.temporal.ChronoField.*;
 
 @Component
-public class ElasticLogRecordsParser implements LogRecordsParser {
+public class DefaultLogRecordsParser implements LogRecordsParser {
 
     /**
      * Pattern for format like '2023-01-01 10:00:02,213 INFO  [org.example.SomeClass1] (thread-1) Any text'
@@ -55,8 +56,13 @@ public class ElasticLogRecordsParser implements LogRecordsParser {
     private final Map<String, Pattern> patternsCache;
     private final Map<String, DateTimeFormatter> dateTimeFormattersCache;
 
+    private final LogKeysFactory logKeysFactory;
+
     @Autowired
-    public ElasticLogRecordsParser(@NonNull MeterRegistry meterRegistry) {
+    public DefaultLogRecordsParser(
+            @NonNull MeterRegistry meterRegistry,
+            @NonNull LogKeysFactory logKeysFactory) {
+        this.logKeysFactory = logKeysFactory;
         this.patternsCache = new ConcurrentHashMap<>();
         this.dateTimeFormattersCache = new ConcurrentHashMap<>();
 
@@ -100,7 +106,7 @@ public class ElasticLogRecordsParser implements LogRecordsParser {
                     if (matcher.matches()) {
                         return LogRecordEntity
                                     .builder()
-                                        .id(logKey + "@" + counter)
+                                        .id(this.logKeysFactory.createLogRecordKey(logKey, counter))
                                         .time(parseTime(timeFormatter, matcher))
                                         .date(parseDate(dateFormatter, matcher))
                                         .level(matcher.group("level"))

@@ -18,4 +18,7 @@ public interface AnalyzeQuery extends SearchQuery {
 
     @Nonnull
     SearchQuery toSearchQuery();
+
+    @Nonnull
+    String getId();
 }

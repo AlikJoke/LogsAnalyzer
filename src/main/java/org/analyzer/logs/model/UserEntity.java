@@ -26,4 +26,13 @@ public class UserEntity {
     private boolean active;
 
     private UserSettings settings;
+
+    public boolean disable() {
+        if (this.active) {
+            this.active = false;
+            return true;
+        }
+
+        return false;
+    }
 }

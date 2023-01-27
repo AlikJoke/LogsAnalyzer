@@ -1,6 +1,6 @@
 package org.analyzer.logs.sec.config;
 
-import org.analyzer.logs.dao.UserRepository;
+import org.analyzer.logs.service.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
@@ -40,8 +40,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public ReactiveUserDetailsService userDetailsService(UserRepository userRepository) {
-        return username -> userRepository
+    public ReactiveUserDetailsService userDetailsService(UserService userService) {
+        return username -> userService
                             .findById(username)
                             .map(user -> User
                                             .withUsername(user.getUsername())

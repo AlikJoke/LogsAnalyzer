@@ -1,6 +1,7 @@
 package org.analyzer.logs.rest.stats;
 
 import lombok.extern.slf4j.Slf4j;
+import org.analyzer.logs.model.LogsStatisticsEntity;
 import org.analyzer.logs.service.LogsService;
 import org.analyzer.logs.service.LogsStatistics;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,7 @@ public class LogsStatisticsController {
     @ResponseStatus(HttpStatus.OK)
     public Mono<Map<String, Object>> find(@PathVariable("statisticsKey") String statisticsKey) {
         return this.service.findStatisticsByKey(statisticsKey)
+                            .map(LogsStatisticsEntity::getStats)
                             .onErrorResume(this::onError);
     }
 

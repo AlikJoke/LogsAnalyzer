@@ -61,6 +61,8 @@ public class ElasticLogsService implements LogsService {
     private LongRunningTaskExecutor taskExecutor;
     @Autowired
     private CurrentUserAccessor userAccessor;
+    @Autowired
+    private LogKeysFactory logKeysFactory;
 
     @Value("${elasticsearch.default.indexing.buffer_size:2500}")
     private int elasticIndexBufferSize;
@@ -86,8 +88,7 @@ public class ElasticLogsService implements LogsService {
     @NonNull
     public Mono<String> index(
             @NonNull Mono<File> logFile,
-            @Nullable LogRecordFormat recordFormat,
-            final boolean preAnalyze) {
+            @Nullable LogRecordFormat recordFormat) {
 
         final Mono<String> uuidKey = Mono.fromSupplier(UUID.randomUUID()::toString);
         final Mono<UserEntity> userEntity = this.userAccessor.get();
@@ -100,10 +101,10 @@ public class ElasticLogsService implements LogsService {
                             .doOnNext(file -> this.indexedFilesCounter.increment())
                             .parallel()
                             .runOn(Schedulers.parallel())
-                            .map(file -> this.parser.parse(composeSearchKey(file, createIndexKey(indexingKey.getT1(), indexingKey.getT2())), file, recordFormat))
+                            .map(file -> this.parser.parse(this.logKeysFactory.createIndexedLogFileKey(file.getName(), indexingKey.getT1(), indexingKey.getT2()), file, recordFormat))
                             .flatMap(records -> records
                                                     .cache()
-                                                    .transform(recordsFlux -> sendToAnalyzeLogsIfNeed(preAnalyze, recordsFlux, indexingKey.getT2()))
+                                                    .transform(recordsFlux -> sendToAnalyzeLogs(recordsFlux, indexingKey.getT2()))
                                                     .buffer(this.elasticIndexBufferSize)
                                                     .doOnNext(buffer -> this.indexedRecordsCounter.increment(buffer.size()))
                                                     .doOnNext(buffer -> this.elasticIndexRequestsCounter.increment())
@@ -133,13 +134,34 @@ public class ElasticLogsService implements LogsService {
 
     @NonNull
     @Override
-    public Mono<Map<String, Object>> findStatisticsByKey(@NonNull String key) {
-        return this.statisticsRepository.findByDataQueryLike(key)
-                                        .map(LogsStatisticsEntity::getStats);
+    public Mono<LogsStatisticsEntity> findStatisticsByKey(@NonNull String key) {
+        return this.statisticsRepository.findByDataQueryLike(key);
     }
 
-    private String createIndexKey(final String userHash, final String uuidKey) {
-        return userHash + "#" + uuidKey;
+    @NonNull
+    @Override
+    public Flux<LogsStatisticsEntity> findAllStatisticsByUserKeyAndCreationDate(
+            @NonNull String userKey,
+            @NonNull LocalDateTime beforeDate) {
+        return this.statisticsRepository.findAllByUserKeyAndCreationDateBefore(userKey, beforeDate);
+    }
+
+    @NonNull
+    @Override
+    public Mono<Void> deleteStatistics(@NonNull Flux<LogsStatisticsEntity> statsFlux) {
+        return this.statisticsRepository.deleteAll(statsFlux);
+    }
+
+    @NonNull
+    @Override
+    public Flux<String> deleteAllStatisticsByUserKeyAndCreationDate(@NonNull String userKey, @NonNull LocalDateTime beforeDate) {
+        return this.statisticsRepository.deleteAllByUserKeyAndCreationDateBefore(userKey, beforeDate);
+    }
+
+    @NonNull
+    @Override
+    public Mono<Void> deleteByQuery(@NonNull SearchQuery deleteQuery) {
+        return this.logRecordRepository.deleteAll(searchByFilterQuery(deleteQuery));
     }
 
     private Mono<LogsStatistics> analyze(
@@ -178,7 +200,7 @@ public class ElasticLogsService implements LogsService {
 
         final LogsStatisticsEntity entity =
                 LogsStatisticsEntity.builder()
-                                    .id(UUID.randomUUID().toString())
+                                    .id(analyzeQuery.getId())
                                     .created(LocalDateTime.now())
                                     .title(analyzeQuery.analyzeResultName())
                                     .dataQuery(analyzeQuery.toSearchQuery().toJson())
@@ -216,21 +238,14 @@ public class ElasticLogsService implements LogsService {
         return builder.register(this.meterRegistry);
     }
 
-    private Flux<LogRecordEntity> sendToAnalyzeLogsIfNeed(
-            final boolean preAnalyze,
+    private Flux<LogRecordEntity> sendToAnalyzeLogs(
             final Flux<LogRecordEntity> records,
             final String searchKey) {
-        if (preAnalyze) {
-            final AnalyzeQuery analyzeQuery = new AnalyzeQueryOnIndexWrapper(searchKey);
-            this.taskExecutor.execute(
-                    () -> analyze(records, analyzeQuery).subscribe()
-            );
-        }
+        final AnalyzeQuery analyzeQuery = new AnalyzeQueryOnIndexWrapper(searchKey);
+        this.taskExecutor.execute(
+                () -> analyze(records, analyzeQuery).subscribe()
+        );
 
         return records;
-    }
-
-    private String composeSearchKey(final File file, final String key) {
-        return file.getName() + "$" + key;
     }
 }

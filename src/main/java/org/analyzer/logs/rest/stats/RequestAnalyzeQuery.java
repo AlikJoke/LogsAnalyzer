@@ -1,6 +1,7 @@
 package org.analyzer.logs.rest.stats;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.EqualsAndHashCode;
@@ -16,6 +17,7 @@ import javax.annotation.Nonnegative;
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Value
@@ -52,5 +54,12 @@ public class RequestAnalyzeQuery extends RequestSearchQuery implements AnalyzeQu
     @Override
     public SearchQuery toSearchQuery() {
         return new RequestSearchQuery(query(), extendedFormat(), postFilters(), maxResults(), sorts());
+    }
+
+    @NonNull
+    @Override
+    @JsonIgnore
+    public String getId() {
+        return UUID.randomUUID().toString();
     }
 }
