@@ -21,7 +21,7 @@ public interface LogsService {
     Flux<String> searchByQuery(@Nonnull SearchQuery query);
 
     @Nonnull
-    Mono<LogsStatistics> analyze(@Nonnull AnalyzeQuery query);
+    Mono<MapLogsStatistics> analyze(@Nonnull AnalyzeQuery query);
 
     @Nonnull
     Mono<LogsStatisticsEntity> findStatisticsByKey(@Nonnull String key);

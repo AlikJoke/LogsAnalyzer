@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public interface LogsStatistics extends Map<String, Flux<?>> {
+public interface MapLogsStatistics extends Map<String, Flux<?>> {
 
     @Nonnull
     Flux<Tuple2<String, Long>> errorsFrequencies();

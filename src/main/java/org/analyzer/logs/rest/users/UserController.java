@@ -1,20 +1,23 @@
 package org.analyzer.logs.rest.users;
 
-import lombok.extern.slf4j.Slf4j;
 import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.UserService;
+import org.analyzer.logs.service.elastic.ElasticLogsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import reactor.util.Logger;
+import reactor.util.Loggers;
 
 import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/user")
-@Slf4j
 public class UserController {
+
+    private static final Logger logger = Loggers.getLogger(ElasticLogsService.class);
 
     @Autowired
     private UserService userService;
@@ -25,10 +28,11 @@ public class UserController {
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<Void> create(@RequestBody Mono<UserResource> resource) {
         final Mono<UserEntity> user = resource.map(
-                userResource -> userResource.toEntity(this.passwordEncoder)
+                userResource -> userResource.composeEntity(this.passwordEncoder)
         );
 
         return this.userService.create(user)
+                                .log(logger)
                                 .then()
                                 .onErrorResume(this::onError);
     }
@@ -38,6 +42,7 @@ public class UserController {
     public Mono<Void> disable(Mono<Principal> principal) {
         return principal
                 .map(Principal::getName)
+                .log(logger)
                 .flatMap(this.userService::disable)
                 .onErrorResume(this::onError);
     }
@@ -45,8 +50,11 @@ public class UserController {
     @PutMapping("/update")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<UserResource> update(@RequestBody Mono<UserResource> resource) {
-        final Mono<UserEntity> user = resource.map(
-                userResource -> userResource.toEntity(this.passwordEncoder)
+        final Mono<UserEntity> user = resource.flatMap(
+                userResource ->
+                        this.userService
+                                .findById(userResource.username())
+                                .map(u -> userResource.update(u, this.passwordEncoder))
         );
 
         return this.userService.update(user)
@@ -55,7 +63,7 @@ public class UserController {
     }
 
     private <T> Mono<T> onError(final Throwable ex) {
-        log.error("", ex);
+        logger.error("", ex);
         return Mono.error(ex);
     }
 }

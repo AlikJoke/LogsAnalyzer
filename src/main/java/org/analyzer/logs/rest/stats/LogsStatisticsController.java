@@ -3,7 +3,7 @@ package org.analyzer.logs.rest.stats;
 import lombok.extern.slf4j.Slf4j;
 import org.analyzer.logs.model.LogsStatisticsEntity;
 import org.analyzer.logs.service.LogsService;
-import org.analyzer.logs.service.LogsStatistics;
+import org.analyzer.logs.service.MapLogsStatistics;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +23,7 @@ public class LogsStatisticsController {
     @ResponseStatus(HttpStatus.OK)
     public Mono<Map<String, Object>> analyze(@RequestBody RequestAnalyzeQuery query) {
         return this.service.analyze(query)
-                            .flatMap(LogsStatistics::toResultMap)
+                            .flatMap(MapLogsStatistics::toResultMap)
                             .onErrorResume(this::onError);
     }
 

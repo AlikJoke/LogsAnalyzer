@@ -127,7 +127,7 @@ public class ElasticLogsService implements LogsService {
 
     @NonNull
     @Override
-    public Mono<LogsStatistics> analyze(@NonNull AnalyzeQuery analyzeQuery) {
+    public Mono<MapLogsStatistics> analyze(@NonNull AnalyzeQuery analyzeQuery) {
         final var filteredRecords = searchByFilterQuery(analyzeQuery).cache();
         return analyze(filteredRecords, analyzeQuery);
     }
@@ -164,7 +164,7 @@ public class ElasticLogsService implements LogsService {
         return this.logRecordRepository.deleteAll(searchByFilterQuery(deleteQuery));
     }
 
-    private Mono<LogsStatistics> analyze(
+    private Mono<MapLogsStatistics> analyze(
             final Flux<LogRecordEntity> recordFlux,
             final AnalyzeQuery analyzeQuery) {
 
@@ -176,12 +176,13 @@ public class ElasticLogsService implements LogsService {
                                                     .map(UserEntity::getHash)
                                                     .map(userKey -> processStatsSaving(analyzeQuery, userStats, userKey))
                                                     .flatMap(Mono::single)
+                                                    .doOnError(ex -> logger.error("", ex))
                         );
     }
 
-    private Mono<LogsStatistics> processStatsSaving(
+    private Mono<MapLogsStatistics> processStatsSaving(
             final AnalyzeQuery analyzeQuery,
-            final LogsStatistics stats,
+            final MapLogsStatistics stats,
             final String userKey) {
 
         if (!analyzeQuery.save()) {

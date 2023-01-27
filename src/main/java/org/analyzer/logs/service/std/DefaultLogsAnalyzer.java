@@ -5,7 +5,7 @@ import org.analyzer.logs.model.LogRecordEntity;
 import org.analyzer.logs.service.Aggregator;
 import org.analyzer.logs.service.AnalyzeQuery;
 import org.analyzer.logs.service.LogsAnalyzer;
-import org.analyzer.logs.service.LogsStatistics;
+import org.analyzer.logs.service.MapLogsStatistics;
 import org.analyzer.logs.service.std.aggregations.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.logging.LogLevel;
@@ -31,7 +31,7 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
 
     @Override
     @NonNull
-    public Mono<LogsStatistics> analyze(
+    public Mono<MapLogsStatistics> analyze(
             @NonNull Flux<LogRecordEntity> records,
             @NonNull AnalyzeQuery analyzeQuery) {
 
@@ -48,44 +48,44 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
                     .as(this::composeStatistics);
     }
 
-    private Mono<LogsStatistics> composeStatistics(final Flux<Tuple2<String, Flux<Object>>> statistics) {
-        return Mono.fromSupplier(MapLogsStatistics::new)
+    private Mono<MapLogsStatistics> composeStatistics(final Flux<Tuple2<String, Flux<Object>>> statistics) {
+        return Mono.fromSupplier(StdMapLogsStatistics::new)
                     .flatMap(
                             mapStats -> statistics
                                             .map(tuple -> mapStats.putOne(tuple.getT1(), tuple.getT2().cache()))
                                             .then(Mono.just(mapStats))
                     )
-                    .cast(LogsStatistics.class);
+                    .cast(MapLogsStatistics.class);
     }
 
     private Flux<Tuple2<String, Aggregator<Object>>> createDefaultAggregationsFlux() {
 
         return Flux.merge(
-                Mono.just(MapLogsStatistics.ERRORS_FREQUENCIES)
+                Mono.just(StdMapLogsStatistics.ERRORS_FREQUENCIES)
                         .zipWith(this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterErrors(), Integer.MAX_VALUE))),
 
-                Mono.just(MapLogsStatistics.MOST_FREQUENT_ERRORS)
+                Mono.just(StdMapLogsStatistics.MOST_FREQUENT_ERRORS)
                         .zipWith(this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterErrors(), 5))),
 
-                Mono.just(MapLogsStatistics.MOST_FREQUENT_WARNS)
+                Mono.just(StdMapLogsStatistics.MOST_FREQUENT_WARNS)
                         .zipWith(this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterWarns(), 5))),
 
-                Mono.just(MapLogsStatistics.ERRORS_COUNT)
+                Mono.just(StdMapLogsStatistics.ERRORS_COUNT)
                         .zipWith(this.aggregatorsFactory.create(CountAggregator.NAME, new Count(createAdditionalFilterErrors()))),
 
-                Mono.just(MapLogsStatistics.WARNS_COUNT)
+                Mono.just(StdMapLogsStatistics.WARNS_COUNT)
                         .zipWith(this.aggregatorsFactory.create(CountAggregator.NAME, new Count(createAdditionalFilterWarns()))),
 
-                Mono.just(MapLogsStatistics.ERRORS_FREQUENCIES_BY_CATEGORY)
+                Mono.just(StdMapLogsStatistics.ERRORS_FREQUENCIES_BY_CATEGORY)
                         .zipWith(this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("category", 1, createAdditionalFilterErrors(), Integer.MAX_VALUE))),
 
-                Mono.just(MapLogsStatistics.RECORDS_FREQUENCY_BY_CATEGORY)
+                Mono.just(StdMapLogsStatistics.RECORDS_FREQUENCY_BY_CATEGORY)
                         .zipWith(this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("category", 1, Collections.emptyMap(), Integer.MAX_VALUE))),
 
-                Mono.just(MapLogsStatistics.RECORDS_FREQUENCY_BY_THREAD)
+                Mono.just(StdMapLogsStatistics.RECORDS_FREQUENCY_BY_THREAD)
                         .zipWith(this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("thread", 1, Collections.emptyMap(), Integer.MAX_VALUE))),
 
-                Mono.just(MapLogsStatistics.ERRORS_AVERAGE_INTERVAL)
+                Mono.just(StdMapLogsStatistics.ERRORS_AVERAGE_INTERVAL)
                         .zipWith(this.aggregatorsFactory.create(ErrorsAverageIntervalAggregator.NAME, new Object()))
                 )
                 .cache();

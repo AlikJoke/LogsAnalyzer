@@ -10,7 +10,7 @@ import javax.annotation.Nonnull;
 public interface LogsAnalyzer {
 
     @Nonnull
-    Mono<LogsStatistics> analyze(
+    Mono<MapLogsStatistics> analyze(
             @NonNull Flux<LogRecordEntity> records,
             @NonNull AnalyzeQuery analyzeQuery);
 }

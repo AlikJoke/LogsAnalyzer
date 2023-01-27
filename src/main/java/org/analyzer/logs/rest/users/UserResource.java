@@ -5,19 +5,33 @@ import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.model.UserSettings;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import javax.annotation.Nullable;
+import java.util.UUID;
+
 public record UserResource(
         @NonNull String username,
         @NonNull String password,
-        @NonNull UserSettings settings) {
+        @Nullable UserSettings settings) {
 
     @NonNull
-    public UserEntity toEntity(final PasswordEncoder passwordEncoder) {
+    public UserEntity composeEntity(final PasswordEncoder passwordEncoder) {
         return UserEntity
                 .builder()
-                    .settings(settings())
                     .username(username())
+                    .hash(UUID.randomUUID().toString())
+                    .settings(settings())
                     .encodedPassword(passwordEncoder.encode(password()))
+                    .active(true)
                 .build();
+    }
+
+    @NonNull
+    public UserEntity update(
+            @NonNull final UserEntity entity,
+            @NonNull final PasswordEncoder passwordEncoder) {
+        entity.setSettings(settings());
+        entity.setEncodedPassword(passwordEncoder.encode(password()));
+        return entity;
     }
 
     @NonNull

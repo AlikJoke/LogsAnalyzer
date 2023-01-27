@@ -1,7 +1,7 @@
 package org.analyzer.logs.service.std;
 
 import lombok.NonNull;
-import org.analyzer.logs.service.LogsStatistics;
+import org.analyzer.logs.service.MapLogsStatistics;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
@@ -10,7 +10,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.util.HashMap;
 
 @NotThreadSafe
-public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsStatistics {
+public class StdMapLogsStatistics extends HashMap<String, Flux<?>> implements MapLogsStatistics {
 
     public static final String ERRORS_FREQUENCIES = "errors-frequencies";
     public static final String MOST_FREQUENT_ERRORS = "most-frequent-errors";
@@ -30,7 +30,7 @@ public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsS
     }
 
     @NonNull
-    public MapLogsStatistics errorsFrequencies(@NonNull Flux<Tuple2<String, Long>> errorsFrequencies) {
+    public StdMapLogsStatistics errorsFrequencies(@NonNull Flux<Tuple2<String, Long>> errorsFrequencies) {
         put(ERRORS_FREQUENCIES, errorsFrequencies);
         return this;
     }
@@ -42,7 +42,7 @@ public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsS
     }
 
     @NonNull
-    public MapLogsStatistics mostFrequentErrors(@NonNull Flux<Tuple2<String, Long>> mostFrequentErrors) {
+    public StdMapLogsStatistics mostFrequentErrors(@NonNull Flux<Tuple2<String, Long>> mostFrequentErrors) {
         put(MOST_FREQUENT_ERRORS, mostFrequentErrors);
         return this;
     }
@@ -54,7 +54,7 @@ public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsS
     }
 
     @NonNull
-    public MapLogsStatistics errorsAverageInterval(@NonNull Mono<Double> errorsAverageInterval) {
+    public StdMapLogsStatistics errorsAverageInterval(@NonNull Mono<Double> errorsAverageInterval) {
         put(ERRORS_AVERAGE_INTERVAL, errorsAverageInterval.flux());
         return this;
     }
@@ -66,7 +66,7 @@ public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsS
     }
 
     @NonNull
-    public MapLogsStatistics errorsByCategoryFrequencies(@NonNull Flux<Tuple2<String, Long>> errorsByCategoryFrequencies) {
+    public StdMapLogsStatistics errorsByCategoryFrequencies(@NonNull Flux<Tuple2<String, Long>> errorsByCategoryFrequencies) {
         put(MOST_FREQUENT_ERRORS, errorsByCategoryFrequencies);
         return this;
     }
@@ -78,7 +78,7 @@ public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsS
     }
 
     @NonNull
-    public MapLogsStatistics errorsCount(@NonNull Mono<Long> errorsCount) {
+    public StdMapLogsStatistics errorsCount(@NonNull Mono<Long> errorsCount) {
         put(ERRORS_COUNT, errorsCount.flux());
         return this;
     }
@@ -90,7 +90,7 @@ public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsS
     }
 
     @NonNull
-    public MapLogsStatistics warnsCount(@NonNull Mono<Long> warnsCount) {
+    public StdMapLogsStatistics warnsCount(@NonNull Mono<Long> warnsCount) {
         put(WARNS_COUNT, warnsCount.flux());
         return this;
     }
@@ -102,7 +102,7 @@ public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsS
     }
 
     @NonNull
-    public MapLogsStatistics mostFrequentWarns(@NonNull Flux<Tuple2<String, Long>> mostFrequentWarns) {
+    public StdMapLogsStatistics mostFrequentWarns(@NonNull Flux<Tuple2<String, Long>> mostFrequentWarns) {
         put(MOST_FREQUENT_WARNS, mostFrequentWarns);
         return this;
     }
@@ -114,7 +114,7 @@ public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsS
     }
 
     @NonNull
-    public MapLogsStatistics averageWriteRate(@NonNull Mono<Double> averageWriteRate) {
+    public StdMapLogsStatistics averageWriteRate(@NonNull Mono<Double> averageWriteRate) {
         put(AVERAGE_WRITE_RATE, averageWriteRate.flux());
         return this;
     }
@@ -126,7 +126,7 @@ public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsS
     }
 
     @NonNull
-    public MapLogsStatistics recordsByCategoryFrequencies(@NonNull Flux<Tuple2<String, Long>> recordsByCategoryFrequencies) {
+    public StdMapLogsStatistics recordsByCategoryFrequencies(@NonNull Flux<Tuple2<String, Long>> recordsByCategoryFrequencies) {
         put(RECORDS_FREQUENCY_BY_CATEGORY, recordsByCategoryFrequencies);
         return this;
     }
@@ -138,13 +138,13 @@ public class MapLogsStatistics extends HashMap<String, Flux<?>> implements LogsS
     }
 
     @NonNull
-    public MapLogsStatistics recordsByThreadFrequencies(@NonNull Flux<Tuple2<String, Long>> recordsByThreadFrequencies) {
+    public StdMapLogsStatistics recordsByThreadFrequencies(@NonNull Flux<Tuple2<String, Long>> recordsByThreadFrequencies) {
         put(RECORDS_FREQUENCY_BY_THREAD, recordsByThreadFrequencies);
         return this;
     }
 
     @NonNull
-    public MapLogsStatistics putOne(@NonNull final String statisticKey, @NonNull final Flux<?> value) {
+    public StdMapLogsStatistics putOne(@NonNull final String statisticKey, @NonNull final Flux<?> value) {
         put(statisticKey, value);
         return this;
     }
