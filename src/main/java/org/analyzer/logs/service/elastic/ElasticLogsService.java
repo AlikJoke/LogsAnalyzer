@@ -25,6 +25,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.Logger;
 import reactor.util.Loggers;
+import reactor.util.function.Tuple2;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -90,8 +91,8 @@ public class ElasticLogsService implements LogsService {
             @NonNull Mono<File> logFile,
             @Nullable LogRecordFormat recordFormat) {
 
-        final Mono<String> uuidKey = Mono.fromSupplier(UUID.randomUUID()::toString);
-        final Mono<UserEntity> userEntity = this.userAccessor.get();
+        final var uuidKey = Mono.fromSupplier(UUID.randomUUID()::toString);
+        final var userEntity = this.userAccessor.get();
         return userEntity
                 .map(UserEntity::getHash)
                 .zipWith(uuidKey)
@@ -104,7 +105,7 @@ public class ElasticLogsService implements LogsService {
                             .map(file -> this.parser.parse(this.logKeysFactory.createIndexedLogFileKey(file.getName(), indexingKey.getT1(), indexingKey.getT2()), file, recordFormat))
                             .flatMap(records -> records
                                                     .cache()
-                                                    .transform(recordsFlux -> sendToAnalyzeLogs(recordsFlux, indexingKey.getT2()))
+                                                    .transform(recordsFlux -> sendToAnalyzeLogs(recordsFlux, indexingKey))
                                                     .buffer(this.elasticIndexBufferSize)
                                                     .doOnNext(buffer -> this.indexedRecordsCounter.increment(buffer.size()))
                                                     .doOnNext(buffer -> this.elasticIndexRequestsCounter.increment())
@@ -135,7 +136,7 @@ public class ElasticLogsService implements LogsService {
     @NonNull
     @Override
     public Mono<LogsStatisticsEntity> findStatisticsByKey(@NonNull String key) {
-        return this.statisticsRepository.findByDataQueryLike(key);
+        return this.statisticsRepository.findByDataQueryRegex(key);
     }
 
     @NonNull
@@ -201,12 +202,12 @@ public class ElasticLogsService implements LogsService {
 
         final LogsStatisticsEntity entity =
                 LogsStatisticsEntity.builder()
-                                    .id(analyzeQuery.getId())
-                                    .created(LocalDateTime.now())
-                                    .title(analyzeQuery.analyzeResultName())
-                                    .dataQuery(analyzeQuery.toSearchQuery().toJson())
-                                    .userKey(userKey)
-                                    .stats(stats)
+                                        .id(analyzeQuery.getId())
+                                        .created(LocalDateTime.now())
+                                        .title(analyzeQuery.analyzeResultName())
+                                        .dataQuery(analyzeQuery.toSearchQuery().toJson())
+                                        .userKey(userKey)
+                                        .stats(stats)
                                     .build();
         return this.statisticsRepository.save(entity);
     }
@@ -241,10 +242,15 @@ public class ElasticLogsService implements LogsService {
 
     private Flux<LogRecordEntity> sendToAnalyzeLogs(
             final Flux<LogRecordEntity> records,
-            final String searchKey) {
-        final AnalyzeQuery analyzeQuery = new AnalyzeQueryOnIndexWrapper(searchKey);
+            final Tuple2<String, String> userIndexingKey) {
+        final var analyzeQuery = new AnalyzeQueryOnIndexWrapper(userIndexingKey.getT2());
         this.taskExecutor.execute(
-                () -> analyze(records, analyzeQuery).subscribe()
+                () -> {
+                    final String userKey = userIndexingKey.getT1();
+                    analyze(records, analyzeQuery)
+                            .contextWrite(this.userAccessor.set(userKey))
+                            .subscribe();
+                }
         );
 
         return records;

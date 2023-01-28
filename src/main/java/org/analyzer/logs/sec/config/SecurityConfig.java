@@ -1,6 +1,8 @@
 package org.analyzer.logs.sec.config;
 
+import org.analyzer.logs.sec.UserDetailsWrapper;
 import org.analyzer.logs.service.UserService;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -9,20 +11,28 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import reactor.core.publisher.Mono;
 
 @EnableWebFluxSecurity
 @Configuration
+@EnableConfigurationProperties(AdminAccountCredentials.class)
 public class SecurityConfig {
+
+    public static final String ADMIN_ROLE = "ADMIN";
+    public static final String USER_ROLE = "USER";
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
                 .authorizeExchange()
+                    .pathMatchers("/api/**")
+                    .hasAuthority(USER_ROLE)
                     .pathMatchers("/actuator**")
-                    .hasAuthority("ADMIN")
+                    .hasAuthority(ADMIN_ROLE)
                     .pathMatchers(HttpMethod.POST, "/api/user/create")
                     .permitAll()
                 .anyExchange()
@@ -48,18 +58,23 @@ public class SecurityConfig {
     }
 
     @Bean
-    public ReactiveUserDetailsService userDetailsService(UserService userService) {
-        return username -> userService
+    public ReactiveUserDetailsService userDetailsService(
+            UserService userService,
+            AdminAccountCredentials adminAccountCredentials) {
+        final UserDetails adminUser = User.withUsername(adminAccountCredentials.getUsername())
+                                                .password(adminAccountCredentials.getEncodedPassword())
+                                                .disabled(false)
+                                                .authorities(ADMIN_ROLE)
+                                            .build();
+        final Mono<UserDetails> adminUserMono = Mono.just(adminUser);
+        return username ->
+                adminAccountCredentials.getUsername().equals(username)
+                        ? adminUserMono
+                        : userService
                             .findById(username)
                             .onErrorMap(ex -> new UsernameNotFoundException(ex.getMessage()))
                             .onErrorStop()
-                            .map(user -> User
-                                            .withUsername(user.getUsername())
-                                            .password(user.getEncodedPassword())
-                                            .roles("USER")
-                                            .disabled(!user.isActive())
-                                            .build()
-                            );
+                            .map(UserDetailsWrapper::new);
     }
 
     @Bean

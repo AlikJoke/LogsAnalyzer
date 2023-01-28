@@ -22,4 +22,7 @@ public interface UserService {
 
     @Nonnull
     Mono<UserEntity> findById(@Nonnull String username);
+
+    @Nonnull
+    Mono<UserEntity> findByUserHash(@Nonnull String userHash);
 }

@@ -65,4 +65,11 @@ public class DefaultUserService implements UserService {
         return this.userRepository.findById(username)
                                     .switchIfEmpty(Mono.error(() -> new UserNotFoundException(username)));
     }
+
+    @NonNull
+    @Override
+    public Mono<UserEntity> findByUserHash(@NonNull String userHash) {
+        return this.userRepository.findByHash(userHash)
+                                    .switchIfEmpty(Mono.error(() -> new UserNotFoundException(userHash)));
+    }
 }

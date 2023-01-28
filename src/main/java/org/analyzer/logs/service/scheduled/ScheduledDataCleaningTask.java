@@ -3,10 +3,7 @@ package org.analyzer.logs.service.scheduled;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.NonNull;
 import org.analyzer.logs.model.UserEntity;
-import org.analyzer.logs.service.LogKeysFactory;
-import org.analyzer.logs.service.LogsService;
-import org.analyzer.logs.service.SearchQuery;
-import org.analyzer.logs.service.UserService;
+import org.analyzer.logs.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -30,11 +27,13 @@ public class ScheduledDataCleaningTask {
     private UserService userService;
     @Autowired
     private LogKeysFactory logKeysFactory;
+    @Autowired
+    private CurrentUserAccessor userAccessor;
 
     @Scheduled(fixedRate = 5, timeUnit = TimeUnit.MINUTES)
     public void run() {
         this.userService.findAllWithClearingSettings()
-                        .flatMap(this::clearData)
+                        .map(this::clearData)
                         .subscribe();
     }
 
@@ -46,6 +45,7 @@ public class ScheduledDataCleaningTask {
                     .map(
                             indexingKeys -> this.logsService.deleteByQuery(createSearchQueryToDelete(user, indexingKeys))
                     )
+                    .contextWrite(this.userAccessor.set(Mono.just(user)))
                     .then();
     }
 

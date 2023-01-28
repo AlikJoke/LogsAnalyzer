@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 public interface LogsStatisticsRepository extends ReactiveMongoRepository<LogsStatisticsEntity, String> {
 
     @Nonnull
-    Mono<LogsStatisticsEntity> findByDataQueryLike(@Nonnull String statisticsKey);
+    Mono<LogsStatisticsEntity> findByDataQueryRegex(@Nonnull String statisticsKey);
 
     @Nonnull
     @Query(value = "{ 'user_key' : '?0', 'created' : { $lte : '?1' } }")
