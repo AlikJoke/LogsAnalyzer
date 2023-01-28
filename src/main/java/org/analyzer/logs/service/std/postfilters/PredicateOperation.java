@@ -34,7 +34,7 @@ public enum PredicateOperation {
 
     @NonNull
     public static PredicateOperation value(@NonNull String operationStr) {
-        for (final PredicateOperation op : values()) {
+        for (final var op : values()) {
             if (op.alias.equals(operationStr)) {
                 return op;
             }

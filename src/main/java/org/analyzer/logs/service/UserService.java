@@ -5,6 +5,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
+import java.time.LocalDateTime;
 
 public interface UserService {
 
@@ -19,6 +20,9 @@ public interface UserService {
 
     @Nonnull
     Flux<UserEntity> findAllWithClearingSettings();
+
+    @Nonnull
+    Flux<UserEntity> findAllWithScheduledIndexingSettings(@Nonnull LocalDateTime modifiedAfter);
 
     @Nonnull
     Mono<UserEntity> findById(@Nonnull String username);

@@ -40,10 +40,10 @@ public class DefaultCurrentUserAccessor implements CurrentUserAccessor {
     @NonNull
     @Override
     public Context set(@NonNull Mono<UserEntity> user) {
-        final Mono<SecurityContext> securityContext = user
-                                                        .map(UserDetailsWrapper::new)
-                                                        .map(RunAsUserAuthenticationToken::new)
-                                                        .map(SecurityContextImpl::new);
+        final var securityContext = user
+                                    .map(UserDetailsWrapper::new)
+                                    .map(RunAsUserAuthenticationToken::new)
+                                    .map(SecurityContextImpl::new);
         return ReactiveSecurityContextHolder.withSecurityContext(securityContext);
     }
 

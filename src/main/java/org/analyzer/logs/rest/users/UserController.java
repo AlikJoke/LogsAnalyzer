@@ -27,7 +27,7 @@ public class UserController {
     @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<Void> create(@RequestBody Mono<UserResource> resource) {
-        final Mono<UserEntity> user = resource.map(
+        final var user = resource.map(
                 userResource -> userResource.composeEntity(this.passwordEncoder)
         );
 
@@ -50,7 +50,7 @@ public class UserController {
     @PutMapping("/update")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<UserResource> update(@RequestBody Mono<UserResource> resource) {
-        final Mono<UserEntity> user = resource.flatMap(
+        final var user = resource.flatMap(
                 userResource ->
                         this.userService
                                 .findById(userResource.username())

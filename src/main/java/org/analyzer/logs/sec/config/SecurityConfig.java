@@ -51,7 +51,7 @@ public class SecurityConfig {
     public UserDetailsRepositoryReactiveAuthenticationManager authenticationManager(
             ReactiveUserDetailsService userDetailsService,
             BCryptPasswordEncoder passwordEncoder) {
-        final UserDetailsRepositoryReactiveAuthenticationManager manager = new UserDetailsRepositoryReactiveAuthenticationManager(userDetailsService);
+        final var manager = new UserDetailsRepositoryReactiveAuthenticationManager(userDetailsService);
         manager.setPasswordEncoder(passwordEncoder);
 
         return manager;
@@ -61,12 +61,12 @@ public class SecurityConfig {
     public ReactiveUserDetailsService userDetailsService(
             UserService userService,
             AdminAccountCredentials adminAccountCredentials) {
-        final UserDetails adminUser = User.withUsername(adminAccountCredentials.getUsername())
-                                                .password(adminAccountCredentials.getEncodedPassword())
-                                                .disabled(false)
-                                                .authorities(ADMIN_ROLE)
-                                            .build();
-        final Mono<UserDetails> adminUserMono = Mono.just(adminUser);
+        final var adminUser = User.withUsername(adminAccountCredentials.getUsername())
+                                    .password(adminAccountCredentials.getEncodedPassword())
+                                    .disabled(false)
+                                    .authorities(ADMIN_ROLE)
+                                .build();
+        final var adminUserMono = Mono.just(adminUser);
         return username ->
                 adminAccountCredentials.getUsername().equals(username)
                         ? adminUserMono

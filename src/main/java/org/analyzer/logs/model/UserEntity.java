@@ -2,9 +2,12 @@ package org.analyzer.logs.model;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+
+import java.time.LocalDateTime;
 
 @Document("users")
 @Data
@@ -25,6 +28,8 @@ public class UserEntity {
     @ToString.Exclude
     @Indexed(unique = true)
     private String hash;
+    @Version
+    private LocalDateTime modified;
 
     private boolean active;
 

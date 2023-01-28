@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
+
 @Service
 public class DefaultUserService implements UserService {
 
@@ -57,6 +59,12 @@ public class DefaultUserService implements UserService {
     @Override
     public Flux<UserEntity> findAllWithClearingSettings() {
         return this.userRepository.findAllWithClearingSettings();
+    }
+
+    @NonNull
+    @Override
+    public Flux<UserEntity> findAllWithScheduledIndexingSettings(@NonNull final LocalDateTime modifiedAfter) {
+        return this.userRepository.findAllWithScheduledIndexingSettings(modifiedAfter);
     }
 
     @NonNull

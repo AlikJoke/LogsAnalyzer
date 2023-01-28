@@ -1,6 +1,7 @@
 package org.analyzer.logs.service.scheduled;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.micrometer.core.annotation.Timed;
 import lombok.NonNull;
 import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.*;
@@ -8,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -31,6 +31,11 @@ public class ScheduledDataCleaningTask {
     private CurrentUserAccessor userAccessor;
 
     @Scheduled(fixedRate = 5, timeUnit = TimeUnit.MINUTES)
+    @Timed(
+            value = "data-cleaning-task",
+            longTask = true,
+            extraTags = { "description", "Data cleaning task"}
+    )
     public void run() {
         this.userService.findAllWithClearingSettings()
                         .map(this::clearData)
@@ -38,8 +43,8 @@ public class ScheduledDataCleaningTask {
     }
 
     private Mono<Void> clearData(final UserEntity user) {
-        final LocalDateTime timestamp = createTimestamp(user.getSettings().getCleaningInterval());
-        final Flux<String> indexingKeysFlux = this.logsService.deleteAllStatisticsByUserKeyAndCreationDate(user.getHash(), timestamp);
+        final var timestamp = createTimestamp(user.getSettings().getCleaningInterval());
+        final var indexingKeysFlux = this.logsService.deleteAllStatisticsByUserKeyAndCreationDate(user.getHash(), timestamp);
         return indexingKeysFlux
                     .collectList()
                     .map(
@@ -54,7 +59,7 @@ public class ScheduledDataCleaningTask {
     }
 
     private SearchQuery createSearchQueryToDelete(final UserEntity user, final List<String> indexingKeys) {
-        final String indexingKeysString = indexingKeys
+        final var indexingKeysString = indexingKeys
                                                 .stream()
                                                 .map(indexingKey -> this.logKeysFactory.createUserIndexingKey(user.getHash(), indexingKey))
                                                 .map(key -> "id.keyword:" + key + "*")
