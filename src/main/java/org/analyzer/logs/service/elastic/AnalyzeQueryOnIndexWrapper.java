@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.NonNull;
 import org.analyzer.logs.service.AnalyzeQuery;
 import org.analyzer.logs.service.SearchQuery;
+import org.analyzer.logs.service.util.JsonConverter;
 import org.springframework.data.domain.Sort;
 
 import javax.annotation.Nullable;
@@ -77,7 +78,7 @@ public final class AnalyzeQueryOnIndexWrapper implements AnalyzeQuery {
 
     @NonNull
     @Override
-    public String toJson() {
+    public String toJson(@NonNull final JsonConverter jsonConverter) {
         return "{\"query\":\"" + query() + "\"}";
     }
 }

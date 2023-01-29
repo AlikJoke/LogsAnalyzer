@@ -5,6 +5,7 @@ import io.micrometer.core.annotation.Timed;
 import lombok.NonNull;
 import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.*;
+import org.analyzer.logs.service.util.JsonConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -95,7 +96,7 @@ public class ScheduledDataCleaningTask {
 
             @NonNull
             @Override
-            public String toJson() {
+            public String toJson(@NonNull JsonConverter jsonConverter) {
                 return "{" + query() + "}";
             }
         };

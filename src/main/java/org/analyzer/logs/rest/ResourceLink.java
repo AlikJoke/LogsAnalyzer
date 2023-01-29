@@ -1,12 +1,6 @@
 package org.analyzer.logs.rest;
 
-import lombok.Value;
-import org.springframework.http.HttpMethod;
+import org.springframework.web.bind.annotation.RequestMethod;
 
-@Value
-public class ResourceLink {
-
-    String rel;
-    String href;
-    HttpMethod method;
+public record ResourceLink(String rel, String href, RequestMethod method) {
 }

@@ -1,7 +1,7 @@
 package org.analyzer.logs.rest.stats;
 
-import lombok.Getter;
 import lombok.NonNull;
+import lombok.Value;
 import org.analyzer.logs.model.LogsStatisticsEntity;
 import org.analyzer.logs.rest.ResourceLink;
 import org.analyzer.logs.rest.hateoas.LinksCollector;
@@ -10,18 +10,20 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-@Getter
+@Value
 public class StatisticsResource {
 
-    private final String statisticsName;
-    private final String dataQuery;
-    private final LocalDateTime createdAt;
-    private final Map<String, Object> statistics;
-    private final List<ResourceLink> links;
+    String id;
+    String statisticsName;
+    String dataQuery;
+    LocalDateTime createdAt;
+    Map<String, Object> statistics;
+    List<ResourceLink> links;
 
     public StatisticsResource(
             @NonNull final LogsStatisticsEntity logsStatistics,
             @NonNull final LinksCollector linksCollector) {
+        this.id = logsStatistics.getId();
         this.statisticsName = logsStatistics.getTitle();
         this.statistics = logsStatistics.getStats();
         this.createdAt = logsStatistics.getCreated();

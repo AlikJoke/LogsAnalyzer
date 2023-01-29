@@ -1,6 +1,7 @@
 package org.analyzer.logs.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.analyzer.logs.service.util.JsonConverter;
 import org.springframework.data.domain.Sort;
 
 import javax.annotation.Nonnegative;
@@ -24,5 +25,5 @@ public interface SearchQuery {
     Map<String, Sort.Direction> sorts();
 
     @Nonnull
-    String toJson();
+    String toJson(@Nonnull JsonConverter jsonConverter);
 }

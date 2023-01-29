@@ -2,6 +2,7 @@ package org.analyzer.logs.sec.config;
 
 import org.analyzer.logs.sec.UserDetailsWrapper;
 import org.analyzer.logs.service.UserService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +15,13 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.cors.CorsConfiguration;
 import reactor.core.publisher.Mono;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @EnableWebFluxSecurity
 @Configuration
@@ -23,6 +30,9 @@ public class SecurityConfig {
 
     public static final String ADMIN_ROLE = "ADMIN";
     public static final String USER_ROLE = "USER";
+
+    @Value("${logs.analyzer.web.client.allowed.origins:*}")
+    private List<String> allowedOrigins;
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
@@ -37,12 +47,23 @@ public class SecurityConfig {
                 .anyExchange()
                     .authenticated()
                     .and()
-                    .formLogin()
+                        .formLogin()
                     .and()
-                    .httpBasic()
+                        .httpBasic()
                     .and()
-                    .csrf()
-                        .disable()
+                        .cors(corsSpec -> corsSpec.configurationSource(exchange -> {
+                            final List<String> allowedMethods = Arrays.stream(RequestMethod.values())
+                                    .map(RequestMethod::name)
+                                    .collect(Collectors.toList());
+                            final CorsConfiguration result = new CorsConfiguration().applyPermitDefaultValues();
+                            result
+                                    .setAllowedOriginPatterns(allowedOrigins)
+                                    .setAllowedMethods(allowedMethods);
+
+                            return result;
+                        }))
+                        .csrf()
+                            .disable()
                     .build();
     }
 

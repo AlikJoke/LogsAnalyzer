@@ -56,8 +56,8 @@ public class RequestSearchQuery implements SearchQuery {
     @NonNull
     @Override
     @JsonIgnore
-    public String toJson() {
-        return JsonConverter.get().convertToJson(this);
+    public String toJson(@NonNull final JsonConverter jsonConverter) {
+        return jsonConverter.convertToJson(this);
     }
 
     @NonNull

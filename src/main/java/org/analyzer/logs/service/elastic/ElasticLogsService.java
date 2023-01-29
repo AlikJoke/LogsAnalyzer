@@ -12,6 +12,7 @@ import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.*;
 import org.analyzer.logs.service.std.DefaultLogsAnalyzer;
 import org.analyzer.logs.service.std.postfilters.PostFiltersSequenceBuilder;
+import org.analyzer.logs.service.util.JsonConverter;
 import org.analyzer.logs.service.util.LongRunningTaskExecutor;
 import org.analyzer.logs.service.util.ZipUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +65,8 @@ public class ElasticLogsService implements LogsService {
     private CurrentUserAccessor userAccessor;
     @Autowired
     private LogKeysFactory logKeysFactory;
+    @Autowired
+    private JsonConverter jsonConverter;
 
     @Value("${elasticsearch.default.indexing.buffer_size:2500}")
     private int elasticIndexBufferSize;
@@ -97,24 +100,25 @@ public class ElasticLogsService implements LogsService {
                 .map(UserEntity::getHash)
                 .zipWith(uuidKey)
                 .flatMap(indexingKey ->
-                        this.zipUtil.flat(logFile)
-                            .log(logger)
-                            .doOnNext(file -> this.indexedFilesCounter.increment())
-                            .parallel()
-                            .runOn(Schedulers.parallel())
-                            .map(file -> this.parser.parse(this.logKeysFactory.createIndexedLogFileKey(file.getName(), indexingKey.getT1(), indexingKey.getT2()), file, recordFormat))
-                            .flatMap(records -> records
-                                                    .cache()
-                                                    .transform(recordsFlux -> sendToAnalyzeLogs(recordsFlux, indexingKey))
-                                                    .buffer(this.elasticIndexBufferSize)
-                                                    .doOnNext(buffer -> this.indexedRecordsCounter.increment(buffer.size()))
-                                                    .doOnNext(buffer -> this.elasticIndexRequestsCounter.increment())
-                                                    .map(this.logRecordRepository::saveAll)
-                                                    .log(logger)
-                            )
-                            .flatMap(Flux::then)
-                            .then()
-                            .thenReturn(uuidKey)
+                        this.zipUtil
+                                .flat(logFile)
+                                .log(logger)
+                                .doOnNext(file -> this.indexedFilesCounter.increment())
+                                .parallel()
+                                .runOn(Schedulers.parallel())
+                                .map(file -> this.parser.parse(this.logKeysFactory.createIndexedLogFileKey(file.getName(), indexingKey.getT1(), indexingKey.getT2()), file, recordFormat))
+                                .flatMap(records -> records
+                                                        .cache()
+                                                        .transform(recordsFlux -> sendToAnalyzeLogs(recordsFlux, indexingKey))
+                                                        .buffer(this.elasticIndexBufferSize)
+                                                        .doOnNext(buffer -> this.indexedRecordsCounter.increment(buffer.size()))
+                                                        .doOnNext(buffer -> this.elasticIndexRequestsCounter.increment())
+                                                        .map(this.logRecordRepository::saveAll)
+                                                        .log(logger)
+                                )
+                                .flatMap(Flux::then)
+                                .then()
+                                .thenReturn(uuidKey)
                 )
                 .flatMap(Function.identity());
     }
@@ -205,7 +209,7 @@ public class ElasticLogsService implements LogsService {
                                         .id(analyzeQuery.getId())
                                         .created(LocalDateTime.now())
                                         .title(analyzeQuery.analyzeResultName())
-                                        .dataQuery(analyzeQuery.toSearchQuery().toJson())
+                                        .dataQuery(analyzeQuery.toSearchQuery().toJson(this.jsonConverter))
                                         .userKey(userKey)
                                         .stats(stats)
                                     .build();
