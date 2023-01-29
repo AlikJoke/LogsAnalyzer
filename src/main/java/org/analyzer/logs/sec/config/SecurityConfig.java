@@ -11,7 +11,6 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
@@ -33,7 +32,7 @@ public class SecurityConfig {
                     .hasAuthority(USER_ROLE)
                     .pathMatchers("/actuator**")
                     .hasAuthority(ADMIN_ROLE)
-                    .pathMatchers(HttpMethod.POST, "/api/user/create")
+                    .pathMatchers(HttpMethod.POST, "/api/user/create", "/api/anonymous")
                     .permitAll()
                 .anyExchange()
                     .authenticated()

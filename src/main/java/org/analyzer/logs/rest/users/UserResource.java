@@ -3,15 +3,19 @@ package org.analyzer.logs.rest.users;
 import lombok.NonNull;
 import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.model.UserSettings;
+import org.analyzer.logs.rest.ResourceLink;
+import org.analyzer.logs.rest.hateoas.LinksCollector;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.UUID;
 
 public record UserResource(
         @NonNull String username,
         @NonNull String password,
-        @Nullable UserSettings settings) {
+        @Nullable UserSettings settings,
+        @Nullable List<ResourceLink> links) {
 
     @NonNull
     public UserEntity composeEntity(final PasswordEncoder passwordEncoder) {
@@ -35,7 +39,7 @@ public record UserResource(
     }
 
     @NonNull
-    public static UserResource convertFrom(@NonNull UserEntity user) {
-        return new UserResource(user.getUsername(), "[protected]", user.getSettings());
+    public static UserResource convertFrom(@NonNull UserEntity user, @NonNull LinksCollector linksCollector) {
+        return new UserResource(user.getUsername(), "[protected]", user.getSettings(), linksCollector.collectFor(UserResource.class));
     }
 }

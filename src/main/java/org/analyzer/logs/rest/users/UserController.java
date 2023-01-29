@@ -1,9 +1,14 @@
 package org.analyzer.logs.rest.users;
 
-import org.analyzer.logs.model.UserEntity;
+import org.analyzer.logs.rest.AnonymousRootEntrypointResource;
+import org.analyzer.logs.rest.ControllerBase;
+import org.analyzer.logs.rest.RootEntrypointResource;
+import org.analyzer.logs.rest.hateoas.LinksCollector;
+import org.analyzer.logs.rest.hateoas.NamedEndpoint;
 import org.analyzer.logs.service.UserService;
 import org.analyzer.logs.service.elastic.ElasticLogsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -12,20 +17,40 @@ import reactor.util.Logger;
 import reactor.util.Loggers;
 
 import java.security.Principal;
+import java.util.Set;
 
 @RestController
-@RequestMapping("/api/user")
-public class UserController {
+@RequestMapping(UserController.BASE_PATH)
+public class UserController extends ControllerBase {
 
     private static final Logger logger = Loggers.getLogger(ElasticLogsService.class);
+
+    static final String BASE_PATH = "/user";
+    static final String PATH_CURRENT = "/current";
+    static final String PATH_DISABLE = "/disable";
+    static final String PATH_CREATE = "/create";
 
     @Autowired
     private UserService userService;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private LinksCollector linksCollector;
 
-    @PostMapping("/create")
+    @GetMapping(PATH_CURRENT)
+    @NamedEndpoint(value = "self", includeTo = UserResource.class)
+    @NamedEndpoint(value = "current.user", includeTo = RootEntrypointResource.class)
+    public Mono<UserResource> read(Mono<Principal> principalMono) {
+        return principalMono
+                .map(Principal::getName)
+                .flatMap(this.userService::findById)
+                .map(user -> UserResource.convertFrom(user, this.linksCollector))
+                .onErrorResume(this::onError);
+    }
+
+    @PostMapping(PATH_CREATE)
     @ResponseStatus(HttpStatus.CREATED)
+    @NamedEndpoint(value = "create.user", includeTo = AnonymousRootEntrypointResource.class)
     public Mono<Void> create(@RequestBody Mono<UserResource> resource) {
         final var user = resource.map(
                 userResource -> userResource.composeEntity(this.passwordEncoder)
@@ -37,8 +62,9 @@ public class UserController {
                                 .onErrorResume(this::onError);
     }
 
-    @DeleteMapping("/disable")
+    @DeleteMapping(PATH_DISABLE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @NamedEndpoint(value = "disable", includeTo = UserResource.class)
     public Mono<Void> disable(Mono<Principal> principal) {
         return principal
                 .map(Principal::getName)
@@ -49,6 +75,7 @@ public class UserController {
 
     @PutMapping("/update")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @NamedEndpoint(value = "edit", includeTo = UserResource.class)
     public Mono<UserResource> update(@RequestBody Mono<UserResource> resource) {
         final var user = resource.flatMap(
                 userResource ->
@@ -58,12 +85,12 @@ public class UserController {
         );
 
         return this.userService.update(user)
-                                .map(UserResource::convertFrom)
+                                .map(updatedUser -> UserResource.convertFrom(updatedUser, this.linksCollector))
                                 .onErrorResume(this::onError);
     }
 
-    private <T> Mono<T> onError(final Throwable ex) {
-        logger.error("", ex);
-        return Mono.error(ex);
+    @Override
+    protected Set<HttpMethod> supportedMethods() {
+        return Set.of(HttpMethod.OPTIONS, HttpMethod.GET, HttpMethod.DELETE, HttpMethod.PUT, HttpMethod.POST);
     }
 }

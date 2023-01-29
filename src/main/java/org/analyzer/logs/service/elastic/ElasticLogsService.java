@@ -136,7 +136,7 @@ public class ElasticLogsService implements LogsService {
     @NonNull
     @Override
     public Mono<LogsStatisticsEntity> findStatisticsByKey(@NonNull String key) {
-        return this.statisticsRepository.findByDataQueryRegex(key);
+        return this.statisticsRepository.findByDataQueryRegexOrId(key);
     }
 
     @NonNull
