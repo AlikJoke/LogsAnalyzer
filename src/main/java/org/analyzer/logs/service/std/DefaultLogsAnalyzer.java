@@ -73,6 +73,9 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
                 Mono.just(StdMapLogsStatistics.ERRORS_COUNT)
                         .zipWith(this.aggregatorsFactory.create(CountAggregator.NAME, new Count(createAdditionalFilterErrors()))),
 
+                Mono.just(StdMapLogsStatistics.ALL_RECORDS_COUNT)
+                        .zipWith(this.aggregatorsFactory.create(CountAggregator.NAME, new Count(Collections.emptyMap()))),
+
                 Mono.just(StdMapLogsStatistics.WARNS_COUNT)
                         .zipWith(this.aggregatorsFactory.create(CountAggregator.NAME, new Count(createAdditionalFilterWarns()))),
 

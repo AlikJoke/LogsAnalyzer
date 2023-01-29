@@ -1,6 +1,9 @@
 package org.analyzer.logs.service.scheduled;
 
 import io.micrometer.core.annotation.Timed;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.analyzer.logs.model.ScheduledIndexingSettings;
 import org.analyzer.logs.model.UserEntity;
@@ -14,6 +17,7 @@ import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,9 +37,24 @@ public class ScheduledDataIndexingTask {
     private TaskScheduler taskScheduler;
     @Autowired
     private ApplicationContext applicationContext;
+    @Autowired
+    private MeterRegistry meterRegistry;
 
     private volatile LocalDateTime lastScanInfoTime = LocalDateTime.MIN;
     private final Map<UserEntity, Map<String, ScheduledFuture<?>>> settingsFuturesByUser = new ConcurrentHashMap<>();
+
+    @PostConstruct
+    private void init() {
+        this.meterRegistry.gauge(
+                "scheduled.indexing.tasks",
+                Collections.singleton(Tag.of("description", "Number of scheduled indexing tasks for network data by users settings")),
+                this.settingsFuturesByUser,
+                map -> map.values()
+                            .stream()
+                            .mapToInt(Map::size)
+                            .sum()
+        );
+    }
 
     @Scheduled(fixedRate = 5, timeUnit = TimeUnit.MINUTES)
     @Timed(
@@ -68,8 +87,13 @@ public class ScheduledDataIndexingTask {
         scheduledSettingsIds
                 .stream()
                 .filter(Predicate.not(userSettingsByKey::containsKey))
+                .peek(settingsFutures::remove)
                 .map(settingsFutures::get)
                 .forEach(future -> {
+                    if (settingsFutures.isEmpty()) {
+                        this.settingsFuturesByUser.remove(userEntity);
+                    }
+
                     future.cancel(true);
                     log.debug("Scheduled task for user {} cancelled", userEntity.getUsername());
                 });

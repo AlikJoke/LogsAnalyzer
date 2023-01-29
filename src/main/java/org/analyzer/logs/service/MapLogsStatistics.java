@@ -16,6 +16,9 @@ import java.util.stream.Collectors;
 public interface MapLogsStatistics extends Map<String, Flux<?>> {
 
     @Nonnull
+    Mono<Long> commonCount();
+
+    @Nonnull
     Flux<Tuple2<String, Long>> errorsFrequencies();
 
     @Nonnull

@@ -247,10 +247,10 @@ public class ElasticLogsService implements LogsService {
     private Flux<LogRecordEntity> sendToAnalyzeLogs(
             final Flux<LogRecordEntity> records,
             final Tuple2<String, String> userIndexingKey) {
-        final var analyzeQuery = new AnalyzeQueryOnIndexWrapper(userIndexingKey.getT2());
         this.taskExecutor.execute(
                 () -> {
-                    final String userKey = userIndexingKey.getT1();
+                    final var analyzeQuery = new AnalyzeQueryOnIndexWrapper(userIndexingKey.getT2());
+                    final var userKey = userIndexingKey.getT1();
                     analyze(records, analyzeQuery)
                             .contextWrite(this.userAccessor.set(userKey))
                             .subscribe();

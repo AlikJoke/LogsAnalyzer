@@ -62,7 +62,7 @@ public class CountAggregator implements Aggregator<Long> {
 
         return recordFlux
                 .map(LogRecordEntity.field2FieldValueFunction(this.additionalFilterBy))
-                .filter(value -> Objects.equals(value, this.additionalFilterValue))
+                .filter(value -> this.additionalFilterValue == null || Objects.equals(value, this.additionalFilterValue))
                 .count()
                 .flux();
     }

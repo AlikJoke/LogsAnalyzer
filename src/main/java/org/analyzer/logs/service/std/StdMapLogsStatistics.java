@@ -22,6 +22,13 @@ public class StdMapLogsStatistics extends HashMap<String, Flux<?>> implements Ma
     public static final String AVERAGE_WRITE_RATE = "average-write-rage";
     public static final String RECORDS_FREQUENCY_BY_CATEGORY = "records-frequency-by-category";
     public static final String RECORDS_FREQUENCY_BY_THREAD = "records-frequency-by-thread";
+    public static final String ALL_RECORDS_COUNT = "common-count";
+
+    @NonNull
+    @Override
+    public Mono<Long> commonCount() {
+        return getStatByKey(ALL_RECORDS_COUNT);
+    }
 
     @NonNull
     @Override
