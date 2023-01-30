@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -38,23 +37,22 @@ public class SecurityConfig {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
                 .authorizeExchange()
-                    .pathMatchers("/api/**")
-                    .hasAuthority(USER_ROLE)
-                    .pathMatchers("/actuator**")
+                    .pathMatchers("/actuator/**")
                     .hasAuthority(ADMIN_ROLE)
-                    .pathMatchers(HttpMethod.POST, "/api/user/create", "/api/anonymous")
+                    .pathMatchers("/user/create", "/anonymous")
                     .permitAll()
                 .anyExchange()
-                    .authenticated()
+                    .hasAuthority(USER_ROLE)
                     .and()
                         .formLogin()
                     .and()
                         .httpBasic()
                     .and()
                         .cors(corsSpec -> corsSpec.configurationSource(exchange -> {
-                            final List<String> allowedMethods = Arrays.stream(RequestMethod.values())
-                                    .map(RequestMethod::name)
-                                    .collect(Collectors.toList());
+                            final List<String> allowedMethods =
+                                    Arrays.stream(RequestMethod.values())
+                                        .map(RequestMethod::name)
+                                        .collect(Collectors.toList());
                             final CorsConfiguration result = new CorsConfiguration().applyPermitDefaultValues();
                             result
                                     .setAllowedOriginPatterns(allowedOrigins)

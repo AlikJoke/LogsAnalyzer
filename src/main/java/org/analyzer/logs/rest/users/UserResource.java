@@ -8,6 +8,7 @@ import org.analyzer.logs.rest.hateoas.LinksCollector;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.annotation.Nullable;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,6 +36,7 @@ public record UserResource(
             @NonNull final PasswordEncoder passwordEncoder) {
         entity.setSettings(settings());
         entity.setEncodedPassword(passwordEncoder.encode(password()));
+        entity.setModified(LocalDateTime.now());
         return entity;
     }
 

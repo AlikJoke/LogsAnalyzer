@@ -1,6 +1,8 @@
 package org.analyzer.logs.management;
 
 import org.analyzer.logs.service.management.LogsManagementService;
+import org.analyzer.logs.service.management.StatisticsManagementService;
+import org.analyzer.logs.service.management.UsersManagementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.endpoint.web.WebEndpointResponse;
@@ -11,7 +13,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 
 @Component
 @EndpointWebExtension(endpoint = InfoEndpoint.class)
@@ -20,18 +21,43 @@ public class InfoWebEndpointExtension {
     @Autowired
     private InfoEndpoint delegate;
     @Autowired
-    private LogsManagementService managementService;
+    private LogsManagementService logsManagementService;
+    @Autowired
+    private UsersManagementService usersManagementService;
+    @Autowired
+    private StatisticsManagementService statisticsManagementService;
 
     @ReadOperation
     public Mono<WebEndpointResponse<Map<String, Object>>> info() {
-        return Mono.fromSupplier(() -> {
-
-            final var info = this.delegate.info();
-            final var indexExists = this.managementService.existsIndex().blockOptional();
-            info.put("elasticsearch", indexExists.isPresent()
-                    ? this.managementService.indexInfo().block()
-                    : Collections.singletonMap("index-exists", false));
-            return new WebEndpointResponse<>(info);
-        });
+        final Map<String, Object> info = this.delegate.info();
+        return
+            this.logsManagementService.existsIndex()
+                    .zipWith(this.logsManagementService.indexInfo())
+                    .doOnNext(tuple -> {
+                        info.put("elasticsearch",
+                                    tuple.getT1()
+                                            ? tuple.getT2()
+                                            : Collections.singletonMap("index-exists", false)
+                        );
+                    })
+                    .mergeWith(this.usersManagementService.existsCollection()
+                            .zipWith(this.usersManagementService.indexesInfo())
+                            .doOnNext(tuple -> {
+                                info.put("mongodb-users",
+                                            tuple.getT1()
+                                                    ? tuple.getT2()
+                                                    : Collections.singletonMap("collection-exists", false)
+                                );
+                            }))
+                    .mergeWith(this.statisticsManagementService.existsCollection()
+                            .zipWith(this.statisticsManagementService.indexesInfo())
+                            .doOnNext(tuple -> {
+                                info.put("mongodb-statistics",
+                                            tuple.getT1()
+                                                    ? tuple.getT2()
+                                                    : Collections.singletonMap("collection-exists", false)
+                                );
+                            }))
+                    .then(Mono.just(new WebEndpointResponse<>(info)));
     }
 }

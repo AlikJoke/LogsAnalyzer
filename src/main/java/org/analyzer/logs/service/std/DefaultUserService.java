@@ -80,4 +80,12 @@ public class DefaultUserService implements UserService {
         return this.userRepository.findByHash(userHash)
                                     .switchIfEmpty(Mono.error(() -> new UserNotFoundException(userHash)));
     }
+
+    @NonNull
+    @Override
+    public Mono<Long> findCount(boolean onlyActive) {
+        return onlyActive
+                ? this.userRepository.countByActive(true)
+                : this.userRepository.count();
+    }
 }

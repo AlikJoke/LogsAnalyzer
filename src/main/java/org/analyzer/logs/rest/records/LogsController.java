@@ -6,6 +6,7 @@ import org.analyzer.logs.rest.hateoas.LinksCollector;
 import org.analyzer.logs.rest.hateoas.NamedEndpoint;
 import org.analyzer.logs.service.LogsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.codec.multipart.FilePart;
@@ -27,6 +28,7 @@ public class LogsController extends ControllerBase {
     @Autowired
     private WebUtils webUtils;
     @Autowired
+    @Lazy
     private LinksCollector linksCollector;
 
     @PostMapping(PATH_INDEX)

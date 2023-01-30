@@ -1,15 +1,14 @@
 package org.analyzer.logs.service.management;
 
-import org.analyzer.logs.model.UserEntity;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
 
-public interface UsersManagementService extends MongoDBManagementService<UserEntity> {
+public interface UsersManagementService extends MongoDBManagementService {
 
     @Nonnull
     Mono<Boolean> disableUser(@Nonnull String username);
 
     @Nonnull
-    Mono<Long> count(boolean active);
+    Mono<Long> count(boolean onlyActive);
 }

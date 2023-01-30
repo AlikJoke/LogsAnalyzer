@@ -5,19 +5,17 @@ import reactor.core.publisher.Mono;
 import javax.annotation.Nonnull;
 import java.util.Map;
 
-public interface MongoDBManagementService<T> {
+public interface MongoDBManagementService {
 
     @Nonnull
-    Mono<Boolean> createCollection(@Nonnull Class<T> entity);
+    Mono<Void> createCollection();
 
     @Nonnull
-    Mono<Boolean> existsCollection(@Nonnull Class<T> entity);
+    Mono<Boolean> existsCollection();
 
     @Nonnull
-    Mono<Boolean> dropCollection(@Nonnull Class<T> entity);
+    Mono<Void> dropCollection();
 
     @Nonnull
-    Mono<Map<String, Object>> collectionInfo(@Nonnull Class<T> entity);
-
-
+    Mono<Map<String, Object>> indexesInfo();
 }

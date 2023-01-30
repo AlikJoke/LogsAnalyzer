@@ -29,4 +29,7 @@ public interface UserService {
 
     @Nonnull
     Mono<UserEntity> findByUserHash(@Nonnull String userHash);
+
+    @Nonnull
+    Mono<Long> findCount(boolean onlyActive);
 }

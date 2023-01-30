@@ -16,7 +16,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +42,7 @@ public class ScheduledDataIndexingTask {
     @Autowired
     private MeterRegistry meterRegistry;
 
-    private volatile LocalDateTime lastScanInfoTime = LocalDateTime.MIN;
+    private volatile LocalDateTime lastScanInfoTime = LocalDateTime.ofInstant(Instant.EPOCH, ZoneId.systemDefault());
     private final Map<UserEntity, Map<String, ScheduledFuture<?>>> settingsFuturesByUser = new ConcurrentHashMap<>();
 
     @PostConstruct

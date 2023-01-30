@@ -19,4 +19,7 @@ public interface UserRepository extends ReactiveMongoRepository<UserEntity, Stri
 
     @Nonnull
     Mono<UserEntity> findByHash(@Nonnull String hash);
+
+    @Query
+    Mono<Long> countByActive(boolean active);
 }

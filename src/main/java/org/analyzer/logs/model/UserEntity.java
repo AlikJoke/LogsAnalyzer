@@ -28,7 +28,7 @@ public class UserEntity {
     @ToString.Exclude
     @Indexed(unique = true)
     private String hash;
-    @Version
+    @Indexed
     private LocalDateTime modified;
 
     private boolean active;

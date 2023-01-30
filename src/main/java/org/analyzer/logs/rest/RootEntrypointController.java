@@ -2,6 +2,7 @@ package org.analyzer.logs.rest;
 
 import org.analyzer.logs.rest.hateoas.LinksCollector;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
@@ -13,6 +14,7 @@ public class RootEntrypointController extends ControllerBase {
     static final String PATH_ANON = "/anonymous";
 
     @Autowired
+    @Lazy
     private LinksCollector linksCollector;
 
     @GetMapping(PATH)

@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.Map;
 
 @Component
-@Endpoint(id = "logs-index")
+@Endpoint(id = "logs")
 public class LogIndexManagementEndpoint {
 
     @Autowired
@@ -47,6 +47,6 @@ public class LogIndexManagementEndpoint {
             return this.managementService.dropIndex();
         }
 
-        throw new UnsupportedOperationException(operation);
+        return Mono.error(() -> new UnsupportedOperationException(operation));
     }
 }

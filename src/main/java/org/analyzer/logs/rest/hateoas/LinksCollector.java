@@ -6,6 +6,7 @@ import org.analyzer.logs.rest.ResourceLink;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,7 @@ import java.util.*;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @Slf4j
+@Lazy
 public class LinksCollector {
 
     private final Map<Class<?>, List<ResourceLink>> linksCache;
@@ -33,10 +35,10 @@ public class LinksCollector {
                 .forEach(controller -> {
                     final var controllerClass = controller.getClass();
                     final var baseMapping = controllerClass.getAnnotation(RequestMapping.class);
-                    final var basePath = getFirstFromArrayOrDefault(baseMapping.path(), "");
-                    final var baseMethod = getFirstFromArrayOrDefault(baseMapping.method(), RequestMethod.GET);
+                    final var basePath = getFirstFromArrayOrDefault(baseMapping == null ? null : baseMapping.value(), "");
+                    final var baseMethod = getFirstFromArrayOrDefault(baseMapping == null ? null : baseMapping.method(), RequestMethod.GET);
                     Arrays.stream(controllerClass.getDeclaredMethods())
-                            .filter(method -> method.isAnnotationPresent(NamedEndpoint.class))
+                            .filter(method -> method.isAnnotationPresent(NamedEndpoint.class) || method.isAnnotationPresent(NamedEndpoints.class))
                             .forEach(method -> {
                                 final var namedEndpoints = method.getAnnotationsByType(NamedEndpoint.class);
                                 final var path2method = getMapping2HttpMethodFromJavaMethod(method);
@@ -71,27 +73,27 @@ public class LinksCollector {
     private Tuple2<String, RequestMethod> getMapping2HttpMethodFromJavaMethod(final Method method) {
         final var getMapping = method.getAnnotation(GetMapping.class);
         if (getMapping != null) {
-            return Tuples.of(getFirstFromArrayOrDefault(getMapping.path(), ""), RequestMethod.GET);
+            return Tuples.of(getFirstFromArrayOrDefault(getMapping.value(), ""), RequestMethod.GET);
         }
 
         final var postMapping = method.getAnnotation(PostMapping.class);
         if (postMapping != null) {
-            return Tuples.of(getFirstFromArrayOrDefault(postMapping.path(), ""), RequestMethod.POST);
+            return Tuples.of(getFirstFromArrayOrDefault(postMapping.value(), ""), RequestMethod.POST);
         }
 
         final var putMapping = method.getAnnotation(PutMapping.class);
         if (putMapping != null) {
-            return Tuples.of(getFirstFromArrayOrDefault(putMapping.path(), ""), RequestMethod.PUT);
+            return Tuples.of(getFirstFromArrayOrDefault(putMapping.value(), ""), RequestMethod.PUT);
         }
 
         final var deleteMapping = method.getAnnotation(DeleteMapping.class);
         if (deleteMapping != null) {
-            return Tuples.of(getFirstFromArrayOrDefault(deleteMapping.path(), ""), RequestMethod.DELETE);
+            return Tuples.of(getFirstFromArrayOrDefault(deleteMapping.value(), ""), RequestMethod.DELETE);
         }
 
         final var mapping = method.getAnnotation(RequestMapping.class);
         if (mapping != null) {
-            return Tuples.of(getFirstFromArrayOrDefault(mapping.path(), ""), getFirstFromArray(mapping.method()));
+            return Tuples.of(getFirstFromArrayOrDefault(mapping.value(), ""), getFirstFromArray(mapping.method()));
         }
 
         return null;

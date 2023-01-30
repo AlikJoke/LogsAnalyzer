@@ -10,6 +10,7 @@ import org.analyzer.logs.service.CurrentUserAccessor;
 import org.analyzer.logs.service.LogsService;
 import org.analyzer.logs.service.MapLogsStatistics;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +33,7 @@ public class LogsStatisticsController extends ControllerBase {
     @Autowired
     private CurrentUserAccessor userAccessor;
     @Autowired
+    @Lazy
     private LinksCollector linksCollector;
 
     @PostMapping(PATH_GENERATE)

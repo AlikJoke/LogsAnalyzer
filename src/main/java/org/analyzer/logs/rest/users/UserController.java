@@ -8,6 +8,7 @@ import org.analyzer.logs.rest.hateoas.NamedEndpoint;
 import org.analyzer.logs.service.UserService;
 import org.analyzer.logs.service.elastic.ElasticLogsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,6 +36,7 @@ public class UserController extends ControllerBase {
     @Autowired
     private PasswordEncoder passwordEncoder;
     @Autowired
+    @Lazy
     private LinksCollector linksCollector;
 
     @GetMapping(PATH_CURRENT)
@@ -51,14 +53,14 @@ public class UserController extends ControllerBase {
     @PostMapping(PATH_CREATE)
     @ResponseStatus(HttpStatus.CREATED)
     @NamedEndpoint(value = "create.user", includeTo = AnonymousRootEntrypointResource.class)
-    public Mono<Void> create(@RequestBody Mono<UserResource> resource) {
+    public Mono<UserResource> create(@RequestBody Mono<UserResource> resource) {
         final var user = resource.map(
                 userResource -> userResource.composeEntity(this.passwordEncoder)
         );
 
         return this.userService.create(user)
                                 .log(logger)
-                                .then()
+                                .map(created -> UserResource.convertFrom(created, this.linksCollector))
                                 .onErrorResume(this::onError);
     }
 
