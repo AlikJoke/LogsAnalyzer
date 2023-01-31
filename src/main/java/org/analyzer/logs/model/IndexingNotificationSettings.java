@@ -14,4 +14,6 @@ public class IndexingNotificationSettings {
     private boolean aggregationNotificationsEnabled;
     @Field("notify_email")
     private String notifyToEmail;
+    @Field("notify_telegram")
+    private String notifyToTelegram;
 }

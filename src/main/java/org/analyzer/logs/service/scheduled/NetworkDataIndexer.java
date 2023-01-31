@@ -13,13 +13,10 @@ import org.analyzer.logs.service.LogRecordFormat;
 import org.analyzer.logs.service.LogsService;
 import org.analyzer.logs.service.util.JsonConverter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -42,13 +39,13 @@ public class NetworkDataIndexer implements Runnable {
     @Autowired
     private WebClient webClient;
     @Autowired
-    private JavaMailSender mailSender;
-    @Autowired
     private CurrentUserAccessor userAccessor;
     @Autowired
     private JsonConverter jsonConverter;
-    @Value("${logs.analyzer.notifications.from}")
-    private String emailFrom;
+    @Autowired
+    private DataIndexingTelegramNotifier telegramNotifier;
+    @Autowired
+    private DataIndexingMailNotifier mailNotifier;
 
     private UserEntity user;
     private ScheduledIndexingSettings indexingSettings;
@@ -92,8 +89,16 @@ public class NetworkDataIndexer implements Runnable {
             return;
         }
 
-        sendMail("Logs indexing completed (" + statistics.getId() + ")",
-                this.jsonConverter.convertToJson(statistics.getStats()));
+        final String statsJson = this.jsonConverter.convertToJson(statistics.getStats());
+        if (this.indexingSettings.getNotificationSettings().getNotifyToEmail() != null) {
+            this.mailNotifier.notifySuccess(statistics.getId(), statsJson, this.indexingSettings.getNotificationSettings());
+            log.info("Success mail notification for user {} sent", this.user.getUsername());
+        }
+
+        if (this.indexingSettings.getNotificationSettings().getNotifyToTelegram() != null) {
+            this.telegramNotifier.notifySuccess(statistics.getId(), statsJson, this.indexingSettings.getNotificationSettings());
+            log.info("Success telegram notification for user {} sent", this.user.getUsername());
+        }
     }
 
     private void onError(final Throwable ex) {
@@ -101,24 +106,18 @@ public class NetworkDataIndexer implements Runnable {
         final IndexingNotificationSettings notificationSettings = this.indexingSettings.getNotificationSettings();
         if (!notificationSettings.isErrorNotificationsEnabled()) {
             log.trace("Error notifications for user {} disabled", this.user.getUsername());
+            return;
         }
 
-        sendMail("Logs indexing fail with error", ex.getMessage());
-    }
+        if (this.indexingSettings.getNotificationSettings().getNotifyToEmail() != null) {
+            this.mailNotifier.notifyError(ex.getMessage(), this.indexingSettings.getNotificationSettings());
+            log.info("Error mail notification for user {} sent", this.user.getUsername());
+        }
 
-    private void sendMail(final String subject, final String bodyText) {
-
-        final IndexingNotificationSettings notificationSettings = this.indexingSettings.getNotificationSettings();
-
-        final SimpleMailMessage mailMessage = new SimpleMailMessage();
-        mailMessage.setSubject(subject);
-        mailMessage.setFrom(this.emailFrom);
-        mailMessage.setTo(notificationSettings.getNotifyToEmail());
-        mailMessage.setText(bodyText);
-
-        this.mailSender.send(mailMessage);
-
-        log.info("Notification with subject {} for user {} sent", subject, this.user.getUsername());
+        if (this.indexingSettings.getNotificationSettings().getNotifyToTelegram() != null) {
+            this.telegramNotifier.notifyError(ex.getMessage(), this.indexingSettings.getNotificationSettings());
+            log.info("Error telegram notification for user {} sent", this.user.getUsername());
+        }
     }
 
     private File createTempFile() {
