@@ -69,6 +69,12 @@ public class DefaultUserService implements UserService {
 
     @NonNull
     @Override
+    public Flux<UserEntity> findAllWithTelegramId() {
+        return this.userRepository.findAllWithTelegramId();
+    }
+
+    @NonNull
+    @Override
     public Mono<UserEntity> findById(@NonNull String username) {
         return this.userRepository.findById(username)
                                     .switchIfEmpty(Mono.error(() -> new UserNotFoundException(username)));

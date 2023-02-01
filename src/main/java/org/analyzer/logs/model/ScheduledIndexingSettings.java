@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 public class ScheduledIndexingSettings {
 
     @NonNull
+    @Field("settings_id")
     private String settingsId;
     @NonNull
     private String schedule;

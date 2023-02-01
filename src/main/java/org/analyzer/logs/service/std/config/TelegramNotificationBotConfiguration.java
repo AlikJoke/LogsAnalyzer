@@ -1,4 +1,4 @@
-package org.analyzer.logs.service.scheduled.config;
+package org.analyzer.logs.service.std.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.Value;

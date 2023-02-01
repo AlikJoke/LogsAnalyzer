@@ -25,6 +25,9 @@ public interface UserService {
     Flux<UserEntity> findAllWithScheduledIndexingSettings(@Nonnull LocalDateTime modifiedAfter);
 
     @Nonnull
+    Flux<UserEntity> findAllWithTelegramId();
+
+    @Nonnull
     Mono<UserEntity> findById(@Nonnull String username);
 
     @Nonnull
