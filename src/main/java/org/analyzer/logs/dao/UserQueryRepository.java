@@ -17,7 +17,8 @@ public interface UserQueryRepository extends ReactiveMongoRepository<UserSearchQ
     Flux<UserSearchQueryEntity> findAllByUserKeyAndCreatedBetween(
             @Nonnull String userKey,
             @Nonnull LocalDateTime from,
-            @Nonnull LocalDateTime to);
+            @Nonnull LocalDateTime to,
+            @Nonnull Sort sort);
 
     @Nonnull
     Mono<Void> deleteAllByUserKey(@Nonnull String userKey);

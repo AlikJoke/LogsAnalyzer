@@ -6,6 +6,7 @@ import org.analyzer.logs.rest.RootEntrypointResource;
 import org.analyzer.logs.rest.hateoas.LinksCollector;
 import org.analyzer.logs.rest.hateoas.NamedEndpoint;
 import org.analyzer.logs.rest.records.IndexingResult;
+import org.analyzer.logs.rest.users.UserResource;
 import org.analyzer.logs.service.CurrentUserAccessor;
 import org.analyzer.logs.service.LogsService;
 import org.analyzer.logs.service.MapLogsStatistics;
@@ -55,7 +56,7 @@ public class LogsStatisticsController extends ControllerBase {
     }
 
     @GetMapping("/history")
-    @NamedEndpoint(value = "statistics.history", includeTo = RootEntrypointResource.class)
+    @NamedEndpoint(value = "statistics.history", includeTo = UserResource.class)
     public Flux<StatisticsResource> readHistory() {
         return this.userAccessor.get()
                 .map(UserEntity::getHash)

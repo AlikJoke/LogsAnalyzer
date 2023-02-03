@@ -53,7 +53,9 @@ public class DefaultCurrentUserQueryService implements CurrentUserQueryService {
     public Flux<UserSearchQueryEntity> findAll(@NonNull LocalDateTime from, @NonNull LocalDateTime to) {
         return this.userAccessor.get()
                 .map(UserEntity::getHash)
-                .flatMapMany(userHash -> this.userQueryRepository.findAllByUserKeyAndCreatedBetween(userHash, from, to));
+                .flatMapMany(userHash ->
+                        this.userQueryRepository.findAllByUserKeyAndCreatedBetween(userHash, from, to, Sort.by(Sort.Direction.DESC, "created"))
+                );
     }
 
     @NonNull
