@@ -1,8 +1,8 @@
 package org.analyzer.logs.model;
 
 import lombok.*;
+import lombok.experimental.Accessors;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -12,7 +12,8 @@ import java.time.LocalDateTime;
 @Document("users")
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Builder
+@NoArgsConstructor
+@Accessors(chain = true)
 public class UserEntity {
 
     @Id

@@ -20,6 +20,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.elasticsearch.client.elc.ReactiveElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.query.StringQuery;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -40,6 +42,8 @@ import java.util.function.Function;
 public class ElasticLogsService implements LogsService {
 
     private static final Logger logger = Loggers.getLogger(ElasticLogsService.class);
+
+    private static final String STATISTICS_CACHE = "statistics";
 
     @Autowired
     private ReactiveElasticsearchTemplate template;
@@ -67,6 +71,8 @@ public class ElasticLogsService implements LogsService {
     private LogKeysFactory logKeysFactory;
     @Autowired
     private JsonConverter jsonConverter;
+    @Autowired
+    private ReactiveRedisTemplate<String, Object> redisTemplate;
 
     @Value("${elasticsearch.default.indexing.buffer_size:2500}")
     private int elasticIndexBufferSize;
@@ -140,7 +146,16 @@ public class ElasticLogsService implements LogsService {
     @NonNull
     @Override
     public Mono<LogsStatisticsEntity> findStatisticsByKey(@NonNull String key) {
-        return this.statisticsRepository.findByDataQueryRegexOrId(key, key);
+        final Mono<Object> entityFromCache = this.redisTemplate.opsForValue().get(createStatsRedisKey(key));
+        final Mono<LogsStatisticsEntity> entityFromStorage =
+                this.statisticsRepository.findByDataQueryRegexOrId(key, key)
+                            .flatMap(stats ->
+                                    this.redisTemplate.opsForValue().set(createStatsRedisKey(key), stats)
+                                            .thenReturn(stats))
+                            .cache();
+        return entityFromCache
+                .cast(LogsStatisticsEntity.class)
+                .switchIfEmpty(entityFromStorage);
     }
 
     @NonNull
@@ -154,19 +169,35 @@ public class ElasticLogsService implements LogsService {
     @NonNull
     @Override
     public Mono<Void> deleteStatistics(@NonNull Flux<LogsStatisticsEntity> statsFlux) {
-        return this.statisticsRepository.deleteAll(statsFlux);
+        return this.statisticsRepository.deleteAll(statsFlux)
+                                        .then(deleteAllStatsKeys());
     }
 
     @NonNull
     @Override
     public Flux<String> deleteAllStatisticsByUserKeyAndCreationDate(@NonNull String userKey, @NonNull LocalDateTime beforeDate) {
-        return this.statisticsRepository.deleteAllByUserKeyAndCreationDateBefore(userKey, beforeDate);
+        return this.statisticsRepository.deleteAllByUserKeyAndCreationDateBefore(userKey, beforeDate)
+                                        .transform(indexingKeys ->
+                                                deleteAllStatsKeys()
+                                                    .thenReturn(indexingKeys)
+                                        )
+                                        .flatMap(Function.identity());
     }
 
     @NonNull
     @Override
     public Mono<Void> deleteByQuery(@NonNull SearchQuery deleteQuery) {
         return this.logRecordRepository.deleteAll(searchByFilterQuery(deleteQuery));
+    }
+
+    private Mono<Void> deleteAllStatsKeys() {
+        final ScanOptions scanOptions = ScanOptions
+                                            .scanOptions()
+                                                .match(STATISTICS_CACHE + ":*")
+                                            .build();
+        return this.redisTemplate.scan(scanOptions)
+                                    .transform(this.redisTemplate::delete)
+                                    .then();
     }
 
     private Mono<MapLogsStatistics> analyze(
@@ -205,14 +236,13 @@ public class ElasticLogsService implements LogsService {
             final String userKey) {
 
         final LogsStatisticsEntity entity =
-                LogsStatisticsEntity.builder()
-                                        .id(analyzeQuery.getId())
-                                        .created(LocalDateTime.now())
-                                        .title(analyzeQuery.analyzeResultName())
-                                        .dataQuery(analyzeQuery.toSearchQuery().toJson(this.jsonConverter))
-                                        .userKey(userKey)
-                                        .stats(stats)
-                                    .build();
+                new LogsStatisticsEntity()
+                        .setId(analyzeQuery.getId())
+                        .setCreated(LocalDateTime.now())
+                        .setTitle(analyzeQuery.analyzeResultName())
+                        .setDataQuery(analyzeQuery.toSearchQuery().toJson(this.jsonConverter))
+                        .setUserKey(userKey)
+                        .setStats(stats);
         return this.statisticsRepository.save(entity);
     }
 
@@ -258,5 +288,9 @@ public class ElasticLogsService implements LogsService {
         );
 
         return records;
+    }
+
+    private String createStatsRedisKey(final String key) {
+        return STATISTICS_CACHE + ":" + key;
     }
 }

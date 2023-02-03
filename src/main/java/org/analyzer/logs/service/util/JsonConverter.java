@@ -38,4 +38,12 @@ public class JsonConverter {
             throw new RuntimeException(e);
         }
     }
+
+    public byte[] writeAsBytes(@NonNull Object object) {
+        try {
+            return mapper.writeValueAsBytes(object);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

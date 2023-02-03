@@ -4,9 +4,11 @@ import lombok.NonNull;
 import org.analyzer.logs.dao.UserRepository;
 import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.UserService;
+import org.analyzer.logs.service.exceptions.UserAlreadyDisabledException;
 import org.analyzer.logs.service.exceptions.UserAlreadyExistsException;
 import org.analyzer.logs.service.exceptions.UserNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -16,8 +18,12 @@ import java.time.LocalDateTime;
 @Service
 public class DefaultUserService implements UserService {
 
+    private static final String USERS_CACHE = "users";
+
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private ReactiveRedisTemplate<String, Object> redisTemplate;
 
     @NonNull
     @Override
@@ -29,6 +35,10 @@ public class DefaultUserService implements UserService {
                                     .filter(exists -> !exists)
                                     .flatMap(exists -> this.userRepository.save(user))
                                     .switchIfEmpty(Mono.error(() -> new UserAlreadyExistsException(user.getUsername())))
+                ).flatMap(user ->
+                        this.redisTemplate.opsForValue()
+                                            .set(createUserRedisKey(user.getUsername()), user)
+                                            .thenReturn(user)
                 );
     }
 
@@ -38,7 +48,8 @@ public class DefaultUserService implements UserService {
         return this.userRepository.findById(username)
                                     .filter(UserEntity::disable)
                                     .flatMap(this.userRepository::save)
-                                    .switchIfEmpty(Mono.error(() -> new UserAlreadyExistsException(username)))
+                                    .switchIfEmpty(Mono.error(() -> new UserAlreadyDisabledException(username)))
+                                    .flatMap(user -> this.redisTemplate.delete(createUserRedisKey(username), createUserRedisKey(user.getHash())))
                                     .then();
     }
 
@@ -52,6 +63,11 @@ public class DefaultUserService implements UserService {
                                 .filter(exists -> exists)
                                 .flatMap(exists -> this.userRepository.save(user))
                                 .switchIfEmpty(Mono.error(() -> new UserNotFoundException(user.getUsername())))
+                )
+                .flatMap(user ->
+                        this.redisTemplate.opsForValue().set(createUserRedisKey(user.getUsername()), user)
+                                .and(this.redisTemplate.opsForValue().set(createUserRedisKey(user.getHash()), user))
+                                .thenReturn(user)
                 );
     }
 
@@ -76,15 +92,33 @@ public class DefaultUserService implements UserService {
     @NonNull
     @Override
     public Mono<UserEntity> findById(@NonNull String username) {
-        return this.userRepository.findById(username)
-                                    .switchIfEmpty(Mono.error(() -> new UserNotFoundException(username)));
+        final Mono<Object> entityFromCache = this.redisTemplate.opsForValue().get(createUserRedisKey(username));
+        final Mono<UserEntity> entityFromStorage =
+                this.userRepository.findById(username)
+                                    .switchIfEmpty(Mono.error(() -> new UserNotFoundException(username)))
+                                    .flatMap(user ->
+                                            this.redisTemplate.opsForValue().set(createUserRedisKey(user.getUsername()), user)
+                                                                            .thenReturn(user))
+                                    .cache();
+        return entityFromCache
+                .cast(UserEntity.class)
+                .switchIfEmpty(entityFromStorage);
     }
 
     @NonNull
     @Override
     public Mono<UserEntity> findByUserHash(@NonNull String userHash) {
-        return this.userRepository.findByHash(userHash)
-                                    .switchIfEmpty(Mono.error(() -> new UserNotFoundException(userHash)));
+        final Mono<Object> entityFromCache = this.redisTemplate.opsForValue().get(createUserRedisKey(userHash));
+        final Mono<UserEntity> entityFromStorage =
+                this.userRepository.findByHash(userHash)
+                                    .switchIfEmpty(Mono.error(() -> new UserNotFoundException(userHash)))
+                                    .flatMap(user ->
+                                            this.redisTemplate.opsForValue().set(createUserRedisKey(userHash), user)
+                                                                            .thenReturn(user))
+                                    .cache();
+        return entityFromCache
+                .cast(UserEntity.class)
+                .switchIfEmpty(entityFromStorage);
     }
 
     @NonNull
@@ -93,5 +127,9 @@ public class DefaultUserService implements UserService {
         return onlyActive
                 ? this.userRepository.countByActive(true)
                 : this.userRepository.count();
+    }
+
+    private String createUserRedisKey(final String key) {
+        return USERS_CACHE + ":" + key;
     }
 }

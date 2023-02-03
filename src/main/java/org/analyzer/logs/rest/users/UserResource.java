@@ -20,14 +20,13 @@ public record UserResource(
 
     @NonNull
     public UserEntity composeEntity(final PasswordEncoder passwordEncoder) {
-        return UserEntity
-                .builder()
-                    .username(username())
-                    .hash(UUID.randomUUID().toString())
-                    .settings(settings())
-                    .encodedPassword(passwordEncoder.encode(password()))
-                    .active(true)
-                .build();
+        return new UserEntity()
+                    .setUsername(username())
+                    .setHash(UUID.randomUUID().toString())
+                    .setSettings(settings())
+                    .setEncodedPassword(passwordEncoder.encode(password()))
+                    .setModified(LocalDateTime.now())
+                    .setActive(true);
     }
 
     @NonNull
