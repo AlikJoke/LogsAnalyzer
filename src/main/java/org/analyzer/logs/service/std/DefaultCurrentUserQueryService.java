@@ -10,6 +10,7 @@ import org.analyzer.logs.service.SearchQuery;
 import org.analyzer.logs.service.util.JsonConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -75,7 +76,8 @@ public class DefaultCurrentUserQueryService implements CurrentUserQueryService {
     @NonNull
     private Mono<Void> deleteAllMoreThanLimit(@NonNull String userHash) {
         final Sort sort = Sort.by(Sort.Direction.DESC, "created");
-        final Pageable pageable = Pageable.ofSize(this.userQueriesMaxCount - 1).withPage(2);
-        return this.userQueryRepository.deleteAllByUserKey(userHash, sort, pageable);
+        final Pageable pageable = PageRequest.of(2, this.userQueriesMaxCount, sort);
+        return this.userQueryRepository.deleteAllByUserKey(userHash, pageable)
+                                        .then();
     }
 }

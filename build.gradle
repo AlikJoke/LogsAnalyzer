@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.0.1'
 	id 'io.spring.dependency-management' version '1.1.0'
+	id "org.springdoc.openapi-gradle-plugin" version '1.6.0'
 }
 
 group = 'org.analyzer'
@@ -27,6 +28,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
 	implementation 'org.springframework:spring-aspects'
+	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.0.2'
 	implementation 'commons-io:commons-io:2.11.0'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -35,6 +37,11 @@ dependencies {
 
 springBoot {
 	buildInfo()
+}
+
+openApi {
+	outputDir.set(file("$buildDir/docs"))
+	outputFileName.set("openapi.json")
 }
 
 tasks.named('test') {

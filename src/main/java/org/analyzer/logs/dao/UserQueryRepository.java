@@ -24,8 +24,7 @@ public interface UserQueryRepository extends ReactiveMongoRepository<UserSearchQ
     Mono<Void> deleteAllByUserKey(@Nonnull String userKey);
 
     @Query(delete = true)
-    Mono<Void> deleteAllByUserKey(
+    Flux<UserSearchQueryEntity> deleteAllByUserKey(
             @Nonnull String userKey,
-            @Nonnull Sort sort,
             @Nonnull Pageable pageable);
 }
