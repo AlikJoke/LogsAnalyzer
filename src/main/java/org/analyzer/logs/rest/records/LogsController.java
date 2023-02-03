@@ -55,9 +55,9 @@ public class LogsController extends ControllerBase {
     @NamedEndpoint(value = "search", includeTo = RootEntrypointResource.class)
     public Mono<LogRecordsCollectionResource> read(@RequestBody RequestSearchQuery query) {
         return this.service.searchByQuery(query)
-                            .collectList()
-                            .map(LogRecordsCollectionResource::new)
-                            .onErrorResume(this::onError);
+                                .collectList()
+                                .map(LogRecordsCollectionResource::new)
+                                .onErrorResume(this::onError);
     }
 
     @Override

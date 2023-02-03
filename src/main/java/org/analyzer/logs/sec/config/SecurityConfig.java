@@ -49,11 +49,11 @@ public class SecurityConfig {
                         .httpBasic()
                     .and()
                         .cors(corsSpec -> corsSpec.configurationSource(exchange -> {
-                            final List<String> allowedMethods =
+                            final var allowedMethods =
                                     Arrays.stream(RequestMethod.values())
                                         .map(RequestMethod::name)
                                         .collect(Collectors.toList());
-                            final CorsConfiguration result = new CorsConfiguration().applyPermitDefaultValues();
+                            final var result = new CorsConfiguration().applyPermitDefaultValues();
                             result
                                     .setAllowedOriginPatterns(allowedOrigins)
                                     .setAllowedMethods(allowedMethods);

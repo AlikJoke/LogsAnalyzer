@@ -92,8 +92,8 @@ public class DefaultUserService implements UserService {
     @NonNull
     @Override
     public Mono<UserEntity> findById(@NonNull String username) {
-        final Mono<Object> entityFromCache = this.redisTemplate.opsForValue().get(createUserRedisKey(username));
-        final Mono<UserEntity> entityFromStorage =
+        final var entityFromCache = this.redisTemplate.opsForValue().get(createUserRedisKey(username));
+        final var entityFromStorage =
                 this.userRepository.findById(username)
                                     .switchIfEmpty(Mono.error(() -> new UserNotFoundException(username)))
                                     .flatMap(user ->
@@ -108,8 +108,8 @@ public class DefaultUserService implements UserService {
     @NonNull
     @Override
     public Mono<UserEntity> findByUserHash(@NonNull String userHash) {
-        final Mono<Object> entityFromCache = this.redisTemplate.opsForValue().get(createUserRedisKey(userHash));
-        final Mono<UserEntity> entityFromStorage =
+        final var entityFromCache = this.redisTemplate.opsForValue().get(createUserRedisKey(userHash));
+        final var entityFromStorage =
                 this.userRepository.findByHash(userHash)
                                     .switchIfEmpty(Mono.error(() -> new UserNotFoundException(userHash)))
                                     .flatMap(user ->

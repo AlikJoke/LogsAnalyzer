@@ -71,13 +71,13 @@ public class ControllerBase {
 
     private Mono<String> exceptionToString(Throwable e) {
         return Mono.fromSupplier(() -> {
-            final StringBuilder sb = new StringBuilder();
+            final var sb = new StringBuilder();
             sb.append(String.format("Exception: %s\r\n", e.getClass().getName()));
             sb.append(String.format("Message: %s\r\n", e.getMessage() == null ? "" : e.getMessage()));
             sb.append(String.format("Current date: %s\r\n", LocalDateTime.now()));
 
-            final Writer stackTrace = new StringWriter();
-            final PrintWriter printWriter = new PrintWriter(stackTrace);
+            final var stackTrace = new StringWriter();
+            final var printWriter = new PrintWriter(stackTrace);
             e.printStackTrace(printWriter);
             sb.append(String.format("Stack trace: %s\r\n", stackTrace.toString()));
 

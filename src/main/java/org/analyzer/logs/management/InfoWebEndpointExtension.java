@@ -2,6 +2,7 @@ package org.analyzer.logs.management;
 
 import org.analyzer.logs.service.management.LogsManagementService;
 import org.analyzer.logs.service.management.StatisticsManagementService;
+import org.analyzer.logs.service.management.UserQueriesManagementService;
 import org.analyzer.logs.service.management.UsersManagementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
@@ -26,6 +27,8 @@ public class InfoWebEndpointExtension {
     private UsersManagementService usersManagementService;
     @Autowired
     private StatisticsManagementService statisticsManagementService;
+    @Autowired
+    private UserQueriesManagementService userQueriesManagementService;
 
     @ReadOperation
     public Mono<WebEndpointResponse<Map<String, Object>>> info() {
@@ -56,6 +59,15 @@ public class InfoWebEndpointExtension {
                                             tuple.getT1()
                                                     ? tuple.getT2()
                                                     : Collections.singletonMap("collection-exists", false)
+                                );
+                            }))
+                    .mergeWith(this.userQueriesManagementService.existsCollection()
+                            .zipWith(this.userQueriesManagementService.indexesInfo())
+                            .doOnNext(tuple -> {
+                                info.put("mongodb-queries",
+                                        tuple.getT1()
+                                                ? tuple.getT2()
+                                                : Collections.singletonMap("collection-exists", false)
                                 );
                             }))
                     .then(Mono.just(new WebEndpointResponse<>(info)));

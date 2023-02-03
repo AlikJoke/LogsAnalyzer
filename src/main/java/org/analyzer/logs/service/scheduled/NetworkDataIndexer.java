@@ -83,13 +83,13 @@ public class NetworkDataIndexer implements Runnable {
 
         log.trace("Logs indexing for user {} completed: {}", this.user.getUsername(), statistics.getId());
 
-        final IndexingNotificationSettings notificationSettings = this.indexingSettings.getNotificationSettings();
+        final var notificationSettings = this.indexingSettings.getNotificationSettings();
         if (!notificationSettings.isAggregationNotificationsEnabled()) {
             log.trace("Aggregation notifications for user {} disabled", this.user.getUsername());
             return;
         }
 
-        final String statsJson = this.jsonConverter.convertToJson(statistics.getStats());
+        final var statsJson = this.jsonConverter.convertToJson(statistics.getStats());
         if (this.indexingSettings.getNotificationSettings().getNotifyToEmail() != null) {
             this.mailNotifier.notifySuccess(statistics.getId(), statsJson, this.indexingSettings.getNotificationSettings());
             log.info("Success mail notification for user {} sent", this.user.getUsername());

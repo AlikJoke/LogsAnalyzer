@@ -73,6 +73,8 @@ public class ElasticLogsService implements LogsService {
     private JsonConverter jsonConverter;
     @Autowired
     private ReactiveRedisTemplate<String, Object> redisTemplate;
+    @Autowired
+    private CurrentUserQueryService currentUserQueryService;
 
     @Value("${elasticsearch.default.indexing.buffer_size:2500}")
     private int elasticIndexBufferSize;
@@ -132,8 +134,22 @@ public class ElasticLogsService implements LogsService {
     @Nonnull
     @Override
     public Flux<String> searchByQuery(@Nonnull SearchQuery searchQuery) {
-        return searchByFilterQuery(searchQuery)
-                    .map(LogRecordEntity::getSource);
+        return this.userAccessor.get()
+                                .map(UserEntity::getHash)
+                                .doOnNext(userKey ->
+                                    this.taskExecutor.execute(
+                                            () -> this.currentUserQueryService
+                                                            .create(searchQuery)
+                                                            .contextWrite(this.userAccessor.set(userKey))
+                                                            .subscribe(
+                                                                    savedQuery -> logger.debug("Success query saving: {}", savedQuery),
+                                                                    ex -> logger.error("", ex)
+                                                            )
+                                    )
+                                )
+                                .thenMany(searchByFilterQuery(searchQuery)
+                                            .map(LogRecordEntity::getSource)
+                                );
     }
 
     @NonNull
@@ -146,7 +162,7 @@ public class ElasticLogsService implements LogsService {
     @NonNull
     @Override
     public Mono<LogsStatisticsEntity> findStatisticsByKey(@NonNull String key) {
-        final Mono<Object> entityFromCache = this.redisTemplate.opsForValue().get(createStatsRedisKey(key));
+        final var entityFromCache = this.redisTemplate.opsForValue().get(createStatsRedisKey(key));
         final Mono<LogsStatisticsEntity> entityFromStorage =
                 this.statisticsRepository.findByDataQueryRegexOrId(key, key)
                             .flatMap(stats ->
@@ -191,10 +207,10 @@ public class ElasticLogsService implements LogsService {
     }
 
     private Mono<Void> deleteAllStatsKeys() {
-        final ScanOptions scanOptions = ScanOptions
-                                            .scanOptions()
-                                                .match(STATISTICS_CACHE + ":*")
-                                            .build();
+        final var scanOptions = ScanOptions
+                                    .scanOptions()
+                                        .match(STATISTICS_CACHE + ":*")
+                                    .build();
         return this.redisTemplate.scan(scanOptions)
                                     .transform(this.redisTemplate::delete)
                                     .then();
@@ -235,7 +251,7 @@ public class ElasticLogsService implements LogsService {
             final Map<String, Object> stats,
             final String userKey) {
 
-        final LogsStatisticsEntity entity =
+        final var entity =
                 new LogsStatisticsEntity()
                         .setId(analyzeQuery.getId())
                         .setCreated(LocalDateTime.now())
