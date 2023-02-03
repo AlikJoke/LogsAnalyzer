@@ -17,8 +17,8 @@ public class RedisCacheConfig {
     public ReactiveRedisTemplate<String, Object> userReactiveRedisTemplate(
             ReactiveRedisConnectionFactory factory,
             ObjectMapper mapper) {
-        final StringRedisSerializer keySerializer = new StringRedisSerializer();
-        final GenericJackson2JsonRedisSerializer valueSerializer = new GenericJackson2JsonRedisSerializer(
+        final var keySerializer = new StringRedisSerializer();
+        final var valueSerializer = new GenericJackson2JsonRedisSerializer(
                 createObjectMapper(), JacksonObjectReader.create(), JacksonObjectWriter.create()
         );
         final RedisSerializationContext.RedisSerializationContextBuilder<String, Object> builder =
@@ -28,7 +28,7 @@ public class RedisCacheConfig {
     }
 
     private ObjectMapper createObjectMapper() {
-        final ObjectMapper mapper = new ObjectMapper();
+        final var mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         GenericJackson2JsonRedisSerializer.registerNullValueSerializer(mapper, null);
 
