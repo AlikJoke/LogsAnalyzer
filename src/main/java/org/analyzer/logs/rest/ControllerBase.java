@@ -3,10 +3,7 @@ package org.analyzer.logs.rest;
 import org.analyzer.logs.service.exceptions.UserAlreadyDisabledException;
 import org.analyzer.logs.service.exceptions.UserAlreadyExistsException;
 import org.analyzer.logs.service.exceptions.UserNotFoundException;
-import org.springframework.http.CacheControl;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -20,7 +17,6 @@ import reactor.util.Loggers;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -43,21 +39,33 @@ public class ControllerBase {
     }
 
     @ExceptionHandler(RuntimeException.class)
-    protected Mono<ServerResponse> commonHandler(RuntimeException ex) {
+    protected Mono<ResponseEntity<ExceptionResource>> commonHandler(RuntimeException ex) {
         logger.error("", ex);
-        return ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).body(exceptionToString(ex), String.class);
+        return exceptionToString(ex)
+                    .map(ExceptionResource::new)
+                    .map(resource ->
+                            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR.value()).body(resource)
+                    );
     }
 
     @ExceptionHandler(HttpClientErrorException.class)
-    protected Mono<ServerResponse> clientErrorHandler(HttpClientErrorException ex) {
+    protected Mono<ResponseEntity<ExceptionResource>> clientErrorHandler(HttpClientErrorException ex) {
         logger.error("", ex);
-        return ServerResponse.status(ex.getStatusCode()).body(exceptionToString(ex), String.class);
+        return exceptionToString(ex)
+                .map(ExceptionResource::new)
+                .map(resource ->
+                        ResponseEntity.status(ex.getStatusCode()).body(resource)
+                );
     }
 
     @ExceptionHandler({ UserAlreadyDisabledException.class, UserNotFoundException.class, UserAlreadyExistsException.class})
-    protected Mono<ServerResponse> userNotFoundHandler(RuntimeException ex) {
+    protected Mono<ResponseEntity<ExceptionResource>> userNotFoundHandler(RuntimeException ex) {
         logger.error("", ex);
-        return ServerResponse.badRequest().body(exceptionToString(ex), String.class);
+        return exceptionToString(ex)
+                .map(ExceptionResource::new)
+                .map(resource ->
+                        ResponseEntity.badRequest().body(resource)
+                );
     }
 
     protected Set<HttpMethod> supportedMethods() {

@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .authorizeExchange()
                     .pathMatchers("/actuator/**")
                     .hasAuthority(ADMIN_ROLE)
-                    .pathMatchers("/user/create", "/anonymous")
+                    .pathMatchers("/user/create", "/anonymous", "/docs", "/swagger-ui.html", "/webjars/**")
                     .permitAll()
                 .anyExchange()
                     .hasAuthority(USER_ROLE)
