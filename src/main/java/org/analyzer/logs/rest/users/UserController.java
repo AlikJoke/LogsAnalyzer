@@ -27,9 +27,6 @@ public class UserController extends ControllerBase {
     private static final Logger logger = Loggers.getLogger(ElasticLogsService.class);
 
     static final String BASE_PATH = "/user";
-    static final String PATH_CURRENT = "/current";
-    static final String PATH_DISABLE = "/disable";
-    static final String PATH_CREATE = "/create";
 
     @Autowired
     private UserService userService;
@@ -39,7 +36,7 @@ public class UserController extends ControllerBase {
     @Lazy
     private LinksCollector linksCollector;
 
-    @GetMapping(PATH_CURRENT)
+    @GetMapping
     @NamedEndpoint(value = "self", includeTo = UserResource.class)
     @NamedEndpoint(value = "current.user", includeTo = RootEntrypointResource.class)
     public Mono<UserResource> read(Mono<Principal> principalMono) {
@@ -50,7 +47,7 @@ public class UserController extends ControllerBase {
                 .onErrorResume(this::onError);
     }
 
-    @PostMapping(PATH_CREATE)
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @NamedEndpoint(value = "create.user", includeTo = AnonymousRootEntrypointResource.class)
     public Mono<UserResource> create(@RequestBody Mono<UserResource> resource) {
@@ -64,7 +61,7 @@ public class UserController extends ControllerBase {
                                 .onErrorResume(this::onError);
     }
 
-    @DeleteMapping(PATH_DISABLE)
+    @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @NamedEndpoint(value = "disable", includeTo = UserResource.class)
     public Mono<Void> disable(Mono<Principal> principal) {
@@ -75,8 +72,7 @@ public class UserController extends ControllerBase {
                 .onErrorResume(this::onError);
     }
 
-    @PutMapping("/update")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PutMapping
     @NamedEndpoint(value = "edit", includeTo = UserResource.class)
     public Mono<UserResource> update(@RequestBody Mono<UserResource> resource) {
         final var user = resource.flatMap(

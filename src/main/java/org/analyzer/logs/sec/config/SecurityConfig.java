@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -39,7 +40,9 @@ public class SecurityConfig {
                 .authorizeExchange()
                     .pathMatchers("/actuator/**")
                     .hasAuthority(ADMIN_ROLE)
-                    .pathMatchers("/user/create", "/anonymous", "/docs", "/swagger-ui.html", "/webjars/**")
+                    .pathMatchers(HttpMethod.POST, "/user")
+                    .permitAll()
+                    .pathMatchers("/anonymous", "/docs", "/swagger-ui.html", "/webjars/**")
                     .permitAll()
                 .anyExchange()
                     .hasAuthority(USER_ROLE)

@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.UUID;
 
-public abstract class UserFixtures {
+public abstract class TestFixtures {
 
     public static UserEntity createUser(final String username) {
 

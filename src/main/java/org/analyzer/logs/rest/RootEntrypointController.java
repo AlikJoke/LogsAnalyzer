@@ -19,11 +19,11 @@ public class RootEntrypointController extends ControllerBase {
 
     @GetMapping(PATH)
     public Mono<RootEntrypointResource> read() {
-        return Mono.just(new RootEntrypointResource(this.linksCollector.collectFor(RootEntrypointResource.class)));
+        return Mono.fromSupplier(() -> new RootEntrypointResource(this.linksCollector.collectFor(RootEntrypointResource.class)));
     }
 
     @GetMapping(PATH_ANON)
     public Mono<AnonymousRootEntrypointResource> readAnonymous() {
-        return Mono.just(new AnonymousRootEntrypointResource(this.linksCollector.collectFor(AnonymousRootEntrypointResource.class)));
+        return Mono.fromSupplier(() -> new AnonymousRootEntrypointResource(this.linksCollector.collectFor(AnonymousRootEntrypointResource.class)));
     }
 }
