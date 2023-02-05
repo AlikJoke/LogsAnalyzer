@@ -1,5 +1,6 @@
 package org.analyzer.logs.rest.records;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -22,6 +23,7 @@ import java.util.Map;
 @ToString
 @Accessors(fluent = true)
 @EqualsAndHashCode
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class RequestSearchQuery implements SearchQuery {
 
     private final String query;

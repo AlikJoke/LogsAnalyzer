@@ -5,7 +5,7 @@ import org.analyzer.logs.sec.DefaultCurrentUserAccessor;
 import org.analyzer.logs.service.CurrentUserAccessor;
 import org.analyzer.logs.service.UserService;
 import org.analyzer.logs.service.exceptions.UserNotFoundException;
-import org.analyzer.logs.test.rest.fixtures.TestFixtures;
+import org.analyzer.logs.test.fixtures.TestFixtures;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import reactor.util.context.Context;
 
-import static org.analyzer.logs.test.rest.fixtures.TestFixtures.TEST_USER;
+import static org.analyzer.logs.test.fixtures.TestFixtures.TEST_USER;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;

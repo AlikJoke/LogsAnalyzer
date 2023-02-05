@@ -18,7 +18,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 
 import static org.analyzer.logs.test.rest.config.TestSecurityConfig.ADMIN_ROLE;
 import static org.analyzer.logs.test.rest.config.TestSecurityConfig.USER_ROLE;
-import static org.analyzer.logs.test.rest.fixtures.TestFixtures.TEST_USER;
+import static org.analyzer.logs.test.fixtures.TestFixtures.TEST_USER;
 
 @ExtendWith(SpringExtension.class)
 @WebFluxTest(RootEntrypointController.class)

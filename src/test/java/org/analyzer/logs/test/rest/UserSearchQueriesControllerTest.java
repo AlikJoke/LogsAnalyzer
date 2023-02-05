@@ -6,7 +6,7 @@ import org.analyzer.logs.rest.queries.UserQueryResource;
 import org.analyzer.logs.rest.queries.UserSearchQueriesController;
 import org.analyzer.logs.service.CurrentUserQueryService;
 import org.analyzer.logs.test.rest.config.TestSecurityConfig;
-import org.analyzer.logs.test.rest.fixtures.TestFixtures;
+import org.analyzer.logs.test.fixtures.TestFixtures;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.analyzer.logs.test.rest.config.TestSecurityConfig.USER_ROLE;
-import static org.analyzer.logs.test.rest.fixtures.TestFixtures.TEST_USER;
+import static org.analyzer.logs.test.fixtures.TestFixtures.TEST_USER;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;

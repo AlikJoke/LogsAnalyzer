@@ -77,8 +77,10 @@ public class DefaultCurrentUserQueryService implements CurrentUserQueryService {
     @NonNull
     private Mono<Void> deleteAllMoreThanLimit(@NonNull String userHash) {
         final Sort sort = Sort.by(Sort.Direction.DESC, "created");
-        final Pageable pageable = PageRequest.of(2, this.userQueriesMaxCount, sort);
-        return this.userQueryRepository.deleteAllByUserKey(userHash, pageable)
-                                        .then();
+        final Pageable pageable = PageRequest.of(1, this.userQueriesMaxCount, sort);
+        return this.userQueryRepository.deleteAll(
+                    this.userQueryRepository.findAllByUserKey(userHash, pageable)
+                )
+                .then();
     }
 }

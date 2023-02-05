@@ -8,7 +8,7 @@ import org.analyzer.logs.service.CurrentUserAccessor;
 import org.analyzer.logs.service.LogsService;
 import org.analyzer.logs.service.std.StdMapLogsStatistics;
 import org.analyzer.logs.test.rest.config.TestSecurityConfig;
-import org.analyzer.logs.test.rest.fixtures.TestFixtures;
+import org.analyzer.logs.test.fixtures.TestFixtures;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +29,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import static org.analyzer.logs.test.rest.config.TestSecurityConfig.USER_ROLE;
-import static org.analyzer.logs.test.rest.fixtures.TestFixtures.TEST_USER;
+import static org.analyzer.logs.test.fixtures.TestFixtures.TEST_USER;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;

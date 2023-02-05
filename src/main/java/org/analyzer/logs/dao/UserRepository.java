@@ -14,10 +14,10 @@ public interface UserRepository extends ReactiveMongoRepository<UserEntity, Stri
     @Query("{ 'settings.cleaning_interval' : { $gt : 0 } }")
     Flux<UserEntity> findAllWithClearingSettings();
 
-    @Query("{ 'settings.scheduled_indexing_settings.notification_settings' : { $ne : null }, 'active' : true, 'modified' : { $gt : '?0' } }")
+    @Query("{ 'settings.scheduled_indexing_settings.notification_settings' : { $ne : null }, 'active' : true, 'modified' : { $gt : ?0 } }")
     Flux<UserEntity> findAllWithScheduledIndexingSettings(@Nonnull final LocalDateTime modifiedAfter);
 
-    @Query(value = "{ 'settings.scheduled_indexing_settings.notification_settings.notify_telegram' : { $ne : null }, 'active' : true")
+    @Query("{ 'settings.scheduled_indexing_settings.notification_settings.notify_telegram' : { $ne : null }, 'active' : true }")
     Flux<UserEntity> findAllWithTelegramId();
 
     @Nonnull

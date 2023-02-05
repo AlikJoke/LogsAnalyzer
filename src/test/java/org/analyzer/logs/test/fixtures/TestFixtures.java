@@ -1,4 +1,4 @@
-package org.analyzer.logs.test.rest.fixtures;
+package org.analyzer.logs.test.fixtures;
 
 import org.analyzer.logs.model.*;
 

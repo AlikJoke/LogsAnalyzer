@@ -10,7 +10,7 @@ import org.analyzer.logs.service.exceptions.UserAlreadyDisabledException;
 import org.analyzer.logs.service.exceptions.UserAlreadyExistsException;
 import org.analyzer.logs.service.exceptions.UserNotFoundException;
 import org.analyzer.logs.test.rest.config.TestSecurityConfig;
-import org.analyzer.logs.test.rest.fixtures.TestFixtures;
+import org.analyzer.logs.test.fixtures.TestFixtures;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -27,7 +27,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.analyzer.logs.test.rest.config.TestSecurityConfig.USER_ROLE;
-import static org.analyzer.logs.test.rest.fixtures.TestFixtures.TEST_USER;
+import static org.analyzer.logs.test.fixtures.TestFixtures.TEST_USER;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
