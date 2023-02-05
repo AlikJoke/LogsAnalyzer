@@ -15,14 +15,14 @@ public interface LogsStatisticsRepository extends ReactiveMongoRepository<LogsSt
     Mono<LogsStatisticsEntity> findByDataQueryRegexOrId(@Nonnull String statisticsKey, @Nonnull String id);
 
     @Nonnull
-    @Query("{ 'user_key' : '?0', 'created' : { $lte : '?1' } }")
+    @Query("{ 'user_key' : '?0', 'created' : { $lte : ?1 } }")
     Flux<LogsStatisticsEntity> findAllByUserKeyAndCreationDateBefore(
             @Nonnull String userKey,
             @Nonnull LocalDateTime creationDate);
 
     @Nonnull
-    @Query(value = "{ 'user_key' : '?0', 'created' : { $lte : '?1' } }", fields = "id", delete = true)
-    Flux<String> deleteAllByUserKeyAndCreationDateBefore(
+    @Query(value = "{ 'user_key' : '?0', 'created' : { $lte : ?1 } }", delete = true)
+    Flux<LogsStatisticsEntity> deleteAllByUserKeyAndCreationDateBefore(
             @Nonnull String userKey,
             @Nonnull LocalDateTime creationDate);
 }

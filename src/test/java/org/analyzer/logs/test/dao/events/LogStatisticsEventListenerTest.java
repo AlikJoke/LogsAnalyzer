@@ -1,4 +1,4 @@
-package org.analyzer.logs.test.events;
+package org.analyzer.logs.test.dao.events;
 
 public class LogStatisticsEventListenerTest {
 }

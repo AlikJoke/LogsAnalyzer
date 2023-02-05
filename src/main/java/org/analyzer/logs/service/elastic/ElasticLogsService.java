@@ -193,6 +193,7 @@ public class ElasticLogsService implements LogsService {
     @Override
     public Flux<String> deleteAllStatisticsByUserKeyAndCreationDate(@NonNull String userKey, @NonNull LocalDateTime beforeDate) {
         return this.statisticsRepository.deleteAllByUserKeyAndCreationDateBefore(userKey, beforeDate)
+                                        .map(LogsStatisticsEntity::getId)
                                         .transform(indexingKeys ->
                                                 deleteAllStatsKeys()
                                                     .thenReturn(indexingKeys)

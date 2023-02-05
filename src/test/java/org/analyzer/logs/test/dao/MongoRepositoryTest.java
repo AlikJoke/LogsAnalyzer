@@ -7,7 +7,7 @@ import org.junit.jupiter.api.BeforeAll;
 
 import java.io.IOException;
 
-abstract class MongoRepositoryTest {
+public abstract class MongoRepositoryTest {
 
     @BeforeAll
     public static void beforeAll() throws IOException {

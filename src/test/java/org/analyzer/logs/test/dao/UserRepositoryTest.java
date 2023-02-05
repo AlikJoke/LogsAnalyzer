@@ -158,8 +158,6 @@ public class UserRepositoryTest extends MongoRepositoryTest {
                 .verifyComplete();
     }
 
-
-
     @AfterEach
     public void clearData() {
         this.userRepository.deleteAll().block();
