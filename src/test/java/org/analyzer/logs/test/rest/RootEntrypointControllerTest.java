@@ -11,19 +11,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import static org.analyzer.logs.test.rest.config.TestSecurityConfig.ADMIN_ROLE;
 import static org.analyzer.logs.test.rest.config.TestSecurityConfig.USER_ROLE;
+import static org.analyzer.logs.test.rest.fixtures.TestFixtures.TEST_USER;
 
 @ExtendWith(SpringExtension.class)
 @WebFluxTest(RootEntrypointController.class)
 @Import(TestSecurityConfig.class)
 public class RootEntrypointControllerTest {
-
-    private static final String TEST_USER = "test";
 
     @Autowired
     private WebTestClient webClient;
@@ -40,6 +40,8 @@ public class RootEntrypointControllerTest {
                 .exchange()
                 .expectStatus()
                 .isOk()
+                .expectHeader()
+                .contentType(MediaType.APPLICATION_JSON)
                 .expectBody(RootEntrypointResource.class)
                 .isEqualTo(new RootEntrypointResource(this.linksCollector.collectFor(RootEntrypointResource.class)));
     }
@@ -76,6 +78,8 @@ public class RootEntrypointControllerTest {
                 .exchange()
                 .expectStatus()
                 .isOk()
+                .expectHeader()
+                .contentType(MediaType.APPLICATION_JSON)
                 .expectBody(AnonymousRootEntrypointResource.class)
                 .isEqualTo(new AnonymousRootEntrypointResource(this.linksCollector.collectFor(AnonymousRootEntrypointResource.class)));
     }

@@ -4,9 +4,13 @@ import org.analyzer.logs.model.*;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class TestFixtures {
+
+    public static final String TEST_USER = "test";
 
     public static UserEntity createUser(final String username) {
 
@@ -45,5 +49,24 @@ public abstract class TestFixtures {
                     .setActive(true)
                     .setEncodedPassword("-")
                     .setSettings(settings);
+    }
+
+    public static LogsStatisticsEntity createStatisticsEntity(final String userKey) {
+        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        return new LogsStatisticsEntity()
+                .setCreated(LocalDateTime.now().minusDays(1))
+                .setId(UUID.randomUUID().toString())
+                .setTitle("some-stat")
+                .setDataQuery("{\"query\":\"level.keyword:ERROR\"}")
+                .setUserKey(userKey)
+                .setStats(Map.of("errors-count", rnd.nextInt(100), "errors-frequencies-by-category", Map.of("category1", rnd.nextInt(25), "category2", rnd.nextInt(25))));
+    }
+
+    public static UserSearchQueryEntity createUserSearchQueryEntity(final String userKey) {
+        return new UserSearchQueryEntity()
+                .setCreated(LocalDateTime.now().minusDays(1))
+                .setId(UUID.randomUUID().toString())
+                .setQuery("{\"query\":\"level.keyword:ERROR\"}")
+                .setUserKey(userKey);
     }
 }

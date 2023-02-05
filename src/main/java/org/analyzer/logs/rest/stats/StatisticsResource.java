@@ -1,5 +1,7 @@
 package org.analyzer.logs.rest.stats;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
 import org.analyzer.logs.model.LogsStatisticsEntity;
@@ -11,13 +13,19 @@ import java.util.List;
 import java.util.Map;
 
 @Value
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class StatisticsResource {
 
+    @NonNull
     String id;
     String statisticsName;
+    @NonNull
     String dataQuery;
+    @NonNull
     LocalDateTime createdAt;
+    @NonNull
     Map<String, Object> statistics;
+    @NonNull
     List<ResourceLink> links;
 
     public StatisticsResource(

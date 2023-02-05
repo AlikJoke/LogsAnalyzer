@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -51,6 +52,7 @@ public class LogsStatisticsController extends ControllerBase {
     @NamedEndpoint(value = "self", includeTo = StatisticsResource.class)
     public Mono<StatisticsResource> find(@PathVariable("statisticsKey") String statisticsKey) {
         return this.service.findStatisticsByKey(statisticsKey)
+                            .switchIfEmpty(Mono.error(() -> new HttpClientErrorException(HttpStatus.NOT_FOUND)))
                             .map(stats -> new StatisticsResource(stats, this.linksCollector))
                             .onErrorResume(this::onError);
     }

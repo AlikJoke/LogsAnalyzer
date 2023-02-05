@@ -19,7 +19,7 @@ public class StdMapLogsStatistics extends HashMap<String, Flux<?>> implements Ma
     public static final String MOST_FREQUENT_WARNS = "most-frequent-warns";
     public static final String ERRORS_AVERAGE_INTERVAL = "errors-average-interval";
     public static final String ERRORS_FREQUENCIES_BY_CATEGORY = "errors-frequencies-by-category";
-    public static final String AVERAGE_WRITE_RATE = "average-write-rage";
+    public static final String AVERAGE_WRITE_RATE = "average-write-rate";
     public static final String RECORDS_FREQUENCY_BY_CATEGORY = "records-frequency-by-category";
     public static final String RECORDS_FREQUENCY_BY_THREAD = "records-frequency-by-thread";
     public static final String ALL_RECORDS_COUNT = "common-count";

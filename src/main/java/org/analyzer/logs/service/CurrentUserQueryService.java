@@ -19,5 +19,5 @@ public interface CurrentUserQueryService {
     Mono<Void> deleteAll();
 
     @Nonnull
-    Mono<Void> delete(@Nonnull String queryId);
+    Mono<Boolean> delete(@Nonnull String queryId);
 }

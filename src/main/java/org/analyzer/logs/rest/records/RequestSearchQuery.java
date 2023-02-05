@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
@@ -20,6 +21,7 @@ import java.util.Map;
 @Getter
 @ToString
 @Accessors(fluent = true)
+@EqualsAndHashCode
 public class RequestSearchQuery implements SearchQuery {
 
     private final String query;

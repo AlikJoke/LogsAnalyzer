@@ -69,8 +69,9 @@ public class DefaultCurrentUserQueryService implements CurrentUserQueryService {
 
     @NonNull
     @Override
-    public Mono<Void> delete(@NonNull String queryId) {
-        return this.userQueryRepository.deleteById(queryId);
+    public Mono<Boolean> delete(@NonNull String queryId) {
+        return this.userQueryRepository.deleteById(queryId)
+                                        .map(v -> true);
     }
 
     @NonNull

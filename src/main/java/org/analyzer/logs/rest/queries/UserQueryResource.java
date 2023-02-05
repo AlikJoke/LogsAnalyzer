@@ -1,5 +1,7 @@
 package org.analyzer.logs.rest.queries;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
 import org.analyzer.logs.model.UserSearchQueryEntity;
@@ -10,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Value
+@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class UserQueryResource {
 
     @NonNull

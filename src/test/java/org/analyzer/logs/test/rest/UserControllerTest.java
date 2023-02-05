@@ -27,6 +27,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.analyzer.logs.test.rest.config.TestSecurityConfig.USER_ROLE;
+import static org.analyzer.logs.test.rest.fixtures.TestFixtures.TEST_USER;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,8 +36,6 @@ import static org.mockito.Mockito.when;
 @WebFluxTest(UserController.class)
 @Import(TestSecurityConfig.class)
 public class UserControllerTest {
-
-    private static final String TEST_USER = "test";
 
     @Autowired
     private WebTestClient webClient;
@@ -60,6 +59,8 @@ public class UserControllerTest {
                 .exchange()
                 .expectStatus()
                 .isOk()
+                .expectHeader()
+                .contentType(MediaType.APPLICATION_JSON)
                 .expectBody(UserResource.class)
                 .isEqualTo(UserResource.convertFrom(user, this.linksCollector));
     }
@@ -76,6 +77,8 @@ public class UserControllerTest {
                 .exchange()
                 .expectStatus()
                 .isBadRequest()
+                .expectHeader()
+                .contentType(MediaType.APPLICATION_JSON)
                 .expectBody(ExceptionResource.class);
     }
 
@@ -108,6 +111,8 @@ public class UserControllerTest {
                 .exchange()
                 .expectStatus()
                 .isBadRequest()
+                .expectHeader()
+                .contentType(MediaType.APPLICATION_JSON)
                 .expectBody(ExceptionResource.class);
     }
 
@@ -133,6 +138,8 @@ public class UserControllerTest {
                 .exchange()
                 .expectStatus()
                 .isCreated()
+                .expectHeader()
+                .contentType(MediaType.APPLICATION_JSON)
                 .expectBody(UserResource.class)
                 .isEqualTo(createdUser);
 
@@ -165,6 +172,8 @@ public class UserControllerTest {
                 .exchange()
                 .expectStatus()
                 .isBadRequest()
+                .expectHeader()
+                .contentType(MediaType.APPLICATION_JSON)
                 .expectBody(ExceptionResource.class);
 
         @SuppressWarnings("unchecked")

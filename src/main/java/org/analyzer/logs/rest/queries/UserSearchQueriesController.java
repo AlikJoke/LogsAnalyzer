@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -34,7 +35,9 @@ public class UserSearchQueriesController extends ControllerBase {
     @NamedEndpoint(value = "delete", includeTo = UserQueryResource.class)
     public Mono<Void> delete(@PathVariable("queryId") String queryId) {
         return this.userQueryService.delete(queryId)
-                                    .onErrorResume(this::onError);
+                                    .switchIfEmpty(Mono.error(() -> new HttpClientErrorException(HttpStatus.NOT_FOUND)))
+                                    .onErrorResume(this::onError)
+                                    .then();
     }
 
     @DeleteMapping

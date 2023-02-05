@@ -34,7 +34,9 @@ public class DefaultCurrentUserAccessor implements CurrentUserAccessor {
     @NonNull
     @Override
     public Context set(@NonNull String userKey) {
-        return set(userService.findByUserHash(userKey));
+        return set(userService.findByUserHash(userKey)
+                                .onErrorStop()
+        );
     }
 
     @NonNull
