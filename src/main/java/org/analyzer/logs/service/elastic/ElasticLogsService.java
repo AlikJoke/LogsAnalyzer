@@ -12,9 +12,9 @@ import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.*;
 import org.analyzer.logs.service.std.DefaultLogsAnalyzer;
 import org.analyzer.logs.service.std.postfilters.PostFiltersSequenceBuilder;
+import org.analyzer.logs.service.util.ArchiveUtil;
 import org.analyzer.logs.service.util.JsonConverter;
 import org.analyzer.logs.service.util.LongRunningTaskExecutor;
-import org.analyzer.logs.service.util.ZipUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.elasticsearch.client.elc.ReactiveElasticsearchTemplate;
@@ -25,7 +25,6 @@ import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 import reactor.util.function.Tuple2;
@@ -52,7 +51,7 @@ public class ElasticLogsService implements LogsService {
     @Autowired
     private LogRecordsParser parser;
     @Autowired
-    private ZipUtil zipUtil;
+    private ArchiveUtil zipUtil;
     @Autowired
     private SearchQueryParser<StringQuery> queryParser;
     @Autowired
@@ -76,7 +75,7 @@ public class ElasticLogsService implements LogsService {
     @Autowired
     private CurrentUserQueryService currentUserQueryService;
 
-    @Value("${elasticsearch.default.indexing.buffer_size:2500}")
+    @Value("${elasticsearch.default.indexing.buffer_size:2000}")
     private int elasticIndexBufferSize;
 
     private Counter indexedRecordsCounter;
@@ -112,11 +111,8 @@ public class ElasticLogsService implements LogsService {
                                 .flat(logFile)
                                 .log(logger)
                                 .doOnNext(file -> this.indexedFilesCounter.increment())
-                                .parallel()
-                                .runOn(Schedulers.parallel())
-                                .map(file -> this.parser.parse(this.logKeysFactory.createIndexedLogFileKey(file.getName(), indexingKey.getT1(), indexingKey.getT2()), file, recordFormat))
+                                .map(file -> this.parser.parse(this.logKeysFactory.createIndexedLogFileKey(indexingKey.getT1(), indexingKey.getT2(), file.getName()), file, recordFormat))
                                 .flatMap(records -> records
-                                                        .cache()
                                                         .transform(recordsFlux -> sendToAnalyzeLogs(recordsFlux, indexingKey))
                                                         .buffer(this.elasticIndexBufferSize)
                                                         .doOnNext(buffer -> this.indexedRecordsCounter.increment(buffer.size()))

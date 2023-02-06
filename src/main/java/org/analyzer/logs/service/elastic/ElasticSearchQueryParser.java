@@ -21,7 +21,7 @@ public class ElasticSearchQueryParser implements SearchQueryParser<StringQuery> 
     private static final String QUERY_STRING_BODY_TEMPLATE = """
             {"query_string":
                 {
-                    "query": "(%s) and id.keyword:%s#*"
+                    "query": "(%s) AND (id.keyword:*%s*)"
                 }
             }""";
 

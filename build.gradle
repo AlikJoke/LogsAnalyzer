@@ -30,6 +30,7 @@ dependencies {
 	implementation 'org.springframework:spring-aspects'
 	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.0.2'
 	implementation 'commons-io:commons-io:2.11.0'
+	implementation 'org.apache.commons:commons-compress:1.22'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
