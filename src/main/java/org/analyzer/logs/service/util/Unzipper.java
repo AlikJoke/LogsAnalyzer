@@ -1,10 +1,10 @@
 package org.analyzer.logs.service.util;
 
 import lombok.NonNull;
+import reactor.core.publisher.Flux;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.util.List;
 import java.util.UUID;
 
 abstract class Unzipper {
@@ -12,10 +12,10 @@ abstract class Unzipper {
     protected abstract boolean supported(int markerByte);
 
     @NonNull
-    protected abstract List<File> unzip(@NonNull File archive, @NonNull File targetDir) throws IOException;
+    protected abstract Flux<File> unzip(@NonNull File archive, @NonNull File targetDir) throws IOException;
 
     @NonNull
-    protected final List<File> unzip(@NonNull File file) {
+    protected final Flux<File> unzip(@NonNull File file) {
 
         try {
             final var destDirPath = Files.createTempDirectory(UUID.randomUUID().toString());

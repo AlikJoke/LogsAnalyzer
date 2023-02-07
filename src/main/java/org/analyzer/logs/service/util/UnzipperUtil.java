@@ -4,7 +4,6 @@ import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,20 +12,19 @@ import java.util.List;
 import java.util.function.Predicate;
 
 @Component
-public class ArchiveUtil {
+public class UnzipperUtil {
 
     @Autowired
     private List<Unzipper> unzippers;
 
     @NonNull
-    public Flux<File> flat(@NonNull final Mono<File> zip) {
-        return zip
-                .filter(Predicate.not(this::isArchive))
-                .flux()
-                .switchIfEmpty(zip.flatMapIterable(this::flatArchive));
+    public Flux<File> flat(@NonNull final File file) {
+        return Flux.just(file)
+                    .filter(Predicate.not(this::isArchive))
+                    .switchIfEmpty(flatArchive(file));
     }
 
-    private List<File> flatArchive(@NonNull final File file) {
+    private Flux<File> flatArchive(@NonNull final File file) {
         try {
             try (final var raf = new RandomAccessFile(file, "r")) {
                 final var fileSignature = raf.readInt();
@@ -35,7 +33,8 @@ public class ArchiveUtil {
                                         .filter(unzipper -> unzipper.supported(fileSignature))
                                         .findAny()
                                         .map(unzipper -> unzipper.unzip(file))
-                                        .orElseThrow();
+                                        .orElseThrow()
+                                        .flatMap(this::flat);
             }
         } catch (IOException ex) {
             throw new RuntimeException(ex);

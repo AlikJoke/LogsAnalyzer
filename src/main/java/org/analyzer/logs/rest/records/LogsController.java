@@ -43,7 +43,7 @@ public class LogsController extends ControllerBase {
         return tempFiles
                 .flatMap(tempFile ->
                         this.service
-                                .index(Mono.just(tempFile), recordPattern)
+                                .index(tempFile, recordPattern)
                                 .doOnNext(v -> tempFile.delete())
                 )
                 .map(indexingKey -> new IndexingResult(indexingKey, this.linksCollector.collectFor(IndexingResult.class)))

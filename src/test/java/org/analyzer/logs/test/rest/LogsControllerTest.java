@@ -23,15 +23,16 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-import static org.analyzer.logs.test.rest.config.TestSecurityConfig.USER_ROLE;
 import static org.analyzer.logs.test.fixtures.TestFixtures.TEST_USER;
+import static org.analyzer.logs.test.rest.config.TestSecurityConfig.USER_ROLE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.verify;
@@ -94,13 +95,10 @@ public class LogsControllerTest {
                 .expectBody(IndexingResult.class)
                 .isEqualTo(new IndexingResult(indexingKey, this.linksCollector.collectFor(IndexingResult.class)));
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<Mono<File>> captor = ArgumentCaptor.forClass(Mono.class);
+        final var captor = ArgumentCaptor.forClass(File.class);
         verify(this.logsService).index(captor.capture(), nullable(LogRecordFormat.class));
-        StepVerifier
-                .create(captor.getValue())
-                .expectNextMatches(fileArg -> fileArg.getName().equals(file.getFilename()) && !fileArg.exists())
-                .verifyComplete();
+        assertEquals(captor.getValue().getName(), file.getFilename());
+        assertFalse(captor.getValue().exists());
     }
 
     private MultiValueMap<String, HttpEntity<?>> generateBody(final ClassPathResource file) {

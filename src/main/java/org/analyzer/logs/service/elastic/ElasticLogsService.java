@@ -12,7 +12,7 @@ import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.*;
 import org.analyzer.logs.service.std.DefaultLogsAnalyzer;
 import org.analyzer.logs.service.std.postfilters.PostFiltersSequenceBuilder;
-import org.analyzer.logs.service.util.ArchiveUtil;
+import org.analyzer.logs.service.util.UnzipperUtil;
 import org.analyzer.logs.service.util.JsonConverter;
 import org.analyzer.logs.service.util.LongRunningTaskExecutor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +51,7 @@ public class ElasticLogsService implements LogsService {
     @Autowired
     private LogRecordsParser parser;
     @Autowired
-    private ArchiveUtil zipUtil;
+    private UnzipperUtil zipUtil;
     @Autowired
     private SearchQueryParser<StringQuery> queryParser;
     @Autowired
@@ -98,7 +98,7 @@ public class ElasticLogsService implements LogsService {
     @Override
     @NonNull
     public Mono<String> index(
-            @NonNull Mono<File> logFile,
+            @NonNull File logFile,
             @Nullable LogRecordFormat recordFormat) {
 
         final var uuidKey = Mono.fromSupplier(UUID.randomUUID()::toString);

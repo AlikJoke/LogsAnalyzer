@@ -14,7 +14,7 @@ public interface LogsService {
 
     @Nonnull
     Mono<String> index(
-            @Nonnull Mono<File> logFile,
+            @Nonnull File logFile,
             @Nullable LogRecordFormat patternFormat);
 
     @Nonnull

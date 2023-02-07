@@ -67,16 +67,15 @@ public class NetworkDataIndexer implements Runnable {
                                             .header("Authorization", authToken)
                                             .retrieve()
                                             .bodyToFlux(DataBuffer.class);
-        final var fileMono = DataBufferUtils.write(dataBufferFlux, dataFile.toPath(), StandardOpenOption.CREATE)
-                                        .share()
-                                        .thenReturn(dataFile);
-
-        this.logsService.index(fileMono, createLogRecordFormat())
-                            .flatMap(this.logsService::findStatisticsByKey)
-                            .doOnSuccess(this::onComplete)
-                            .doOnError(this::onError)
-                            .contextWrite(this.userAccessor.set(Mono.just(this.user)))
-                            .subscribe();
+        DataBufferUtils.write(dataBufferFlux, dataFile.toPath(), StandardOpenOption.CREATE)
+                        .share()
+                        .thenReturn(dataFile)
+                        .flatMap(file -> this.logsService.index(file, createLogRecordFormat()))
+                        .flatMap(this.logsService::findStatisticsByKey)
+                        .doOnSuccess(this::onComplete)
+                        .doOnError(this::onError)
+                        .contextWrite(this.userAccessor.set(Mono.just(this.user)))
+                        .subscribe();
     }
 
     private void onComplete(final LogsStatisticsEntity statistics) {

@@ -2,6 +2,7 @@ package org.analyzer.logs.service.util;
 
 import lombok.NonNull;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,7 +21,7 @@ public class StdZipUnzipper extends Unzipper {
 
     @Override
     @NonNull
-    protected List<File> unzip(@NonNull File file, @NonNull File targetDir) throws IOException {
+    protected Flux<File> unzip(@NonNull File file, @NonNull File targetDir) throws IOException {
 
         final List<File> result = new ArrayList<>();
 
@@ -45,6 +46,6 @@ public class StdZipUnzipper extends Unzipper {
             }
         }
 
-        return result;
+        return Flux.fromIterable(result);
     }
 }
