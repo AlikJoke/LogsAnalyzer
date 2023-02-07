@@ -54,7 +54,7 @@ public class LogsControllerTest {
     @Test
     public void shouldSearchLogRecordsByQuery() {
 
-        final var searchQuery = new RequestSearchQuery("category:ERROR", false, null, 1000, null);
+        final var searchQuery = new RequestSearchQuery("category:ERROR", false, null, 1000, 0, null);
 
         final var records = List.of("1", "2", "3", "4");
         when(this.logsService.searchByQuery(searchQuery)).thenReturn(Flux.fromIterable(records));
@@ -70,7 +70,7 @@ public class LogsControllerTest {
                 .expectHeader()
                 .contentType(MediaType.APPLICATION_JSON)
                 .expectBody(LogRecordsCollectionResource.class)
-                .isEqualTo(new LogRecordsCollectionResource(records));
+                .isEqualTo(new LogRecordsCollectionResource(records, new Paging(0, records.size())));
     }
 
     @Test

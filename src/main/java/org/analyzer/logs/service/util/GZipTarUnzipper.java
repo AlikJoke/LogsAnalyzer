@@ -55,7 +55,7 @@ public class GZipTarUnzipper extends Unzipper {
                 } else {
                     createParentDirsIfNeed(tarEntry.getName(), targetDir);
 
-                    final File extractedFile = new File(filePath);
+                    final var extractedFile = new File(filePath);
                     try (final var fos = new FileOutputStream(extractedFile)) {
                         IOUtils.copy(tis, fos);
                     }

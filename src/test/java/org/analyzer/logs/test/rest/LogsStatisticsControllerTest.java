@@ -131,7 +131,7 @@ public class LogsStatisticsControllerTest {
 
     @Test
     public void shouldAnalyzeLogs() {
-        final var analyzeQuery = new RequestAnalyzeQuery("category:ERROR", false, null, 1000, null, null, false, null);
+        final var analyzeQuery = new RequestAnalyzeQuery("category:ERROR", false, null, null, null, false, 1000, 0, null);
         final var mapLogsStatistics = new StdMapLogsStatistics();
         mapLogsStatistics.putOne(StdMapLogsStatistics.ALL_RECORDS_COUNT, Flux.just(12));
         mapLogsStatistics.putOne(StdMapLogsStatistics.ERRORS_COUNT, Flux.just(13));

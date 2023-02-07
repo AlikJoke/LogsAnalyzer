@@ -56,7 +56,7 @@ public class LogsController extends ControllerBase {
     public Mono<LogRecordsCollectionResource> read(@RequestBody RequestSearchQuery query) {
         return this.service.searchByQuery(query)
                                 .collectList()
-                                .map(LogRecordsCollectionResource::new)
+                                .map(records -> new LogRecordsCollectionResource(records, new Paging(query.pageNumber(), records.size())))
                                 .onErrorResume(this::onError);
     }
 

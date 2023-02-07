@@ -8,5 +8,7 @@ import java.util.List;
 
 @JsonSerialize
 @JsonAutoDetect
-public record LogRecordsCollectionResource(@NonNull List<String> records) {
+public record LogRecordsCollectionResource(
+        @NonNull List<String> records,
+        @NonNull Paging page) {
 }

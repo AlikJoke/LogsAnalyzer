@@ -84,7 +84,12 @@ public class ScheduledDataCleaningTask {
             }
 
             @Override
-            public int maxResults() {
+            public int pageSize() {
+                return 0;
+            }
+
+            @Override
+            public int pageNumber() {
                 return 0;
             }
 

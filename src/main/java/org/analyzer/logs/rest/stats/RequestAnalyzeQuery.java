@@ -37,12 +37,13 @@ public class RequestAnalyzeQuery extends RequestSearchQuery implements AnalyzeQu
             @JsonProperty("query") @NonNull String query,
             @JsonProperty("extended_format") boolean extendedFormat,
             @JsonProperty("post_filters") @Nullable Map<String, JsonNode> postFilters,
-            @JsonProperty("max_results") @Nonnegative int maxResults,
             @JsonProperty("sorts") @Nullable Map<String, Sort.Direction> sorts,
             @JsonProperty("aggregations") @Nullable Map<String, JsonNode> aggregations,
             @JsonProperty("save") boolean save,
+            @JsonProperty("page_size") @Nonnegative int pageSize,
+            @JsonProperty("page_number") @Nonnegative int pageNumber,
             @JsonProperty("analyze_result_name") @Nullable String analyzeResultName) {
-        super(query, extendedFormat, postFilters, maxResults, sorts);
+        super(query, extendedFormat, postFilters, pageSize, pageNumber, sorts);
         this.save = save;
         this.analyzeResultName = analyzeResultName;
         this.aggregations = aggregations;
@@ -58,7 +59,7 @@ public class RequestAnalyzeQuery extends RequestSearchQuery implements AnalyzeQu
     @Override
     @JsonIgnore
     public SearchQuery toSearchQuery() {
-        return new RequestSearchQuery(query(), extendedFormat(), postFilters(), maxResults(), sorts());
+        return new RequestSearchQuery(query(), extendedFormat(), postFilters(), pageSize(), pageNumber(), sorts());
     }
 
     @NonNull

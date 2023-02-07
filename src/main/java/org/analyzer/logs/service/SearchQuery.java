@@ -19,7 +19,10 @@ public interface SearchQuery {
     Map<String, JsonNode> postFilters();
 
     @Nonnegative
-    int maxResults();
+    int pageSize();
+
+    @Nonnegative
+    int pageNumber();
 
     @Nonnull
     Map<String, Sort.Direction> sorts();

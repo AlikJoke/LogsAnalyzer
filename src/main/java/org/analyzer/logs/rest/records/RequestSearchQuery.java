@@ -29,7 +29,8 @@ public class RequestSearchQuery implements SearchQuery {
     private final String query;
     private final boolean extendedFormat;
     private final Map<String, JsonNode> postFilters;
-    private final int maxResults;
+    private final int pageSize;
+    private final int pageNumber;
     private final Map<String, Sort.Direction> sorts;
 
     @JsonCreator
@@ -37,18 +38,15 @@ public class RequestSearchQuery implements SearchQuery {
             @JsonProperty("query") @NonNull String query,
             @JsonProperty("extended_format") boolean extendedFormat,
             @JsonProperty("post_filters") @Nullable Map<String, JsonNode> postFilters,
-            @JsonProperty("max_results") @Nonnegative int maxResults,
+            @JsonProperty("page_size") @Nonnegative int pageSize,
+            @JsonProperty("page_number") @Nonnegative int pageNumber,
             @JsonProperty("sorts") @Nullable Map<String, Sort.Direction> sorts) {
         this.query = query;
         this.extendedFormat = extendedFormat;
         this.postFilters = postFilters;
-        this.maxResults = maxResults;
+        this.pageSize = pageSize;
+        this.pageNumber = pageNumber;
         this.sorts = sorts;
-    }
-
-    @Override
-    public int maxResults() {
-        return maxResults;
     }
 
     @NonNull

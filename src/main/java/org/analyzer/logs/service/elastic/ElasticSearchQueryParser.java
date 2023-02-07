@@ -6,6 +6,7 @@ import org.analyzer.logs.service.SearchQueryParser;
 import org.analyzer.logs.service.util.JsonConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.query.StringQuery;
 import org.springframework.data.elasticsearch.core.query.StringQueryBuilder;
@@ -60,8 +61,7 @@ public class ElasticSearchQueryParser implements SearchQueryParser<StringQuery> 
                                     .orElse(Sort.unsorted());
 
             return new StringQueryBuilder(resultQueryString)
-                        .withMaxResults(query.maxResults() == 0 ? maxResultsDefault : query.maxResults())
-                        .withSort(sort)
+                        .withPageable(PageRequest.of(query.pageNumber(), query.pageSize() == 0 ? maxResultsDefault : query.pageSize(), sort))
                         .build();
         });
     }
