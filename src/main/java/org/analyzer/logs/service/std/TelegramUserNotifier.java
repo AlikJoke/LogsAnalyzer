@@ -36,7 +36,6 @@ public class TelegramUserNotifier implements UserNotifier {
                                             .toBodilessEntity(),
                             1
                     )
-                    .onErrorStop()
                     .doOnError(ex -> log.error("", ex))
                     .doOnNext(response -> log.debug("Message sent with code {}", response.getStatusCode()))
                     .then();

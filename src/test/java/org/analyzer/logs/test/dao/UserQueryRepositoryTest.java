@@ -28,7 +28,7 @@ public class UserQueryRepositoryTest extends MongoRepositoryTest {
 
     @Test
     @Order(0)
-    public void shouldNewUserQueryWillBeCreated() {
+    public void shouldNewUserQueryBeCreated() {
         final var query = createUserSearchQueryEntity(UUID.randomUUID().toString());
         StepVerifier
                 .create(this.queryRepository.save(query)
@@ -40,7 +40,7 @@ public class UserQueryRepositoryTest extends MongoRepositoryTest {
 
     @Test
     @Order(1)
-    public void shouldQueryWillBeDeleted() {
+    public void shouldQueryBeDeleted() {
         final var query = createUserSearchQueryEntity(UUID.randomUUID().toString());
         StepVerifier
                 .create(this.queryRepository.save(query)
@@ -53,7 +53,7 @@ public class UserQueryRepositoryTest extends MongoRepositoryTest {
 
     @Test
     @Order(2)
-    public void shouldAllUserQueriesWillBeDeleted() {
+    public void shouldAllUserQueriesBeDeleted() {
         final var userKey = UUID.randomUUID().toString();
         final var query1 = createUserSearchQueryEntity(userKey);
         final var query2 = createUserSearchQueryEntity(userKey);
@@ -77,7 +77,7 @@ public class UserQueryRepositoryTest extends MongoRepositoryTest {
 
     @Test
     @Order(3)
-    public void shouldAllUserQueriesMoreThanMaxWillBeDeleted() {
+    public void shouldAllUserQueriesMoreThanMaxBeDeleted() {
         final var userKey = UUID.randomUUID().toString();
         final var query1 = createUserSearchQueryEntity(userKey).setCreated(LocalDateTime.now().minusDays(1));
         final var query2 = createUserSearchQueryEntity(userKey).setCreated(LocalDateTime.now());

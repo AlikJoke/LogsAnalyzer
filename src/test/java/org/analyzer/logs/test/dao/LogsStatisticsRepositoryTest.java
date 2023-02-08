@@ -24,7 +24,7 @@ public class LogsStatisticsRepositoryTest extends MongoRepositoryTest {
     private LogsStatisticsRepository statisticsRepository;
 
     @Test
-    public void shouldNewStatsWillBeCreatedAndFoundedByQueries() {
+    public void shouldNewStatsBeCreatedAndFoundedByQueries() {
         final var stats = createStatisticsEntity(UUID.randomUUID().toString());
         StepVerifier
                 .create(this.statisticsRepository.save(stats)

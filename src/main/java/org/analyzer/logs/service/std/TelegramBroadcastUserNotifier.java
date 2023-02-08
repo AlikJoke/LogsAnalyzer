@@ -23,6 +23,7 @@ public class TelegramBroadcastUserNotifier implements BroadcastUserNotifier {
     public Mono<Void> broadcast(@NonNull String message) {
         return this.userService.findAllWithTelegramId()
                     .flatMap(user -> this.userNotifier.notify(message, user))
+                    .onErrorContinue((ex, obj) -> log.error("Error send message to " + obj, ex))
                     .then();
     }
 }

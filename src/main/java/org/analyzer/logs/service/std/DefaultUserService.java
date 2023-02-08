@@ -46,10 +46,13 @@ public class DefaultUserService implements UserService {
     @Override
     public Mono<Void> disable(@NonNull String username) {
         return this.userRepository.findById(username)
+                                    .switchIfEmpty(Mono.error(() -> new UserNotFoundException(username)))
                                     .filter(UserEntity::disable)
                                     .flatMap(this.userRepository::save)
                                     .switchIfEmpty(Mono.error(() -> new UserAlreadyDisabledException(username)))
-                                    .flatMap(user -> this.redisTemplate.delete(createUserRedisKey(username), createUserRedisKey(user.getHash())))
+                                    .flatMap(user ->
+                                            this.redisTemplate.opsForValue().delete(createUserRedisKey(username))
+                                                    .and(this.redisTemplate.opsForValue().delete(createUserRedisKey(user.getHash()))))
                                     .then();
     }
 

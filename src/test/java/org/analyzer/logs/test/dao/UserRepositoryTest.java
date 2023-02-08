@@ -24,7 +24,7 @@ public class UserRepositoryTest extends MongoRepositoryTest {
     private UserRepository userRepository;
 
     @Test
-    public void shouldNewUserWillBeCreated() {
+    public void shouldNewUserBeCreated() {
         final var userEntity = createUser(TEST_USER);
         StepVerifier
                 .create(this.userRepository.save(userEntity)
@@ -89,7 +89,7 @@ public class UserRepositoryTest extends MongoRepositoryTest {
     }
 
     @Test
-    public void shouldUpdatesWillBeSaved() {
+    public void shouldUpdatesBeSaved() {
         final var userEntity = createUser(TEST_USER);
         final var updatedUserEntity = new UserEntity()
                                             .setActive(false)

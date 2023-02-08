@@ -8,6 +8,7 @@ import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
+import java.util.Optional;
 
 public interface UserNotifier {
 
@@ -25,8 +26,10 @@ public interface UserNotifier {
                                     .map(IndexingNotificationSettings::getNotifyToTelegram)
                                     .filter(Objects::nonNull)
                                     .findAny()
-                                    .orElseThrow()
                     )
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .switchIfEmpty(Mono.error(IllegalStateException::new))
                     .flatMap(userTelegramId -> notify(message, userTelegramId));
     }
 }
