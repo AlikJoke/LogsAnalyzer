@@ -67,7 +67,7 @@ public final class AnalyzeQueryOnIndexWrapper implements AnalyzeQuery {
 
     @Override
     public int pageSize() {
-        return Integer.MAX_VALUE;
+        return 0;
     }
 
     @Override

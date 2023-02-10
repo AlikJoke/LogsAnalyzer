@@ -196,6 +196,151 @@ public class DefaultUserServiceTest {
                 .expectNext(activeCount)
                 .verifyComplete();
     }
-    
-    // TODO
+
+    @Test
+    public void shouldFindUserByIdFromStorage() {
+
+        final var user = createUser(TEST_USER);
+
+        @SuppressWarnings("unchecked")
+        final ReactiveValueOperations<String, Object> opsMock = mock(ReactiveValueOperations.class);
+        when(this.redisTemplate.opsForValue())
+                .thenReturn(opsMock);
+        when(this.userRepository.findById(user.getUsername()))
+                .thenReturn(Mono.just(user));
+        when(opsMock.get(contains(user.getUsername())))
+                .thenReturn(Mono.empty());
+        when(opsMock.set(contains(user.getUsername()), eq(user)))
+                .thenReturn(Mono.empty());
+
+        StepVerifier
+                .create(this.userService.findById(user.getUsername()))
+                .expectNext(user)
+                .verifyComplete();
+
+        verify(this.userRepository).findById(user.getUsername());
+        verify(opsMock).set(contains(user.getUsername()), eq(user));
+    }
+
+    @Test
+    public void shouldFindUserByIdFromCache() {
+
+        final var user = createUser(TEST_USER);
+
+        @SuppressWarnings("unchecked")
+        final ReactiveValueOperations<String, Object> opsMock = mock(ReactiveValueOperations.class);
+        when(this.redisTemplate.opsForValue())
+                .thenReturn(opsMock);
+
+        when(opsMock.get(contains(user.getUsername())))
+                .thenReturn(Mono.just(user));
+        when(this.userRepository.findById(user.getUsername()))
+                .thenReturn(Mono.just(user));
+
+        StepVerifier
+                .create(this.userService.findById(user.getUsername()))
+                .expectNext(user)
+                .verifyComplete();
+
+        verify(opsMock, never()).set(contains(user.getUsername()), eq(user));
+        verify(this.redisTemplate, times(1)).opsForValue();
+    }
+
+    @Test
+    public void shouldFindUserByIdFail() {
+
+        final var user = createUser(TEST_USER);
+
+        @SuppressWarnings("unchecked")
+        final ReactiveValueOperations<String, Object> opsMock = mock(ReactiveValueOperations.class);
+        when(this.redisTemplate.opsForValue())
+                .thenReturn(opsMock);
+
+        when(opsMock.get(contains(user.getUsername())))
+                .thenReturn(Mono.empty());
+        when(this.userRepository.findById(user.getUsername()))
+                .thenReturn(Mono.empty());
+        when(opsMock.set(contains(user.getUsername()), eq(user)))
+                .thenReturn(Mono.empty());
+
+        StepVerifier
+                .create(this.userService.findById(user.getUsername()))
+                .verifyError(UserNotFoundException.class);
+
+        verify(this.userRepository).findById(user.getUsername());
+        verify(opsMock, never()).set(any(), any());
+    }
+
+    @Test
+    public void shouldFindUserByHashFromStorage() {
+
+        final var user = createUser(TEST_USER);
+
+        @SuppressWarnings("unchecked")
+        final ReactiveValueOperations<String, Object> opsMock = mock(ReactiveValueOperations.class);
+        when(this.redisTemplate.opsForValue())
+                .thenReturn(opsMock);
+        when(this.userRepository.findByHash(user.getHash()))
+                .thenReturn(Mono.just(user));
+        when(opsMock.set(contains(user.getHash()), eq(user)))
+                .thenReturn(Mono.empty());
+        when(opsMock.get(contains(user.getHash())))
+                .thenReturn(Mono.empty());
+
+        StepVerifier
+                .create(this.userService.findByUserHash(user.getHash()))
+                .expectNext(user)
+                .verifyComplete();
+
+        verify(this.userRepository).findByHash(user.getHash());
+        verify(opsMock).set(contains(user.getHash()), eq(user));
+    }
+
+    @Test
+    public void shouldFindUserByHashFromCache() {
+
+        final var user = createUser(TEST_USER);
+
+        @SuppressWarnings("unchecked")
+        final ReactiveValueOperations<String, Object> opsMock = mock(ReactiveValueOperations.class);
+        when(this.redisTemplate.opsForValue())
+                .thenReturn(opsMock);
+
+        when(opsMock.get(contains(user.getHash())))
+                .thenReturn(Mono.just(user));
+        when(this.userRepository.findByHash(user.getHash()))
+                .thenReturn(Mono.just(user));
+
+        StepVerifier
+                .create(this.userService.findByUserHash(user.getHash()))
+                .expectNext(user)
+                .verifyComplete();
+
+        verify(opsMock, never()).set(contains(user.getHash()), eq(user));
+        verify(this.redisTemplate, times(1)).opsForValue();
+    }
+
+    @Test
+    public void shouldFindUserByHashFail() {
+
+        final var user = createUser(TEST_USER);
+
+        @SuppressWarnings("unchecked")
+        final ReactiveValueOperations<String, Object> opsMock = mock(ReactiveValueOperations.class);
+        when(this.redisTemplate.opsForValue())
+                .thenReturn(opsMock);
+        when(this.userRepository.findByHash(user.getHash()))
+                .thenReturn(Mono.empty());
+        when(opsMock.get(contains(user.getHash())))
+                .thenReturn(Mono.empty());
+        when(opsMock.set(contains(user.getHash()), eq(user)))
+                .thenReturn(Mono.empty());
+
+        StepVerifier
+                .create(this.userService.findByUserHash(user.getHash()))
+                .verifyError(UserNotFoundException.class);
+
+        verify(this.userRepository).findByHash(user.getHash());
+        verify(opsMock, never()).set(any(), any());
+    }
 }

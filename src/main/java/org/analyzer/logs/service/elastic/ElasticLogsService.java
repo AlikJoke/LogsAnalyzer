@@ -121,7 +121,6 @@ public class ElasticLogsService implements LogsService {
                                             .then(sendToAnalyzeLogs(indexingKey))
                                             .log(logger)
                                 )
-                                .log(logger)
                                 .then()
                                 .thenReturn(uuidKey)
                 )
