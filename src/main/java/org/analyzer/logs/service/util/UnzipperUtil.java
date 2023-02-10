@@ -21,7 +21,7 @@ public class UnzipperUtil {
     public Flux<File> flat(@NonNull final File file) {
         return Flux.just(file)
                     .filter(Predicate.not(this::isArchive))
-                    .switchIfEmpty(flatArchive(file));
+                    .switchIfEmpty(Flux.defer(() -> flatArchive(file).cache()));
     }
 
     private Flux<File> flatArchive(@NonNull final File file) {

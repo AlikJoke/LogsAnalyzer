@@ -111,16 +111,17 @@ public class ElasticLogsService implements LogsService {
                                 .flat(logFile)
                                 .log(logger)
                                 .doOnNext(file -> this.indexedFilesCounter.increment())
-                                .map(file -> this.parser.parse(this.logKeysFactory.createIndexedLogFileKey(indexingKey.getT1(), indexingKey.getT2(), file.getName()), file, recordFormat))
-                                .flatMap(records -> records
-                                                        .transform(recordsFlux -> sendToAnalyzeLogs(recordsFlux, indexingKey))
-                                                        .buffer(this.elasticIndexBufferSize)
-                                                        .doOnNext(buffer -> this.indexedRecordsCounter.increment(buffer.size()))
-                                                        .doOnNext(buffer -> this.elasticIndexRequestsCounter.increment())
-                                                        .map(this.logRecordRepository::saveAll)
-                                                        .log(logger)
+                                .flatMap(file -> this.parser.parse(this.logKeysFactory.createIndexedLogFileKey(indexingKey.getT1(), indexingKey.getT2(), file.getName()), file, recordFormat))
+                                .transform(recordsFlux ->
+                                        recordsFlux
+                                            .buffer(this.elasticIndexBufferSize)
+                                            .doOnNext(buffer -> this.indexedRecordsCounter.increment(buffer.size()))
+                                            .doOnNext(buffer -> this.elasticIndexRequestsCounter.increment())
+                                            .flatMap(this.logRecordRepository::saveAll)
+                                            .then(sendToAnalyzeLogs(indexingKey))
+                                            .log(logger)
                                 )
-                                .flatMap(Flux::then)
+                                .log(logger)
                                 .then()
                                 .thenReturn(uuidKey)
                 )
@@ -287,20 +288,18 @@ public class ElasticLogsService implements LogsService {
         return builder.register(this.meterRegistry);
     }
 
-    private Flux<LogRecordEntity> sendToAnalyzeLogs(
-            final Flux<LogRecordEntity> records,
-            final Tuple2<String, String> userIndexingKey) {
-        this.taskExecutor.execute(
-                () -> {
-                    final var analyzeQuery = new AnalyzeQueryOnIndexWrapper(userIndexingKey.getT2());
-                    final var userKey = userIndexingKey.getT1();
-                    analyze(records, analyzeQuery)
-                            .contextWrite(this.userAccessor.set(userKey))
-                            .subscribe();
-                }
+    private Mono<Void> sendToAnalyzeLogs(final Tuple2<String, String> userIndexingKey) {
+        return Mono.fromRunnable(
+                () -> this.taskExecutor.execute(
+                        () -> {
+                            final var userKey = userIndexingKey.getT1();
+                            final String indexingKey = this.logKeysFactory.createUserIndexingKey(userKey, userIndexingKey.getT2());
+                            final var analyzeQuery = new AnalyzeQueryOnIndexWrapper(indexingKey);
+                            analyze(analyzeQuery)
+                                    .contextWrite(this.userAccessor.set(userKey))
+                                    .subscribe();
+                        })
         );
-
-        return records;
     }
 
     private String createStatsRedisKey(final String key) {

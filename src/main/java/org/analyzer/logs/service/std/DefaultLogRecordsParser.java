@@ -123,7 +123,7 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
                         return lastRecordLocal;
                     }
 
-                    return null;
+                    throw new RuntimeException("Unsupported log record format: " + line);
                 })
                 .doOnNext(lastRecord::set)
                 .distinctUntilChanged();
