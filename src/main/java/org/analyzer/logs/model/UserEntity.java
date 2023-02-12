@@ -3,6 +3,7 @@ package org.analyzer.logs.model;
 import lombok.*;
 import lombok.experimental.Accessors;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -31,6 +32,8 @@ public class UserEntity {
     private String hash;
     @Indexed
     private LocalDateTime modified;
+    @Version
+    private long version;
 
     private boolean active;
 

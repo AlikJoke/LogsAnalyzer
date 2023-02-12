@@ -2,43 +2,40 @@ package org.analyzer.logs.service;
 
 import lombok.NonNull;
 import org.analyzer.logs.model.LogsStatisticsEntity;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface LogsService {
 
     @Nonnull
-    Mono<String> index(
+    String index(
             @Nonnull File logFile,
             @Nullable LogRecordFormat patternFormat);
 
     @Nonnull
-    Flux<String> searchByQuery(@Nonnull SearchQuery query);
+    List<String> searchByQuery(@Nonnull SearchQuery query);
 
     @Nonnull
-    Mono<MapLogsStatistics> analyze(@Nonnull AnalyzeQuery query);
+    MapLogsStatistics analyze(@Nonnull AnalyzeQuery query);
 
     @Nonnull
-    Mono<LogsStatisticsEntity> findStatisticsByKey(@Nonnull String key);
+    LogsStatisticsEntity findStatisticsByKey(@Nonnull String key);
 
     @Nonnull
-    Flux<LogsStatisticsEntity> findAllStatisticsByUserKeyAndCreationDate(
+    List<LogsStatisticsEntity> findAllStatisticsByUserKeyAndCreationDate(
             @Nonnull String userKey,
             @Nonnull LocalDateTime beforeDate);
 
-    @Nonnull
-    Mono<Void> deleteStatistics(@Nonnull Flux<LogsStatisticsEntity> statsFlux);
+    void deleteStatistics(@Nonnull List<LogsStatisticsEntity> statsList);
 
     @Nonnull
-    Flux<String> deleteAllStatisticsByUserKeyAndCreationDate(
+    List<String> deleteAllStatisticsByUserKeyAndCreationDate(
             @NonNull String userKey,
             @NonNull LocalDateTime beforeDate);
 
-    @Nonnull
-    Mono<Void> deleteByQuery(@Nonnull SearchQuery deleteQuery);
+    void deleteByQuery(@Nonnull SearchQuery deleteQuery);
 }

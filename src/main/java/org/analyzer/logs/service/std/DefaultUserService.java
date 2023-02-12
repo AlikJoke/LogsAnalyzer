@@ -8,12 +8,12 @@ import org.analyzer.logs.service.exceptions.UserAlreadyDisabledException;
 import org.analyzer.logs.service.exceptions.UserAlreadyExistsException;
 import org.analyzer.logs.service.exceptions.UserNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class DefaultUserService implements UserService {
@@ -23,110 +23,94 @@ public class DefaultUserService implements UserService {
     @Autowired
     private UserRepository userRepository;
     @Autowired
-    private ReactiveRedisTemplate<String, Object> redisTemplate;
+    private RedisTemplate<String, Object> redisTemplate;
 
     @NonNull
     @Override
-    public Mono<UserEntity> create(@NonNull Mono<UserEntity> newUser) {
-        return newUser
-                .flatMap(user ->
-                        this.userRepository
-                                .existsById(user.getUsername())
-                                    .filter(exists -> !exists)
-                                    .flatMap(exists -> this.userRepository.save(user))
-                                    .switchIfEmpty(Mono.error(() -> new UserAlreadyExistsException(user.getUsername())))
-                ).flatMap(user ->
-                        this.redisTemplate.opsForValue()
-                                            .set(createUserRedisKey(user.getUsername()), user)
-                                            .thenReturn(user)
-                );
+    public UserEntity create(@NonNull UserEntity newUser) {
+        try {
+            final var savedUser = this.userRepository.save(newUser);
+            this.redisTemplate.opsForValue().set(createUserRedisKey(savedUser.getUsername()), savedUser);
+
+            return savedUser;
+        } catch (OptimisticLockingFailureException ex) {
+            throw new UserAlreadyExistsException(newUser.getUsername());
+        }
+    }
+
+    @Override
+    public void disable(@NonNull String username) {
+        final var user = this.userRepository.findById(username)
+                                            .orElseThrow(() -> new UserNotFoundException(username));
+
+        if (!user.isActive()) {
+            throw new UserAlreadyDisabledException(username);
+        }
+
+        user.disable();
+        this.userRepository.save(user);
+
+        this.redisTemplate.delete(List.of(createUserRedisKey(username), createUserRedisKey(user.getHash())));
+    }
+
+    @Override
+    @NonNull
+    public UserEntity update(@NonNull UserEntity userToSave) {
+        if (!this.userRepository.existsById(userToSave.getUsername())) {
+            throw new UserNotFoundException(userToSave.getUsername());
+        }
+
+        final var savedUser = this.userRepository.save(userToSave);
+        this.redisTemplate.opsForValue().set(createUserRedisKey(userToSave.getUsername()), savedUser);
+        this.redisTemplate.opsForValue().set(createUserRedisKey(userToSave.getHash()), savedUser);
+
+        return savedUser;
     }
 
     @NonNull
     @Override
-    public Mono<Void> disable(@NonNull String username) {
-        return this.userRepository.findById(username)
-                                    .switchIfEmpty(Mono.error(() -> new UserNotFoundException(username)))
-                                    .filter(UserEntity::disable)
-                                    .flatMap(this.userRepository::save)
-                                    .switchIfEmpty(Mono.error(() -> new UserAlreadyDisabledException(username)))
-                                    .flatMap(user ->
-                                            this.redisTemplate.opsForValue().delete(createUserRedisKey(username))
-                                                    .and(this.redisTemplate.opsForValue().delete(createUserRedisKey(user.getHash()))))
-                                    .then();
-    }
-
-    @NonNull
-    @Override
-    public Mono<UserEntity> update(@NonNull Mono<UserEntity> userToSave) {
-        return userToSave
-                .flatMap(user ->
-                        this.userRepository
-                                .existsById(user.getUsername())
-                                .filter(exists -> exists)
-                                .flatMap(exists -> this.userRepository.save(user))
-                                .switchIfEmpty(Mono.error(() -> new UserNotFoundException(user.getUsername())))
-                )
-                .flatMap(user ->
-                        this.redisTemplate.opsForValue().set(createUserRedisKey(user.getUsername()), user)
-                                .and(this.redisTemplate.opsForValue().set(createUserRedisKey(user.getHash()), user))
-                                .thenReturn(user)
-                );
-    }
-
-    @NonNull
-    @Override
-    public Flux<UserEntity> findAllWithClearingSettings() {
+    public List<UserEntity> findAllWithClearingSettings() {
         return this.userRepository.findAllWithClearingSettings();
     }
 
     @NonNull
     @Override
-    public Flux<UserEntity> findAllWithScheduledIndexingSettings(@NonNull final LocalDateTime modifiedAfter) {
+    public List<UserEntity> findAllWithScheduledIndexingSettings(@NonNull final LocalDateTime modifiedAfter) {
         return this.userRepository.findAllWithScheduledIndexingSettings(modifiedAfter);
     }
 
     @NonNull
     @Override
-    public Flux<UserEntity> findAllWithTelegramId() {
+    public List<UserEntity> findAllWithTelegramId() {
         return this.userRepository.findAllWithTelegramId();
     }
 
     @NonNull
     @Override
-    public Mono<UserEntity> findById(@NonNull String username) {
-        final var entityFromCache = this.redisTemplate.opsForValue().get(createUserRedisKey(username));
-        final var entityFromStorage =
-                this.userRepository.findById(username)
-                                    .switchIfEmpty(Mono.error(() -> new UserNotFoundException(username)))
-                                    .flatMap(user ->
-                                            this.redisTemplate.opsForValue().set(createUserRedisKey(user.getUsername()), user)
-                                                                            .thenReturn(user))
-                                    .cache();
-        return entityFromCache
-                .cast(UserEntity.class)
-                .switchIfEmpty(entityFromStorage);
+    public UserEntity findById(@NonNull String username) {
+        final var entityFromCache = (UserEntity) this.redisTemplate.opsForValue().get(createUserRedisKey(username));
+        if (entityFromCache == null) {
+            return this.userRepository.findById(username)
+                                        .orElseThrow(() -> new UserNotFoundException(username));
+        }
+
+        return entityFromCache;
     }
 
     @NonNull
     @Override
-    public Mono<UserEntity> findByUserHash(@NonNull String userHash) {
-        final var entityFromCache = this.redisTemplate.opsForValue().get(createUserRedisKey(userHash));
-        final var entityFromStorage =
-                this.userRepository.findByHash(userHash)
-                                    .switchIfEmpty(Mono.error(() -> new UserNotFoundException(userHash)))
-                                    .flatMap(user ->
-                                            this.redisTemplate.opsForValue().set(createUserRedisKey(userHash), user)
-                                                                            .thenReturn(user))
-                                    .cache();
-        return entityFromCache
-                .cast(UserEntity.class)
-                .switchIfEmpty(entityFromStorage);
+    public UserEntity findByUserHash(@NonNull String userHash) {
+        final var entityFromCache = (UserEntity) this.redisTemplate.opsForValue().get(createUserRedisKey(userHash));
+        if (entityFromCache == null) {
+            return this.userRepository.findByHash(userHash)
+                                        .orElseThrow(() -> new UserNotFoundException(userHash));
+        }
+
+        return entityFromCache;
     }
 
-    @NonNull
     @Override
-    public Mono<Long> findCount(boolean onlyActive) {
+    public long findCount(boolean onlyActive) {
         return onlyActive
                 ? this.userRepository.countByActive(true)
                 : this.userRepository.count();

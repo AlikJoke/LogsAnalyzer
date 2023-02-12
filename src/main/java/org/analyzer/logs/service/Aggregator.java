@@ -1,12 +1,12 @@
 package org.analyzer.logs.service;
 
 import org.analyzer.logs.model.LogRecordEntity;
-import reactor.core.publisher.Flux;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.function.Function;
 
-public interface Aggregator<T> extends Function<Flux<LogRecordEntity>, Flux<T>> {
+public interface Aggregator<T> extends Function<List<LogRecordEntity>, List<T>> {
 
     @Nonnull
     Object getParameters();

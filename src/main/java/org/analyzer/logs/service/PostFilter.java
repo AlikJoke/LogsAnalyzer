@@ -1,12 +1,12 @@
 package org.analyzer.logs.service;
 
 import org.analyzer.logs.model.LogRecordEntity;
-import reactor.core.publisher.Flux;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.function.Function;
 
-public interface PostFilter extends Function<Flux<LogRecordEntity>, Flux<LogRecordEntity>> {
+public interface PostFilter extends Function<List<LogRecordEntity>, List<LogRecordEntity>> {
 
     @Nonnull
     Object getParameters();

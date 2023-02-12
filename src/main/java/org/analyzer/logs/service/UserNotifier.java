@@ -4,7 +4,6 @@ import org.analyzer.logs.model.IndexingNotificationSettings;
 import org.analyzer.logs.model.ScheduledIndexingSettings;
 import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.model.UserSettings;
-import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -12,24 +11,20 @@ import java.util.Optional;
 
 public interface UserNotifier {
 
-    @Nonnull
-    Mono<Void> notify(@Nonnull String message, @Nonnull String userTelegramId);
+    void notify(@Nonnull String message, @Nonnull String userTelegramId);
 
-    @Nonnull
-    default Mono<Void> notify(@Nonnull String message, @Nonnull UserEntity user) {
-        return Mono.justOrEmpty(user.getSettings())
-                    .filter(settings -> settings.getScheduledIndexingSettings() != null)
-                    .map(UserSettings::getScheduledIndexingSettings)
-                    .map(settings ->
-                            settings.stream()
-                                    .map(ScheduledIndexingSettings::getNotificationSettings)
-                                    .map(IndexingNotificationSettings::getNotifyToTelegram)
-                                    .filter(Objects::nonNull)
-                                    .findAny()
-                    )
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .switchIfEmpty(Mono.error(IllegalStateException::new))
-                    .flatMap(userTelegramId -> notify(message, userTelegramId));
+    default void notify(@Nonnull String message, @Nonnull UserEntity user) {
+        final var userTelegramId =
+                Optional.ofNullable(user.getSettings())
+                        .map(UserSettings::getScheduledIndexingSettings)
+                        .flatMap(settings ->
+                                settings.stream()
+                                        .map(ScheduledIndexingSettings::getNotificationSettings)
+                                        .map(IndexingNotificationSettings::getNotifyToTelegram)
+                                        .filter(Objects::nonNull)
+                                        .findAny()
+                        )
+                        .orElseThrow(() -> new IllegalStateException("TelegramId not found for user " + user.getUsername()));
+        notify(message, userTelegramId);
     }
 }

@@ -1,28 +1,28 @@
 package org.analyzer.logs.dao;
 
 import org.analyzer.logs.model.UserEntity;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
-import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
-public interface UserRepository extends ReactiveMongoRepository<UserEntity, String> {
+public interface UserRepository extends MongoRepository<UserEntity, String> {
 
     @Query("{ 'settings.cleaning_interval' : { $gt : 0 } }")
-    Flux<UserEntity> findAllWithClearingSettings();
+    List<UserEntity> findAllWithClearingSettings();
 
     @Query("{ 'settings.scheduled_indexing_settings.notification_settings' : { $ne : null }, 'active' : true, 'modified' : { $gt : ?0 } }")
-    Flux<UserEntity> findAllWithScheduledIndexingSettings(@Nonnull final LocalDateTime modifiedAfter);
+    List<UserEntity> findAllWithScheduledIndexingSettings(@Nonnull final LocalDateTime modifiedAfter);
 
     @Query("{ 'settings.scheduled_indexing_settings.notification_settings.notify_telegram' : { $ne : null }, 'active' : true }")
-    Flux<UserEntity> findAllWithTelegramId();
+    List<UserEntity> findAllWithTelegramId();
 
     @Nonnull
-    Mono<UserEntity> findByHash(@Nonnull String hash);
+    Optional<UserEntity> findByHash(@Nonnull String hash);
 
     @Query
-    Mono<Long> countByActive(boolean active);
+    long countByActive(boolean active);
 }

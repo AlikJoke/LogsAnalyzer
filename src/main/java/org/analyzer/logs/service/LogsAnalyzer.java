@@ -2,15 +2,14 @@ package org.analyzer.logs.service;
 
 import lombok.NonNull;
 import org.analyzer.logs.model.LogRecordEntity;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 public interface LogsAnalyzer {
 
     @Nonnull
-    Mono<MapLogsStatistics> analyze(
-            @NonNull Flux<LogRecordEntity> records,
+    MapLogsStatistics analyze(
+            @NonNull List<LogRecordEntity> records,
             @NonNull AnalyzeQuery analyzeQuery);
 }

@@ -7,7 +7,6 @@ import org.analyzer.logs.service.UserNotifier;
 import org.analyzer.logs.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
 
 @Component
 @Slf4j
@@ -19,11 +18,8 @@ public class TelegramBroadcastUserNotifier implements BroadcastUserNotifier {
     private UserService userService;
 
     @Override
-    @NonNull
-    public Mono<Void> broadcast(@NonNull String message) {
-        return this.userService.findAllWithTelegramId()
-                    .flatMap(user -> this.userNotifier.notify(message, user))
-                    .onErrorContinue((ex, obj) -> log.error("Error send message to " + obj, ex))
-                    .then();
+    public void broadcast(@NonNull String message) {
+        this.userService.findAllWithTelegramId()
+                            .forEach(user -> this.userNotifier.notify(message, user));
     }
 }

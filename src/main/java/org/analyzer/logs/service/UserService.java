@@ -1,38 +1,35 @@
 package org.analyzer.logs.service;
 
 import org.analyzer.logs.model.UserEntity;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface UserService {
 
     @Nonnull
-    Mono<UserEntity> create(@Nonnull Mono<UserEntity> user);
+    UserEntity create(@Nonnull UserEntity user);
+
+    void disable(@Nonnull String username);
 
     @Nonnull
-    Mono<Void> disable(@Nonnull String username);
+    UserEntity update(@Nonnull UserEntity user);
 
     @Nonnull
-    Mono<UserEntity> update(@Nonnull Mono<UserEntity> user);
+    List<UserEntity> findAllWithClearingSettings();
 
     @Nonnull
-    Flux<UserEntity> findAllWithClearingSettings();
+    List<UserEntity> findAllWithScheduledIndexingSettings(@Nonnull LocalDateTime modifiedAfter);
 
     @Nonnull
-    Flux<UserEntity> findAllWithScheduledIndexingSettings(@Nonnull LocalDateTime modifiedAfter);
+    List<UserEntity> findAllWithTelegramId();
 
     @Nonnull
-    Flux<UserEntity> findAllWithTelegramId();
+    UserEntity findById(@Nonnull String username);
 
     @Nonnull
-    Mono<UserEntity> findById(@Nonnull String username);
+    UserEntity findByUserHash(@Nonnull String userHash);
 
-    @Nonnull
-    Mono<UserEntity> findByUserHash(@Nonnull String userHash);
-
-    @Nonnull
-    Mono<Long> findCount(boolean onlyActive);
+    long findCount(boolean onlyActive);
 }

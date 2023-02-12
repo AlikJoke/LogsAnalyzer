@@ -2,15 +2,15 @@ package org.analyzer.logs.service.std;
 
 import lombok.NonNull;
 import org.analyzer.logs.service.MapLogsStatistics;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.concurrent.NotThreadSafe;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 @NotThreadSafe
-public class StdMapLogsStatistics extends HashMap<String, Flux<?>> implements MapLogsStatistics {
+public class StdMapLogsStatistics extends HashMap<String, List<?>> implements MapLogsStatistics {
 
     public static final String ERRORS_FREQUENCIES = "errors-frequencies";
     public static final String MOST_FREQUENT_ERRORS = "most-frequent-errors";
@@ -26,132 +26,132 @@ public class StdMapLogsStatistics extends HashMap<String, Flux<?>> implements Ma
 
     @NonNull
     @Override
-    public Mono<Long> commonCount() {
+    public Long commonCount() {
         return getStatByKey(ALL_RECORDS_COUNT);
     }
 
     @NonNull
     @Override
-    public Flux<Tuple2<String, Long>> errorsFrequencies() {
+    public List<Pair<String, Long>> errorsFrequencies() {
         return getStatByKey(ERRORS_FREQUENCIES);
     }
 
     @NonNull
-    public StdMapLogsStatistics errorsFrequencies(@NonNull Flux<Tuple2<String, Long>> errorsFrequencies) {
+    public StdMapLogsStatistics errorsFrequencies(@NonNull List<Pair<String, Long>> errorsFrequencies) {
         put(ERRORS_FREQUENCIES, errorsFrequencies);
         return this;
     }
 
     @NonNull
     @Override
-    public Flux<Tuple2<String, Long>> mostFrequentErrors() {
+    public List<Pair<String, Long>> mostFrequentErrors() {
         return getStatByKey(MOST_FREQUENT_ERRORS);
     }
 
     @NonNull
-    public StdMapLogsStatistics mostFrequentErrors(@NonNull Flux<Tuple2<String, Long>> mostFrequentErrors) {
+    public StdMapLogsStatistics mostFrequentErrors(@NonNull List<Pair<String, Long>> mostFrequentErrors) {
         put(MOST_FREQUENT_ERRORS, mostFrequentErrors);
         return this;
     }
 
     @NonNull
     @Override
-    public Mono<Double> errorsAverageInterval() {
+    public Double errorsAverageInterval() {
         return getStatByKey(ERRORS_AVERAGE_INTERVAL, true);
     }
 
     @NonNull
-    public StdMapLogsStatistics errorsAverageInterval(@NonNull Mono<Double> errorsAverageInterval) {
-        put(ERRORS_AVERAGE_INTERVAL, errorsAverageInterval.flux());
+    public StdMapLogsStatistics errorsAverageInterval(@NonNull Double errorsAverageInterval) {
+        put(ERRORS_AVERAGE_INTERVAL, List.of(errorsAverageInterval));
         return this;
     }
 
     @NonNull
     @Override
-    public Flux<Tuple2<String, Long>> errorsByCategoryFrequencies() {
+    public List<Pair<String, Long>> errorsByCategoryFrequencies() {
         return getStatByKey(ERRORS_FREQUENCIES_BY_CATEGORY);
     }
 
     @NonNull
-    public StdMapLogsStatistics errorsByCategoryFrequencies(@NonNull Flux<Tuple2<String, Long>> errorsByCategoryFrequencies) {
+    public StdMapLogsStatistics errorsByCategoryFrequencies(@NonNull List<Pair<String, Long>> errorsByCategoryFrequencies) {
         put(MOST_FREQUENT_ERRORS, errorsByCategoryFrequencies);
         return this;
     }
 
     @NonNull
     @Override
-    public Mono<Long> errorsCount() {
+    public Long errorsCount() {
         return getStatByKey(ERRORS_COUNT, true);
     }
 
     @NonNull
-    public StdMapLogsStatistics errorsCount(@NonNull Mono<Long> errorsCount) {
-        put(ERRORS_COUNT, errorsCount.flux());
+    public StdMapLogsStatistics errorsCount(@NonNull Long errorsCount) {
+        put(ERRORS_COUNT, List.of(errorsCount));
         return this;
     }
 
     @NonNull
     @Override
-    public Mono<Long> warnsCount() {
+    public Long warnsCount() {
         return getStatByKey(WARNS_COUNT, true);
     }
 
     @NonNull
-    public StdMapLogsStatistics warnsCount(@NonNull Mono<Long> warnsCount) {
-        put(WARNS_COUNT, warnsCount.flux());
+    public StdMapLogsStatistics warnsCount(@NonNull Long warnsCount) {
+        put(WARNS_COUNT, List.of(warnsCount));
         return this;
     }
 
     @NonNull
     @Override
-    public Flux<Tuple2<String, Long>> mostFrequentWarns() {
+    public List<Pair<String, Long>> mostFrequentWarns() {
         return getStatByKey(MOST_FREQUENT_WARNS);
     }
 
     @NonNull
-    public StdMapLogsStatistics mostFrequentWarns(@NonNull Flux<Tuple2<String, Long>> mostFrequentWarns) {
+    public StdMapLogsStatistics mostFrequentWarns(@NonNull List<Pair<String, Long>> mostFrequentWarns) {
         put(MOST_FREQUENT_WARNS, mostFrequentWarns);
         return this;
     }
 
     @NonNull
     @Override
-    public Mono<Double> averageWriteRate() {
+    public Double averageWriteRate() {
         return getStatByKey(AVERAGE_WRITE_RATE, true);
     }
 
     @NonNull
-    public StdMapLogsStatistics averageWriteRate(@NonNull Mono<Double> averageWriteRate) {
-        put(AVERAGE_WRITE_RATE, averageWriteRate.flux());
+    public StdMapLogsStatistics averageWriteRate(@NonNull Double averageWriteRate) {
+        put(AVERAGE_WRITE_RATE, List.of(averageWriteRate));
         return this;
     }
 
     @NonNull
     @Override
-    public Flux<Tuple2<String, Long>> recordsByCategoryFrequencies() {
+    public List<Pair<String, Long>> recordsByCategoryFrequencies() {
         return getStatByKey(RECORDS_FREQUENCY_BY_CATEGORY);
     }
 
     @NonNull
-    public StdMapLogsStatistics recordsByCategoryFrequencies(@NonNull Flux<Tuple2<String, Long>> recordsByCategoryFrequencies) {
+    public StdMapLogsStatistics recordsByCategoryFrequencies(@NonNull List<Pair<String, Long>> recordsByCategoryFrequencies) {
         put(RECORDS_FREQUENCY_BY_CATEGORY, recordsByCategoryFrequencies);
         return this;
     }
 
     @NonNull
     @Override
-    public Flux<Tuple2<String, Long>> recordsByThreadFrequencies() {
+    public List<Pair<String, Long>> recordsByThreadFrequencies() {
         return getStatByKey(RECORDS_FREQUENCY_BY_THREAD);
     }
 
     @NonNull
-    public StdMapLogsStatistics recordsByThreadFrequencies(@NonNull Flux<Tuple2<String, Long>> recordsByThreadFrequencies) {
+    public StdMapLogsStatistics recordsByThreadFrequencies(@NonNull List<Pair<String, Long>> recordsByThreadFrequencies) {
         put(RECORDS_FREQUENCY_BY_THREAD, recordsByThreadFrequencies);
         return this;
     }
 
     @NonNull
-    public StdMapLogsStatistics putOne(@NonNull final String statisticKey, @NonNull final Flux<?> value) {
+    public StdMapLogsStatistics putOne(@NonNull final String statisticKey, @NonNull final List<?> value) {
         put(statisticKey, value);
         return this;
     }
@@ -161,9 +161,9 @@ public class StdMapLogsStatistics extends HashMap<String, Flux<?>> implements Ma
     }
 
     private <T> T getStatByKey(final String key, final boolean single) {
-        final Flux<?> value = super.getOrDefault(key, Flux.empty());
+        final List<?> value = super.getOrDefault(key, Collections.emptyList());
         @SuppressWarnings("unchecked")
-        final T result = single ? (T) value.singleOrEmpty() : (T) value;
+        final T result = single ? (T) (value.isEmpty() ? null : value.get(0)) : (T) value;
         return result;
     }
 }

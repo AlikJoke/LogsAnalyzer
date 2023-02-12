@@ -18,13 +18,13 @@ public class AggregatorFactory {
     private JsonConverter jsonConverter;
 
     @NonNull
-    public <T> Mono<Aggregator<T>> create(@NonNull String aggregatorKey, @NonNull Object parameters) {
+    public <T> Aggregator<T> create(@NonNull String aggregatorKey, @NonNull Object parameters) {
         return Mono.just(aggregatorKey)
                     .map(key -> createAggregator(key, parameters));
     }
 
     @NonNull
-    public <T> Mono<Aggregator<T>> create(@NonNull String aggregatorKey, @NonNull JsonNode parameters) {
+    public <T> Aggregator<T> create(@NonNull String aggregatorKey, @NonNull JsonNode parameters) {
         return Mono.just(aggregatorKey)
                     .map(key -> createAggregator(key, parameters));
     }

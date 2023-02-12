@@ -1,23 +1,20 @@
 package org.analyzer.logs.service;
 
 import org.analyzer.logs.model.UserSearchQueryEntity;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface CurrentUserQueryService {
 
     @Nonnull
-    Mono<UserSearchQueryEntity> create(@Nonnull SearchQuery query);
+    UserSearchQueryEntity create(@Nonnull SearchQuery query);
 
     @Nonnull
-    Flux<UserSearchQueryEntity> findAll(@Nonnull LocalDateTime from, @Nonnull LocalDateTime to);
+    List<UserSearchQueryEntity> findAll(@Nonnull LocalDateTime from, @Nonnull LocalDateTime to);
 
-    @Nonnull
-    Mono<Void> deleteAll();
+    void deleteAll();
 
-    @Nonnull
-    Mono<Boolean> delete(@Nonnull String queryId);
+    boolean delete(@Nonnull String queryId);
 }

@@ -5,7 +5,6 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,7 +26,7 @@ public class GZipTarUnzipper extends Unzipper {
 
     @Override
     @NonNull
-    protected Flux<File> unzip(@NonNull File file, @NonNull File targetDir) throws IOException {
+    protected List<File> unzip(@NonNull File file, @NonNull File targetDir) throws IOException {
 
         final var tempTarFile = Files.createTempFile(targetDir.toPath(), UUID.randomUUID().toString(), "").toFile();
         try (final var fis = new FileInputStream(file);
@@ -67,6 +66,6 @@ public class GZipTarUnzipper extends Unzipper {
             tempTarFile.delete();
         }
 
-        return Flux.fromIterable(result);
+        return result;
     }
 }
