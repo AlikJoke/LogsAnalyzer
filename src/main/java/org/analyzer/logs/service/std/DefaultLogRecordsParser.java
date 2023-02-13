@@ -10,23 +10,21 @@ import org.analyzer.logs.service.LogRecordsParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-import reactor.core.publisher.Flux;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.BufferedReader;
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.FileReader;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static java.time.temporal.ChronoField.*;
 
@@ -79,10 +77,10 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
 
     @Nonnull
     @Override
-    public Flux<LogRecordEntity> parse(
+    public LogRecordsPackageIterator parse(
             @Nonnull String logKey,
             @Nonnull File logFile,
-            @Nullable LogRecordFormat recordFormat) {
+            @Nullable LogRecordFormat recordFormat) throws IOException {
         final var pattern = recordFormat == null || !StringUtils.hasLength(recordFormat.pattern())
                                     ? defaultRecordPattern
                                     : this.patternsCache.computeIfAbsent(recordFormat.pattern(), Pattern::compile);
@@ -93,40 +91,7 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
                                                     ? defaultTimeFormatter
                                                     : computeFormatter(recordFormat.timeFormat());
 
-        final ThreadLocal<LogRecordEntity> lastRecord = new ThreadLocal<>();
-
-        return readAllLines(logFile.toPath())
-                .index()
-                .map(tuple -> {
-
-                    final var counter = tuple.getT1();
-                    final var line = tuple.getT2();
-                    final var matcher = pattern.matcher(line);
-                    final var lastRecordLocal = lastRecord.get();
-                    if (matcher.matches()) {
-                        return LogRecordEntity
-                                    .builder()
-                                        .id(this.logKeysFactory.createLogRecordKey(logKey, counter))
-                                        .time(parseTime(timeFormatter, matcher))
-                                        .date(parseDate(dateFormatter, matcher))
-                                        .level(matcher.group("level"))
-                                        .thread(matcher.group("thread"))
-                                        .category(matcher.group("category"))
-                                        .source(line)
-                                        .record(matcher.group("text"))
-                                    .build();
-                    } else if (lastRecordLocal != null) {
-                        final var separatedLine = System.lineSeparator() + line;
-                        lastRecordLocal.setSource(lastRecordLocal.getSource() + separatedLine);
-                        lastRecordLocal.setRecord(lastRecordLocal.getRecord() + separatedLine);
-
-                        return lastRecordLocal;
-                    }
-
-                    throw new RuntimeException("Unsupported log record format: " + line);
-                })
-                .doOnNext(lastRecord::set)
-                .distinctUntilChanged();
+        return new LazyLogRecordsPackageIterator(logFile, logKey, pattern, dateFormatter, timeFormatter);
     }
 
     private DateTimeFormatter computeFormatter(final String format) {
@@ -137,14 +102,6 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
                                                     .appendPattern(formatKey)
                                                     .toFormatter()
                         );
-    }
-
-    private Flux<String> readAllLines(final Path path) {
-        return Flux.using(
-                () -> Files.lines(path),
-                Flux::fromStream,
-                Stream::close
-        );
     }
 
     private LocalTime parseTime(final DateTimeFormatter timeFormatter, final Matcher matcher) {
@@ -163,5 +120,95 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
         }
 
         return LocalDate.from(dateFormatter.parse(date));
+    }
+
+    private class LazyLogRecordsPackageIterator implements LogRecordsPackageIterator {
+
+        private static final int PACKAGE_SIZE = 1_000;
+
+        private final String logKey;
+        private final Pattern pattern;
+        private final DateTimeFormatter dateFormatter;
+        private final DateTimeFormatter timeFormatter;
+        private final BufferedReader reader;
+
+        private String lastLine;
+        private long offset = 0;
+
+        private LazyLogRecordsPackageIterator(
+                final File file,
+                final String logKey,
+                final Pattern pattern,
+                final DateTimeFormatter dateFormatter,
+                final DateTimeFormatter timeFormatter) throws IOException {
+            this.logKey = logKey;
+            this.reader = new BufferedReader(new FileReader(file));
+            this.lastLine = readNextLine();
+            this.pattern = pattern;
+            this.dateFormatter = dateFormatter;
+            this.timeFormatter = timeFormatter;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return this.lastLine != null;
+        }
+
+        @Override
+        public List<LogRecordEntity> next() {
+            if (this.lastLine == null) {
+                throw new NoSuchElementException();
+            }
+
+            final List<LogRecordEntity> result = new ArrayList<>(PACKAGE_SIZE);
+
+            LogRecordEntity lastRecord = null;
+            do {
+                final var matcher = this.pattern.matcher(this.lastLine);
+                if (matcher.matches()) {
+
+                    final long counter = this.offset + 1;
+                    if (counter % PACKAGE_SIZE == 0) {
+                        break;
+                    }
+
+                    lastRecord = LogRecordEntity
+                                        .builder()
+                                            .id(logKeysFactory.createLogRecordKey(this.logKey, ++this.offset))
+                                            .time(parseTime(this.timeFormatter, matcher))
+                                            .date(parseDate(this.dateFormatter, matcher))
+                                            .level(matcher.group("level"))
+                                            .thread(matcher.group("thread"))
+                                            .category(matcher.group("category"))
+                                            .source(this.lastLine)
+                                            .record(matcher.group("text"))
+                                        .build();
+                    result.add(lastRecord);
+                } else if (lastRecord != null) {
+                    final var separatedLine = System.lineSeparator() + this.lastLine;
+                    lastRecord.setSource(lastRecord.getSource() + separatedLine);
+                    lastRecord.setRecord(lastRecord.getRecord() + separatedLine);
+                } else {
+                    throw new RuntimeException("Unsupported log record format: " + this.lastLine);
+                }
+
+                this.lastLine = readNextLine();
+            } while ((this.lastLine = readNextLine()) != null);
+
+            return result;
+        }
+
+        @Override
+        public void close() throws Exception {
+            this.reader.close();
+        }
+
+        private String readNextLine() {
+            try {
+                return this.reader.readLine();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

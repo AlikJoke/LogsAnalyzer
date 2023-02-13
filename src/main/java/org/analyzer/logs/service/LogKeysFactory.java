@@ -19,5 +19,5 @@ public interface LogKeysFactory {
     }
 
     @Nonnull
-    String createLogRecordKey(@Nonnull String indexedFileKey, @Nonnull Long recordId);
+    String createLogRecordKey(@Nonnull String indexedFileKey, long recordId);
 }

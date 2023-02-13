@@ -21,7 +21,7 @@ public class DefaultLogKeysFactory implements LogKeysFactory {
 
     @NonNull
     @Override
-    public String createLogRecordKey(@NonNull final String indexedFileKey, @NonNull final Long recordId) {
+    public String createLogRecordKey(@NonNull final String indexedFileKey, final long recordId) {
         return indexedFileKey + "@" + recordId;
     }
 }
