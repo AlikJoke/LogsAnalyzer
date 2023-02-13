@@ -2,12 +2,12 @@ package org.analyzer.logs.service.management;
 
 import lombok.Data;
 import lombok.NonNull;
-import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.UserService;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
-import reactor.core.publisher.Flux;
+
+import java.util.List;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
@@ -17,7 +17,7 @@ abstract class MongoDBManagementServiceWithUserCountersBase<T> extends MongoDBMa
 
     MongoDBManagementServiceWithUserCountersBase(
             @NonNull UserService userService,
-            @NonNull ReactiveMongoTemplate template,
+            @NonNull MongoTemplate template,
             @NonNull Class<T> entityClass) {
         super(template, entityClass);
         this.userService = userService;
@@ -25,14 +25,14 @@ abstract class MongoDBManagementServiceWithUserCountersBase<T> extends MongoDBMa
 
     @NonNull
     @Override
-    public Flux<MongoDBManagementServiceWithUserCounters.CountByUsers> countByUsers() {
-        return composeCountByUsersFlux(
+    public List<MongoDBManagementServiceWithUserCounters.CountByUsers> countByUsers() {
+        return composeCountByUsers(
                 group("user_key").count().as("total")
         );
     }
 
-    protected Flux<MongoDBManagementServiceWithUserCounters.CountByUsers> composeCountByUsersFlux(final AggregationOperation groupOperation) {
-        final Flux<CountByUsers> countByUsersFlux =
+    protected List<MongoDBManagementServiceWithUserCounters.CountByUsers> composeCountByUsers(final AggregationOperation groupOperation) {
+        final var aggregationResults =
                 this.template.aggregate(
                         newAggregation(
                                 this.entityClass,
@@ -41,14 +41,17 @@ abstract class MongoDBManagementServiceWithUserCountersBase<T> extends MongoDBMa
                                 sort(Sort.Direction.DESC, "total")
                         ),
                         this.entityClass,
-                        CountByUsers.class);
-        return countByUsersFlux
-                .flatMap(data ->
-                        this.userService.findByUserHash(data.getUserKey())
-                                .map(UserEntity::getUsername)
-                                .doOnNext(data::setUser_key)
-                                .thenReturn(data)
+                        CountByUsers.class
                 );
+        return aggregationResults
+                        .getMappedResults()
+                        .stream()
+                        .peek(data -> {
+                            final var user = this.userService.findByUserHash(data.getUserKey());
+                            data.setUser_key(user.getUsername());
+                        })
+                        .map(MongoDBManagementServiceWithUserCounters.CountByUsers.class::cast)
+                        .toList();
     }
 
     @Data

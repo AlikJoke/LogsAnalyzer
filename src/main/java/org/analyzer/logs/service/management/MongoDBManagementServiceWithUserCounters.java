@@ -1,17 +1,14 @@
 package org.analyzer.logs.service.management;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 import javax.annotation.Nonnull;
+import java.util.List;
 
 public interface MongoDBManagementServiceWithUserCounters extends MongoDBManagementService {
 
-    @Nonnull
-    Mono<Long> commonCount();
+    long commonCount();
 
     @Nonnull
-    Flux<CountByUsers> countByUsers();
+    List<CountByUsers> countByUsers();
 
     interface CountByUsers {
 

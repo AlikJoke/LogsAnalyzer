@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.Future;
+
 @Component
 public class LongRunningTaskExecutor {
 
@@ -29,8 +31,8 @@ public class LongRunningTaskExecutor {
                             .register(meterRegistry);
     }
 
-    public void execute(@NonNull final Runnable task) {
+    public Future<?> execute(@NonNull final Runnable task) {
         this.longRunningTasksCounter.increment();
-        this.taskExecutorDelegate.submit(this.timer.wrap(task));
+        return this.taskExecutorDelegate.submit(this.timer.wrap(task));
     }
 }

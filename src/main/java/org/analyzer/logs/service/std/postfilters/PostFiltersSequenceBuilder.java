@@ -7,8 +7,8 @@ import org.analyzer.logs.service.util.JsonConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -22,10 +22,14 @@ public class PostFiltersSequenceBuilder {
     private NoFilterPostFilter noFilterPostFilter;
 
     @NonNull
-    public Flux<PostFilter> build(@NonNull Map<String, JsonNode> postFilters) {
-        return Flux.fromIterable(postFilters.entrySet())
+    public List<PostFilter> build(@NonNull Map<String, JsonNode> postFilters) {
+        final var entries = postFilters.entrySet();
+        return entries.isEmpty()
+                ? List.of(this.noFilterPostFilter)
+                : entries
+                    .stream()
                     .map(this::createPostFilter)
-                    .defaultIfEmpty(this.noFilterPostFilter);
+                    .toList();
     }
 
     private PostFilter createPostFilter(final Map.Entry<String, JsonNode> pf) {

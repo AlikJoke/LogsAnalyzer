@@ -7,7 +7,6 @@ import org.analyzer.logs.service.util.JsonConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
 
 @Component
 public class AggregatorFactory {
@@ -19,14 +18,12 @@ public class AggregatorFactory {
 
     @NonNull
     public <T> Aggregator<T> create(@NonNull String aggregatorKey, @NonNull Object parameters) {
-        return Mono.just(aggregatorKey)
-                    .map(key -> createAggregator(key, parameters));
+        return createAggregator(aggregatorKey, parameters);
     }
 
     @NonNull
     public <T> Aggregator<T> create(@NonNull String aggregatorKey, @NonNull JsonNode parameters) {
-        return Mono.just(aggregatorKey)
-                    .map(key -> createAggregator(key, parameters));
+        return createAggregator(aggregatorKey, parameters);
     }
 
     private <T> Aggregator<T> createAggregator(final String aggregatorKey, final JsonNode parametersJson) {

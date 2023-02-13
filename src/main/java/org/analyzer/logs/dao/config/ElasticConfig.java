@@ -1,23 +1,23 @@
 package org.analyzer.logs.dao.config;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchClients;
-import org.springframework.data.elasticsearch.client.elc.ReactiveElasticsearchClient;
-import org.springframework.data.elasticsearch.client.elc.ReactiveElasticsearchTemplate;
+import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.convert.ElasticsearchConverter;
 import org.springframework.data.elasticsearch.core.convert.MappingElasticsearchConverter;
 import org.springframework.data.elasticsearch.core.mapping.SimpleElasticsearchMappingContext;
-import org.springframework.data.elasticsearch.repository.config.EnableReactiveElasticsearchRepositories;
+import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 
 @Configuration
-@EnableReactiveElasticsearchRepositories(basePackages = "org.analyzer.logs.dao")
+@EnableElasticsearchRepositories(basePackages = "org.analyzer.logs.dao")
 public class ElasticConfig {
 
     @Bean
-    public ReactiveElasticsearchClient client(RestClientBuilder restClientBuilder) {
-        return ElasticsearchClients.createReactive(restClientBuilder.build());
+    public ElasticsearchClient client(RestClientBuilder restClientBuilder) {
+        return ElasticsearchClients.createImperative(restClientBuilder.build());
     }
 
     @Bean
@@ -31,7 +31,7 @@ public class ElasticConfig {
     }
 
     @Bean
-    public ReactiveElasticsearchTemplate reactiveElasticsearchTemplate(ReactiveElasticsearchClient client, ElasticsearchConverter converter) {
-        return new ReactiveElasticsearchTemplate(client, converter);
+    public ElasticsearchTemplate elasticsearchTemplate(ElasticsearchClient client, ElasticsearchConverter converter) {
+        return new ElasticsearchTemplate(client, converter);
     }
 }

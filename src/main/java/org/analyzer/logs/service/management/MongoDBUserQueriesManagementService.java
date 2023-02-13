@@ -5,9 +5,8 @@ import org.analyzer.logs.dao.UserQueryRepository;
 import org.analyzer.logs.model.UserSearchQueryEntity;
 import org.analyzer.logs.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 
 @Service
 public class MongoDBUserQueriesManagementService extends MongoDBManagementServiceWithUserCountersBase<UserSearchQueryEntity> implements UserQueriesManagementService {
@@ -18,14 +17,13 @@ public class MongoDBUserQueriesManagementService extends MongoDBManagementServic
     MongoDBUserQueriesManagementService(
             @NonNull UserQueryRepository userQueryRepository,
             @NonNull UserService userService,
-            @NonNull ReactiveMongoTemplate template) {
+            @NonNull MongoTemplate template) {
         super(userService, template, UserSearchQueryEntity.class);
         this.userQueryRepository = userQueryRepository;
     }
 
-    @NonNull
     @Override
-    public Mono<Long> commonCount() {
+    public long commonCount() {
         return this.userQueryRepository.count();
     }
 }

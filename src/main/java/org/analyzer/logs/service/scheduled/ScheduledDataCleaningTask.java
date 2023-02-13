@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -39,20 +38,16 @@ public class ScheduledDataCleaningTask {
     )
     public void run() {
         this.userService.findAllWithClearingSettings()
-                        .map(this::clearData)
-                        .subscribe();
+                        .forEach(this::clearData);
     }
 
-    private Mono<Void> clearData(final UserEntity user) {
+    private void clearData(final UserEntity user) {
         final var timestamp = createTimestamp(user.getSettings().getCleaningInterval());
-        final var indexingKeysFlux = this.logsService.deleteAllStatisticsByUserKeyAndCreationDate(user.getHash(), timestamp);
-        return indexingKeysFlux
-                    .collectList()
-                    .map(
-                            indexingKeys -> this.logsService.deleteByQuery(createSearchQueryToDelete(user, indexingKeys))
-                    )
-                    .contextWrite(this.userAccessor.set(Mono.just(user)))
-                    .then();
+        final var indexingKeys = this.logsService.deleteAllStatisticsByUserKeyAndCreationDate(user.getHash(), timestamp);
+
+        try (final var userContext = this.userAccessor.as(user)) {
+            this.logsService.deleteByQuery(createSearchQueryToDelete(user, indexingKeys));
+        }
     }
 
     private LocalDateTime createTimestamp(final long intervalInMinutes) {

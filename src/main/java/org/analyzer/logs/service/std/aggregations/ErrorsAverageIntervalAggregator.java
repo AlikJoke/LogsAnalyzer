@@ -7,14 +7,13 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.logging.LogLevel;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Component(ErrorsAverageIntervalAggregator.NAME)
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
@@ -48,14 +47,31 @@ public class ErrorsAverageIntervalAggregator implements Aggregator<Double> {
 
     @Override
     @NonNull
-    public Flux<Double> apply(@NonNull Flux<LogRecordEntity> recordFlux) {
-        return recordFlux
-                .filter(record -> LogLevel.ERROR.name().equalsIgnoreCase(record.getLevel()))
-                .cache(1)
-                .buffer(2, 1)
-                .map(this::getDiffInterval)
-                .collect(Collectors.averagingLong(i -> i))
-                .flux();
+    public List<Double> apply(@NonNull List<LogRecordEntity> recordList) {
+
+        final List<LogRecordEntity> errorsRecords =
+                recordList
+                        .stream()
+                        .filter(record -> LogLevel.ERROR.name().equalsIgnoreCase(record.getLevel()))
+                        .toList();
+
+        if (errorsRecords.size() < 2) {
+            return List.of(0d);
+        }
+
+        final var intervals = new LinkedHashSet<Long>();
+
+        for (var i = 1; i < errorsRecords.size(); i++) {
+            final var recordsBuffer = List.of(errorsRecords.get(i - 1), errorsRecords.get(i));
+            intervals.add(getDiffInterval(recordsBuffer));
+        }
+
+        final var averageInterval = intervals
+                                        .stream()
+                                        .mapToLong(i -> i)
+                                        .average()
+                                        .orElse(0);
+        return List.of(averageInterval);
     }
 
     private long getDiffInterval(final List<LogRecordEntity> records) {

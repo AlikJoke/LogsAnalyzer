@@ -4,10 +4,9 @@ import lombok.NonNull;
 import org.analyzer.logs.dao.LogRecordRepository;
 import org.analyzer.logs.model.LogRecordEntity;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.elasticsearch.client.elc.ReactiveElasticsearchTemplate;
-import org.springframework.data.elasticsearch.core.ReactiveIndexOperations;
+import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
+import org.springframework.data.elasticsearch.core.IndexOperations;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
@@ -20,69 +19,55 @@ public class ElasticLogsManagementService implements LogsManagementService {
     private static final Logger logger = Loggers.getLogger(ElasticLogsManagementService.class);
 
     private final LogRecordRepository logsRepository;
-
-    private final ReactiveIndexOperations indexOps;
+    private final IndexOperations indexOps;
 
     @Autowired
     public ElasticLogsManagementService(
-            @NonNull ReactiveElasticsearchTemplate template,
+            @NonNull ElasticsearchTemplate template,
             @NonNull LogRecordRepository logsRepository) {
         this.logsRepository = logsRepository;
         this.indexOps = template.indexOps(LogRecordEntity.class);
     }
 
-    @NonNull
     @Override
-    public Mono<Boolean> createIndex() {
-        return this.indexOps
-                        .createWithMapping()
-                        .log(logger);
+    public boolean createIndex() {
+        return this.indexOps.createWithMapping();
     }
 
-    @NonNull
     @Override
-    public Mono<Boolean> existsIndex() {
+    public boolean existsIndex() {
         return this.indexOps.exists();
     }
 
-    @NonNull
     @Override
-    public Mono<Void> refreshIndex() {
-        return this.indexOps
-                        .refresh()
-                        .log(logger);
+    public void refreshIndex() {
+        this.indexOps.refresh();
+    }
+
+    @Override
+    public boolean dropIndex() {
+        return this.indexOps.delete();
     }
 
     @NonNull
     @Override
-    public Mono<Boolean> dropIndex() {
-        return this.indexOps
-                        .delete()
-                        .log(logger);
-    }
+    public Map<String, Object> indexInfo() {
+        final Map<String, Object> result = new HashMap<>();
+        this.indexOps
+                .getInformation()
+                .forEach(inf -> {
+                    result.put("index-name", inf.getName());
+                    result.put("data-count", this.logsRepository.count());
 
-    @NonNull
-    @Override
-    public Mono<Map<String, Object>> indexInfo() {
-        return this.indexOps
-                        .getInformation()
-                        .zipWith(this.logsRepository.count())
-                        .map(tuple -> {
+                    if (inf.getMapping() != null) {
+                        result.putAll(inf.getMapping());
+                    }
 
-                            final Map<String, Object> properties = new HashMap<>();
-                            properties.put("index-name", tuple.getT1().getName());
-                            properties.put("data-count", tuple.getT2());
+                    if (inf.getSettings() != null) {
+                        result.putAll(inf.getSettings());
+                    }
+                });
 
-                            if (tuple.getT1().getMapping() != null) {
-                                properties.putAll(tuple.getT1().getMapping());
-                            }
-
-                            if (tuple.getT1().getSettings() != null) {
-                                properties.putAll(tuple.getT1().getSettings());
-                            }
-
-                            return properties;
-                        })
-                        .singleOrEmpty();
+        return result;
     }
 }

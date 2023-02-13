@@ -1,7 +1,7 @@
 package org.analyzer.logs.dao;
 
 import org.analyzer.logs.model.LogRecordEntity;
-import org.springframework.data.elasticsearch.repository.ReactiveElasticsearchRepository;
+import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
-public interface LogRecordRepository extends ReactiveElasticsearchRepository<LogRecordEntity, String> {
+public interface LogRecordRepository extends ElasticsearchRepository<LogRecordEntity, String> {
 }

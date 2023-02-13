@@ -3,22 +3,23 @@ package org.analyzer.logs.service.std.aggregations;
 import lombok.NonNull;
 import org.analyzer.logs.model.LogRecordEntity;
 import org.analyzer.logs.service.Aggregator;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 
 import javax.annotation.concurrent.NotThreadSafe;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Component(FrequencyAggregator.NAME)
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @NotThreadSafe
-public class FrequencyAggregator implements Aggregator<Tuple2<String, Long>> {
+public class FrequencyAggregator implements Aggregator<Pair<String, Long>> {
 
     public static final String NAME = "frequency";
 
@@ -60,23 +61,30 @@ public class FrequencyAggregator implements Aggregator<Tuple2<String, Long>> {
 
     @Override
     @NonNull
-    public Flux<Tuple2<String, Long>> apply(@NonNull Flux<LogRecordEntity> recordFlux) {
+    public List<Pair<String, Long>> apply(@NonNull List<LogRecordEntity> recordList) {
         Objects.requireNonNull(this.parameters, "Frequency parameters isn't specified");
 
         final Predicate<LogRecordEntity> filterPredicate =
                 record -> this.additionalFilterBy == null
                         || Objects.equals(this.additionalFilterValue, LogRecordEntity.field2FieldValueFunction(this.additionalFilterBy).apply(record));
 
-        return recordFlux
+        final var groupingBy = LogRecordEntity.field2FieldValueFunction(this.parameters.groupBy() == null ? "record" : this.parameters.groupBy())
+                                                .andThen(String::valueOf);
+        return recordList
+                .stream()
                 .filter(filterPredicate)
-                .groupBy(LogRecordEntity.field2FieldValueFunction(this.parameters.groupBy() == null ? "record" : this.parameters.groupBy()))
-                .flatMap(
-                        group -> Mono
-                                    .just(group.key().toString())
-                                    .zipWith(group.count())
+                .collect(
+                        Collectors.groupingBy(
+                                groupingBy,
+                                Collectors.counting()
+                        )
                 )
-                .filter(tuple -> tuple.getT2().intValue() >= this.parameters.minFrequency())
-                .sort((o1, o2) -> Long.compare(o2.getT2(), o1.getT2()))
-                .take(this.parameters.takeCount() > 0 ? this.parameters.takeCount() : Integer.MAX_VALUE);
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().intValue() >= this.parameters.minFrequency())
+                .sorted((o1, o2) -> Long.compare(o2.getValue(), o1.getValue()))
+                .limit(this.parameters.takeCount() > 0 ? this.parameters.takeCount() : Integer.MAX_VALUE)
+                .map(ImmutablePair::of)
+                .collect(Collectors.toList());
     }
 }

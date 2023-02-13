@@ -7,23 +7,21 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.cors.CorsConfiguration;
-import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
-@EnableWebFluxSecurity
+@EnableWebSecurity
 @Configuration
 @EnableConfigurationProperties(AdminAccountCredentials.class)
 public class SecurityConfig {
@@ -35,16 +33,16 @@ public class SecurityConfig {
     private List<String> allowedOrigins;
 
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .authorizeExchange()
-                    .pathMatchers("/actuator/**")
+                .authorizeHttpRequests()
+                    .requestMatchers("/actuator/**")
                     .hasAuthority(ADMIN_ROLE)
-                    .pathMatchers(HttpMethod.POST, "/user")
+                    .requestMatchers(HttpMethod.POST, "/user")
                     .permitAll()
-                    .pathMatchers("/anonymous", "/docs", "/swagger-ui.html", "/webjars/**")
+                    .requestMatchers("/anonymous", "/docs", "/swagger-ui.html", "/webjars/**")
                     .permitAll()
-                .anyExchange()
+                .anyRequest()
                     .hasAuthority(USER_ROLE)
                     .and()
                         .formLogin()
@@ -55,7 +53,7 @@ public class SecurityConfig {
                             final var allowedMethods =
                                     Arrays.stream(RequestMethod.values())
                                         .map(RequestMethod::name)
-                                        .collect(Collectors.toList());
+                                        .toList();
                             final var result = new CorsConfiguration().applyPermitDefaultValues();
                             result
                                     .setAllowedOriginPatterns(allowedOrigins)
@@ -69,17 +67,18 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UserDetailsRepositoryReactiveAuthenticationManager authenticationManager(
-            ReactiveUserDetailsService userDetailsService,
+    public AuthenticationProvider daoAuthenticationProvider(
+            UserDetailsService userDetailsService,
             BCryptPasswordEncoder passwordEncoder) {
-        final var manager = new UserDetailsRepositoryReactiveAuthenticationManager(userDetailsService);
-        manager.setPasswordEncoder(passwordEncoder);
+        final var provider = new DaoAuthenticationProvider();
+        provider.setPasswordEncoder(passwordEncoder);
+        provider.setUserDetailsService(userDetailsService);
 
-        return manager;
+        return provider;
     }
 
     @Bean
-    public ReactiveUserDetailsService userDetailsService(
+    public UserDetailsService userDetailsService(
             UserService userService,
             AdminAccountCredentials adminAccountCredentials) {
         final var adminUser = User.withUsername(adminAccountCredentials.getUsername())
@@ -87,15 +86,10 @@ public class SecurityConfig {
                                     .disabled(false)
                                     .authorities(ADMIN_ROLE)
                                 .build();
-        final var adminUserMono = Mono.just(adminUser);
         return username ->
                 adminAccountCredentials.getUsername().equals(username)
-                        ? adminUserMono
-                        : userService
-                            .findById(username)
-                            .onErrorMap(ex -> new UsernameNotFoundException(ex.getMessage()))
-                            .onErrorStop()
-                            .map(UserDetailsWrapper::new);
+                        ? adminUser
+                        : new UserDetailsWrapper(userService.findById(username));
     }
 
     @Bean

@@ -5,10 +5,10 @@ import org.analyzer.logs.dao.LogsStatisticsRepository;
 import org.analyzer.logs.model.LogsStatisticsEntity;
 import org.analyzer.logs.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
 
@@ -21,21 +21,20 @@ public class MongoDBStatisticsManagementService extends MongoDBManagementService
     MongoDBStatisticsManagementService(
             @NonNull LogsStatisticsRepository statisticsRepository,
             @NonNull UserService userService,
-            @NonNull ReactiveMongoTemplate template) {
+            @NonNull MongoTemplate template) {
         super(userService, template, LogsStatisticsEntity.class);
         this.statisticsRepository = statisticsRepository;
     }
 
-    @NonNull
     @Override
-    public Mono<Long> commonCount() {
+    public long commonCount() {
         return this.statisticsRepository.count();
     }
 
     @NonNull
     @Override
-    public Flux<StatisticsManagementService.CountByUsers> countRecordsByUsers() {
-        return composeCountByUsersFlux(
+    public List<StatisticsManagementService.CountByUsers> countRecordsByUsers() {
+        return composeCountByUsers(
                 group("user_key").sum("stats.common-count").as("total")
         );
     }

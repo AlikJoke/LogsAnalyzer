@@ -16,5 +16,5 @@ public interface CurrentUserQueryService {
 
     void deleteAll();
 
-    boolean delete(@Nonnull String queryId);
+    void delete(@Nonnull String queryId);
 }

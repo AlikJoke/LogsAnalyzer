@@ -7,9 +7,9 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
-import reactor.core.publisher.Flux;
 
 import javax.annotation.concurrent.NotThreadSafe;
+import java.util.List;
 import java.util.Objects;
 
 @Component(CountAggregator.NAME)
@@ -57,13 +57,14 @@ public class CountAggregator implements Aggregator<Long> {
 
     @Override
     @NonNull
-    public Flux<Long> apply(@NonNull Flux<LogRecordEntity> recordFlux) {
+    public List<Long> apply(@NonNull List<LogRecordEntity> records) {
         Objects.requireNonNull(this.parameters, "Count parameters isn't specified");
 
-        return recordFlux
-                .map(LogRecordEntity.field2FieldValueFunction(this.additionalFilterBy))
-                .filter(value -> this.additionalFilterValue == null || Objects.equals(value, this.additionalFilterValue))
-                .count()
-                .flux();
+        final var result = records
+                            .stream()
+                            .map(LogRecordEntity.field2FieldValueFunction(this.additionalFilterBy))
+                            .filter(value -> this.additionalFilterValue == null || Objects.equals(value, this.additionalFilterValue))
+                            .count();
+        return List.of(result);
     }
 }

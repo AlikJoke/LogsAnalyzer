@@ -1,17 +1,17 @@
 package org.analyzer.logs.service.std.postfilters;
 
 import lombok.NonNull;
-import org.analyzer.logs.service.PostFilter;
 import org.analyzer.logs.model.LogRecordEntity;
+import org.analyzer.logs.service.PostFilter;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -29,14 +29,21 @@ public class TimestampGapPostFilter implements PostFilter {
 
     @NonNull
     @Override
-    public Flux<LogRecordEntity> apply(@NonNull Flux<LogRecordEntity> records) {
+    public List<LogRecordEntity> apply(@NonNull List<LogRecordEntity> records) {
         Objects.requireNonNull(this.parameters, "Gap interval isn't specified");
 
-        return records
-                    .cache(1)
-                    .buffer(2, 1)
-                    .flatMapIterable(this::compareWithFilter)
-                    .distinctUntilChanged();
+        if (records.size() < 2) {
+            return records;
+        }
+
+        final var result = new LinkedHashSet<LogRecordEntity>();
+
+        for (var i = 1; i < records.size(); i++) {
+            final var recordsBuffer = List.of(records.get(i - 1), records.get(i));
+            result.addAll(compareWithFilter(recordsBuffer));
+        }
+
+        return List.copyOf(result);
     }
 
     @NonNull

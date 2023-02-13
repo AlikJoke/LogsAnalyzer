@@ -6,25 +6,31 @@ import com.fasterxml.jackson.databind.jsontype.impl.StdTypeResolverBuilder;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
-import org.springframework.data.redis.core.ReactiveRedisTemplate;
-import org.springframework.data.redis.serializer.*;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.JacksonObjectReader;
+import org.springframework.data.redis.serializer.JacksonObjectWriter;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 public class RedisCacheConfig {
 
     @Bean
-    public ReactiveRedisTemplate<String, Object> userReactiveRedisTemplate(
-            ReactiveRedisConnectionFactory factory,
+    public RedisTemplate<String, Object> userReactiveRedisTemplate(
+            RedisConnectionFactory factory,
             ObjectMapper mapper) {
         final var keySerializer = new StringRedisSerializer();
         final var valueSerializer = new GenericJackson2JsonRedisSerializer(
                 createObjectMapper(), JacksonObjectReader.create(), JacksonObjectWriter.create()
         );
-        final RedisSerializationContext.RedisSerializationContextBuilder<String, Object> builder =
-                RedisSerializationContext.newSerializationContext(keySerializer);
-        final RedisSerializationContext<String, Object> context = builder.value(valueSerializer).build();
-        return new ReactiveRedisTemplate<>(factory, context);
+
+        final RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory);
+        template.setKeySerializer(keySerializer);
+        template.setValueSerializer(valueSerializer);
+
+        return template;
     }
 
     private ObjectMapper createObjectMapper() {

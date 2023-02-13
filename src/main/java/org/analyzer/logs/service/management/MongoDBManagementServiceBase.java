@@ -2,11 +2,10 @@ package org.analyzer.logs.service.management;
 
 import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.IndexField;
 import org.springframework.data.mongodb.core.index.IndexInfo;
-import org.springframework.data.mongodb.core.index.ReactiveIndexOperations;
-import reactor.core.publisher.Mono;
+import org.springframework.data.mongodb.core.index.IndexOperations;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,40 +15,43 @@ import java.util.stream.Collectors;
 abstract class MongoDBManagementServiceBase<T> implements MongoDBManagementService {
 
     protected final Class<T> entityClass;
-    protected final ReactiveMongoTemplate template;
-    protected final ReactiveIndexOperations collectionOps;
+    protected final MongoTemplate template;
+    protected final IndexOperations collectionOps;
 
     @Autowired
-    MongoDBManagementServiceBase(@NonNull ReactiveMongoTemplate template, @NonNull Class<T> entityClass) {
+    MongoDBManagementServiceBase(@NonNull MongoTemplate template, @NonNull Class<T> entityClass) {
         this.template = template;
         this.entityClass = entityClass;
         this.collectionOps = template.indexOps(entityClass);
     }
 
-    @NonNull
     @Override
-    public Mono<Void> createCollection() {
-        return this.template.createCollection(this.entityClass).then();
+    public void createCollection() {
+        this.template.createCollection(this.entityClass);
     }
 
-    @NonNull
     @Override
-    public Mono<Boolean> existsCollection() {
+    public boolean existsCollection() {
         return this.template.collectionExists(this.entityClass);
     }
 
-    @NonNull
     @Override
-    public Mono<Void> dropCollection() {
-        return this.template.dropCollection(this.entityClass);
+    public void dropCollection() {
+        this.template.dropCollection(this.entityClass);
     }
 
     @NonNull
     @Override
-    public Mono<Map<String, Object>> indexesInfo() {
+    public Map<String, Object> indexesInfo() {
         return this.collectionOps.getIndexInfo()
+                                    .stream()
                                     .map(this::composeIndexInfoMap)
-                                    .collectMap(map -> (String) map.get("name"), Function.identity());
+                                    .collect(
+                                            Collectors.toMap(
+                                                    map -> (String) map.get("name"),
+                                                    Function.identity()
+                                            )
+                                    );
     }
 
     private Map<String, Object> composeIndexInfoMap(final IndexInfo ii) {
@@ -61,7 +63,7 @@ abstract class MongoDBManagementServiceBase<T> implements MongoDBManagementServi
         props.put("index-fields", ii.getIndexFields()
                 .stream()
                 .map(IndexField::toString)
-                .collect(Collectors.toList()));
+                .toList());
         ii.getExpireAfter()
                 .ifPresent(expireAfter -> props.put("expire-after", expireAfter));
         return props;

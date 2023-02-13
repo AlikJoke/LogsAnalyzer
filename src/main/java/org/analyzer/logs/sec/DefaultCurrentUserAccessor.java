@@ -6,13 +6,9 @@ import org.analyzer.logs.service.CurrentUserAccessor;
 import org.analyzer.logs.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
-import reactor.util.context.Context;
 
 @Component
 public class DefaultCurrentUserAccessor implements CurrentUserAccessor {
@@ -22,31 +18,31 @@ public class DefaultCurrentUserAccessor implements CurrentUserAccessor {
 
     @NonNull
     @Override
-    public Mono<UserEntity> get() {
-        return ReactiveSecurityContextHolder.getContext()
-                                            .map(SecurityContext::getAuthentication)
-                                            .map(Authentication::getPrincipal)
-                                            .cast(UserDetailsWrapper.class)
-                                            .map(UserDetailsWrapper::getUserEntity)
-                                            .cache();
+    public UserEntity get() {
+        final var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            throw new UserNotDefinedException();
+        }
+
+        final var principal = auth.getPrincipal();
+        return ((UserDetailsWrapper) principal).getUserEntity();
     }
 
     @NonNull
     @Override
-    public Context set(@NonNull String userKey) {
-        return set(userService.findByUserHash(userKey)
-                                .onErrorStop()
-        );
+    public UserContext as(@NonNull String userKey) {
+        return as(this.userService.findByUserHash(userKey));
     }
 
     @NonNull
     @Override
-    public Context set(@NonNull Mono<UserEntity> user) {
-        final var securityContext = user
-                                    .map(UserDetailsWrapper::new)
-                                    .map(RunAsUserAuthenticationToken::new)
-                                    .map(SecurityContextImpl::new);
-        return ReactiveSecurityContextHolder.withSecurityContext(securityContext);
+    public UserContext as(@NonNull UserEntity user) {
+        final var userWrapper = new UserDetailsWrapper(user);
+        final var authToken = new RunAsUserAuthenticationToken(userWrapper);
+        final var securityContext = new SecurityContextImpl(authToken);
+
+        SecurityContextHolder.setContext(securityContext);
+        return SecurityContextHolder::clearContext;
     }
 
     private static class RunAsUserAuthenticationToken extends AbstractAuthenticationToken {

@@ -19,9 +19,6 @@ public class DataIndexingTelegramNotifier implements DataIndexingNotifier {
         this.userNotifier.notify(
                 "**Logs indexing completed** __(%s)__\n".formatted(indexingKey) + "```" + successMessage + "```",
                 notificationSettings.getNotifyToTelegram()
-        ).subscribe(
-                v -> {},
-                ex -> log.error("", ex)
         );
     }
 
@@ -30,9 +27,6 @@ public class DataIndexingTelegramNotifier implements DataIndexingNotifier {
         this.userNotifier.notify(
                 "**Logs indexing failed with error**\n" + "__" + message + "__",
                 notificationSettings.getNotifyToTelegram()
-        ).subscribe(
-                v -> {},
-                ex -> log.error("", ex)
         );
     }
 }

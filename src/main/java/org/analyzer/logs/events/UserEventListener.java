@@ -4,7 +4,7 @@ import lombok.NonNull;
 import org.analyzer.logs.model.UserEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -12,7 +12,7 @@ public class UserEventListener extends MongoEventGenerationListener<UserEntity> 
 
     @Autowired
     protected UserEventListener(
-            @NonNull ReactiveRedisTemplate<String, Object> redisTemplate,
+            @NonNull RedisTemplate<String, Object> redisTemplate,
             @Value("${logs.analyzer.events.users.topic}") @NonNull String topicName) {
         super(redisTemplate, topicName);
     }

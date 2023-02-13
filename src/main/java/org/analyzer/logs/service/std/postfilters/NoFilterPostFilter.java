@@ -4,7 +4,8 @@ import lombok.NonNull;
 import org.analyzer.logs.model.LogRecordEntity;
 import org.analyzer.logs.service.PostFilter;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
+
+import java.util.List;
 
 @Component(NoFilterPostFilter.NAME)
 class NoFilterPostFilter implements PostFilter {
@@ -13,7 +14,7 @@ class NoFilterPostFilter implements PostFilter {
 
     @NonNull
     @Override
-    public Flux<LogRecordEntity> apply(@NonNull Flux<LogRecordEntity> records) {
+    public List<LogRecordEntity> apply(@NonNull List<LogRecordEntity> records) {
         return records;
     }
 

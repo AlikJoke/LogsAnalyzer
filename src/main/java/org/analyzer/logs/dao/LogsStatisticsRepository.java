@@ -1,28 +1,28 @@
 package org.analyzer.logs.dao;
 
 import org.analyzer.logs.model.LogsStatisticsEntity;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
-import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
-public interface LogsStatisticsRepository extends ReactiveMongoRepository<LogsStatisticsEntity, String> {
+public interface LogsStatisticsRepository extends MongoRepository<LogsStatisticsEntity, String> {
 
     @Nonnull
-    Mono<LogsStatisticsEntity> findByDataQueryRegexOrId(@Nonnull String statisticsKey, @Nonnull String id);
+    Optional<LogsStatisticsEntity> findByDataQueryRegexOrId(@Nonnull String statisticsKey, @Nonnull String id);
 
     @Nonnull
     @Query("{ 'user_key' : '?0', 'created' : { $lte : ?1 } }")
-    Flux<LogsStatisticsEntity> findAllByUserKeyAndCreationDateBefore(
+    List<LogsStatisticsEntity> findAllByUserKeyAndCreationDateBefore(
             @Nonnull String userKey,
             @Nonnull LocalDateTime creationDate);
 
     @Nonnull
     @Query(value = "{ 'user_key' : '?0', 'created' : { $lte : ?1 } }", delete = true)
-    Flux<LogsStatisticsEntity> deleteAllByUserKeyAndCreationDateBefore(
+    List<LogsStatisticsEntity> deleteAllByUserKeyAndCreationDateBefore(
             @Nonnull String userKey,
             @Nonnull LocalDateTime creationDate);
 }

@@ -67,12 +67,11 @@ public class ScheduledDataIndexingTask {
     public void run() {
         final var currentStamp = LocalDateTime.now();
         this.userService.findAllWithScheduledIndexingSettings(this.lastScanInfoTime)
-                            .map(this::processChangedUser)
-                            .subscribe();
+                        .forEach(this::processChangedUser);
         this.lastScanInfoTime = currentStamp;
     }
 
-    private boolean processChangedUser(final UserEntity userEntity) {
+    private void processChangedUser(final UserEntity userEntity) {
         final var settingsFutures = settingsFuturesByUser.getOrDefault(userEntity, new HashMap<>());
         final var scheduledSettingsIds = settingsFutures.keySet();
         final var userSettingsByKey =
@@ -113,7 +112,7 @@ public class ScheduledDataIndexingTask {
                     log.debug("Schedule task for user {} by settings = {}", userEntity.getUsername(), indexingSettings.getSettingsId());
                 });
 
-        return this.settingsFuturesByUser.putIfAbsent(userEntity, settingsFutures) != null;
+        this.settingsFuturesByUser.putIfAbsent(userEntity, settingsFutures);
     }
 
     private NetworkDataIndexer createDataIndexer(final UserEntity user, final ScheduledIndexingSettings indexingSettings) {

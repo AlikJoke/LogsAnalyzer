@@ -3,28 +3,26 @@ package org.analyzer.logs.dao;
 import org.analyzer.logs.model.UserSearchQueryEntity;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
-import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
 import java.time.LocalDateTime;
+import java.util.List;
 
-public interface UserQueryRepository extends ReactiveMongoRepository<UserSearchQueryEntity, String> {
+public interface UserQueryRepository extends MongoRepository<UserSearchQueryEntity, String> {
 
     @Nonnull
-    Flux<UserSearchQueryEntity> findAllByUserKeyAndCreatedBetween(
+    List<UserSearchQueryEntity> findAllByUserKeyAndCreatedBetween(
             @Nonnull String userKey,
             @Nonnull LocalDateTime from,
             @Nonnull LocalDateTime to,
             @Nonnull Sort sort);
 
-    @Nonnull
-    Mono<Void> deleteAllByUserKey(@Nonnull String userKey);
+    void deleteAllByUserKey(@Nonnull String userKey);
 
     @Query
-    Flux<UserSearchQueryEntity> findAllByUserKey(
+    List<UserSearchQueryEntity> findAllByUserKey(
             @Nonnull String userKey,
             @Nonnull Pageable pageable);
 }

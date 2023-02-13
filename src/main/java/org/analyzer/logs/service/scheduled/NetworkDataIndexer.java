@@ -12,21 +12,23 @@ import org.analyzer.logs.service.CurrentUserAccessor;
 import org.analyzer.logs.service.LogRecordFormat;
 import org.analyzer.logs.service.LogsService;
 import org.analyzer.logs.service.util.JsonConverter;
+import org.apache.commons.io.FileUtils;
+import org.asynchttpclient.AsyncCompletionHandlerBase;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.Response;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
@@ -34,10 +36,12 @@ import java.util.UUID;
 @Slf4j
 public class NetworkDataIndexer implements Runnable {
 
+    private static final int REQUEST_TIMEOUT = 2 * 60_000;
+
     @Autowired
     private LogsService logsService;
     @Autowired
-    private WebClient webClient;
+    private AsyncHttpClient asyncHttpClient;
     @Autowired
     private CurrentUserAccessor userAccessor;
     @Autowired
@@ -46,6 +50,8 @@ public class NetworkDataIndexer implements Runnable {
     private DataIndexingTelegramNotifier telegramNotifier;
     @Autowired
     private DataIndexingMailNotifier mailNotifier;
+    @Value("${logs.analyzer.indexing-timeout.seconds:60}")
+    private long indexingTimeout;
 
     private UserEntity user;
     private ScheduledIndexingSettings indexingSettings;
@@ -60,22 +66,47 @@ public class NetworkDataIndexer implements Runnable {
 
         final var url = indexingSettings.getNetworkSettings().getLogsUrl();
         final var authToken = indexingSettings.getNetworkSettings().getAuthToken();
+
+        this.asyncHttpClient
+                .prepareGet(url)
+                .addHeader("Authorization", authToken)
+                .setRequestTimeout(REQUEST_TIMEOUT)
+                .execute(new AsyncCompletionHandlerBase() {
+                    @Override
+                    public void onThrowable(Throwable t) {
+                        log.error("", t);
+                    }
+
+                    @Override
+                    public Response onCompleted(Response response) throws Exception {
+                        log.debug("Request completed with response status {}", response.getStatusCode());
+                        return super.onCompleted(response);
+                    }
+                })
+                .toCompletableFuture()
+                .thenApply(Response::getResponseBodyAsStream)
+                .thenAccept(this::processDownloadedData)
+                .join();
+    }
+
+    private void processDownloadedData(final InputStream is) {
         final var dataFile = createTempFile();
-        final var dataBufferFlux = this.webClient
-                                            .get()
-                                            .uri(url)
-                                            .header("Authorization", authToken)
-                                            .retrieve()
-                                            .bodyToFlux(DataBuffer.class);
-        DataBufferUtils.write(dataBufferFlux, dataFile.toPath(), StandardOpenOption.CREATE)
-                        .share()
-                        .thenReturn(dataFile)
-                        .flatMap(file -> this.logsService.index(file, createLogRecordFormat()))
-                        .flatMap(this.logsService::findStatisticsByKey)
-                        .doOnSuccess(this::onComplete)
-                        .doOnError(this::onError)
-                        .contextWrite(this.userAccessor.set(Mono.just(this.user)))
-                        .subscribe();
+        try (final var userContext = this.userAccessor.as(this.user)) {
+            FileUtils.copyInputStreamToFile(is, dataFile);
+            final var indexingProcess = this.logsService.index(dataFile, createLogRecordFormat());
+
+            indexingProcess.getProcessMonitor().get(this.indexingTimeout, TimeUnit.SECONDS);
+
+            final var statsEntity = this.logsService.findStatisticsByKey(indexingProcess.getIndexingKey());
+            onComplete(statsEntity);
+        } catch (InterruptedException e) {
+            onError(e);
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            onError(e);
+        } finally {
+            dataFile.delete();
+        }
     }
 
     private void onComplete(final LogsStatisticsEntity statistics) {

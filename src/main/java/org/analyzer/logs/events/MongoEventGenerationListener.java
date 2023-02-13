@@ -5,18 +5,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.mapping.event.AbstractMongoEventListener;
 import org.springframework.data.mongodb.core.mapping.event.AfterDeleteEvent;
 import org.springframework.data.mongodb.core.mapping.event.AfterSaveEvent;
-import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
 
 @Slf4j
 abstract class MongoEventGenerationListener<T> extends AbstractMongoEventListener<T> {
 
     private static final String ID_KEY = "_id";
 
-    protected final ReactiveRedisTemplate<String, Object> redisTemplate;
+    protected final RedisTemplate<String, Object> redisTemplate;
     protected final String topicName;
 
     protected MongoEventGenerationListener(
-            @NonNull ReactiveRedisTemplate<String, Object> redisTemplate,
+            @NonNull RedisTemplate<String, Object> redisTemplate,
             @NonNull String topicName) {
         this.redisTemplate = redisTemplate;
         this.topicName = topicName;
@@ -45,10 +45,6 @@ abstract class MongoEventGenerationListener<T> extends AbstractMongoEventListene
     protected abstract T buildEntityToSend(final T sourceEntity);
 
     protected void sendEventToTopic(final Object source) {
-        this.redisTemplate.convertAndSend(this.topicName, source)
-                .subscribe(
-                        count -> log.info("Received by {} consumers", count),
-                        ex -> log.error("", ex)
-                );
+        this.redisTemplate.convertAndSend(this.topicName, source);
     }
 }

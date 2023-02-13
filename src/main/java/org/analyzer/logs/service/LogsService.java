@@ -8,11 +8,12 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.Future;
 
 public interface LogsService {
 
     @Nonnull
-    String index(
+    IndexingProcess index(
             @Nonnull File logFile,
             @Nullable LogRecordFormat patternFormat);
 
@@ -38,4 +39,13 @@ public interface LogsService {
             @NonNull LocalDateTime beforeDate);
 
     void deleteByQuery(@Nonnull SearchQuery deleteQuery);
+
+    interface IndexingProcess {
+
+        @Nonnull
+        String getIndexingKey();
+
+        @Nonnull
+        Future<?> getProcessMonitor();
+    }
 }
