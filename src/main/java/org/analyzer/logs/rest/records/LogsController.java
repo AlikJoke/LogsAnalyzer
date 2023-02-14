@@ -44,7 +44,6 @@ public class LogsController extends ControllerBase {
                 .flatMap(tempFile ->
                         this.service
                                 .index(tempFile, recordPattern)
-                                .doOnNext(v -> tempFile.delete())
                 )
                 .map(indexingKey -> new IndexingResult(indexingKey, this.linksCollector.collectFor(IndexingResult.class)))
                 .onErrorResume(this::onError);

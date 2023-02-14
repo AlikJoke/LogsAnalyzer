@@ -8,6 +8,7 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Future;
 
 public interface LogsService {
@@ -24,7 +25,7 @@ public interface LogsService {
     MapLogsStatistics analyze(@Nonnull AnalyzeQuery query);
 
     @Nonnull
-    LogsStatisticsEntity findStatisticsByKey(@Nonnull String key);
+    Optional<LogsStatisticsEntity> findStatisticsByKey(@Nonnull String key);
 
     @Nonnull
     List<LogsStatisticsEntity> findAllStatisticsByUserKeyAndCreationDate(
@@ -40,12 +41,6 @@ public interface LogsService {
 
     void deleteByQuery(@Nonnull SearchQuery deleteQuery);
 
-    interface IndexingProcess {
-
-        @Nonnull
-        String getIndexingKey();
-
-        @Nonnull
-        Future<?> getProcessMonitor();
+    record IndexingProcess(@Nonnull String indexingKey, @Nonnull Future<?> processMonitor) {
     }
 }

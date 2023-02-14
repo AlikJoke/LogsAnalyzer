@@ -39,7 +39,7 @@ public class ElasticSearchQueryParser implements SearchQueryParser<StringQuery> 
                 }
             }""";
 
-    @Value("${elasticsearch.default.max_results:10000}")
+    @Value("${elasticsearch.default.max_results:1000}")
     private int maxResultsDefault;
     @Autowired
     private JsonConverter jsonConverter;

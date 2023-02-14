@@ -21,5 +21,7 @@ public interface LogRecordsParser {
     @NotThreadSafe
     interface LogRecordsPackageIterator extends Iterator<List<LogRecordEntity>>, AutoCloseable {
 
+        @Override
+        void close();
     }
 }

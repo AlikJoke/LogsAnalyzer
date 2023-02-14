@@ -12,28 +12,27 @@ import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.*;
 import org.analyzer.logs.service.std.DefaultLogsAnalyzer;
 import org.analyzer.logs.service.std.postfilters.PostFiltersSequenceBuilder;
-import org.analyzer.logs.service.util.UnzipperUtil;
 import org.analyzer.logs.service.util.JsonConverter;
 import org.analyzer.logs.service.util.LongRunningTaskExecutor;
+import org.analyzer.logs.service.util.UnzipperUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.elasticsearch.client.elc.ReactiveElasticsearchTemplate;
+import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.query.StringQuery;
-import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
-import reactor.util.function.Tuple2;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -45,7 +44,7 @@ public class ElasticLogsService implements LogsService {
     private static final String STATISTICS_CACHE = "statistics";
 
     @Autowired
-    private ReactiveElasticsearchTemplate template;
+    private ElasticsearchTemplate template;
     @Autowired
     private LogRecordRepository logRecordRepository;
     @Autowired
@@ -71,12 +70,9 @@ public class ElasticLogsService implements LogsService {
     @Autowired
     private JsonConverter jsonConverter;
     @Autowired
-    private ReactiveRedisTemplate<String, Object> redisTemplate;
+    private RedisTemplate<String, Object> redisTemplate;
     @Autowired
     private CurrentUserQueryService currentUserQueryService;
-
-    @Value("${elasticsearch.default.indexing.buffer_size:2000}")
-    private int elasticIndexBufferSize;
 
     private Counter indexedRecordsCounter;
     private Counter indexedFilesCounter;
@@ -97,153 +93,125 @@ public class ElasticLogsService implements LogsService {
 
     @Override
     @NonNull
-    public Mono<String> index(
+    public IndexingProcess index(
             @NonNull File logFile,
             @Nullable LogRecordFormat recordFormat) {
 
-        final var uuidKey = Mono.fromSupplier(UUID.randomUUID()::toString);
+        final var uuidKey = UUID.randomUUID().toString();
         final var userEntity = this.userAccessor.get();
-        return userEntity
-                .map(UserEntity::getHash)
-                .zipWith(uuidKey)
-                .flatMap(indexingKey ->
-                        this.zipUtil
-                                .flat(logFile)
-                                .log(logger)
-                                .doOnNext(file -> this.indexedFilesCounter.increment())
-                                .flatMap(file -> this.parser.parse(this.logKeysFactory.createIndexedLogFileKey(indexingKey.getT1(), indexingKey.getT2(), file.getName()), file, recordFormat))
-                                .transform(recordsFlux ->
-                                        recordsFlux
-                                            .buffer(this.elasticIndexBufferSize)
-                                            .doOnNext(buffer -> this.indexedRecordsCounter.increment(buffer.size()))
-                                            .doOnNext(buffer -> this.elasticIndexRequestsCounter.increment())
-                                            .flatMap(this.logRecordRepository::saveAll)
-                                            .then(sendToAnalyzeLogs(indexingKey))
-                                            .log(logger)
-                                )
-                                .then()
-                                .thenReturn(uuidKey)
-                )
-                .flatMap(Function.identity());
+        final var processFuture = this.taskExecutor.execute(
+                () -> this.zipUtil.flat(logFile)
+                                    .forEach(file -> processLogFile(userEntity, uuidKey, recordFormat, file))
+        );
+
+        return new IndexingProcess(uuidKey, processFuture);
     }
 
     @Nonnull
     @Override
-    public Flux<String> searchByQuery(@Nonnull SearchQuery searchQuery) {
-        return this.userAccessor.get()
-                                .map(UserEntity::getHash)
-                                .doOnNext(userKey ->
-                                    this.taskExecutor.execute(
-                                            () -> this.currentUserQueryService
-                                                            .create(searchQuery)
-                                                            .contextWrite(this.userAccessor.set(userKey))
-                                                            .subscribe(
-                                                                    savedQuery -> logger.debug("Success query saving: {}", savedQuery),
-                                                                    ex -> logger.error("", ex)
-                                                            )
-                                    )
-                                )
-                                .thenMany(searchByFilterQuery(searchQuery)
-                                            .map(LogRecordEntity::getSource)
-                                );
+    public List<String> searchByQuery(@Nonnull SearchQuery searchQuery) {
+        final var user = this.userAccessor.get();
+        this.taskExecutor.execute(
+                () -> {
+                    try (final var userContext = this.userAccessor.as(user)) {
+                        this.currentUserQueryService.create(searchQuery);
+                    }
+                }
+        );
+
+        return searchByFilterQuery(searchQuery)
+                .stream()
+                .map(LogRecordEntity::getSource)
+                .toList();
     }
 
     @NonNull
     @Override
-    public Mono<MapLogsStatistics> analyze(@NonNull AnalyzeQuery analyzeQuery) {
-        final var filteredRecords = searchByFilterQuery(analyzeQuery).cache();
+    public MapLogsStatistics analyze(@NonNull AnalyzeQuery analyzeQuery) {
+        final var filteredRecords = searchByFilterQuery(analyzeQuery);
         return analyze(filteredRecords, analyzeQuery);
     }
 
     @NonNull
     @Override
-    public Mono<LogsStatisticsEntity> findStatisticsByKey(@NonNull String key) {
-        final var entityFromCache = this.redisTemplate.opsForValue().get(createStatsRedisKey(key));
-        final Mono<LogsStatisticsEntity> entityFromStorage =
-                this.statisticsRepository.findByDataQueryRegexOrId(key, key)
-                            .flatMap(stats ->
-                                    this.redisTemplate.opsForValue().set(createStatsRedisKey(key), stats)
-                                            .thenReturn(stats))
-                            .cache();
-        return entityFromCache
-                .cast(LogsStatisticsEntity.class)
-                .switchIfEmpty(entityFromStorage);
+    public Optional<LogsStatisticsEntity> findStatisticsByKey(@NonNull String key) {
+        final var valueOps = this.redisTemplate.opsForValue();
+        final var entityFromCache = valueOps.get(createStatsRedisKey(key));
+        if (entityFromCache != null) {
+            return Optional.of(entityFromCache)
+                            .map(LogsStatisticsEntity.class::cast);
+        }
+
+        final var entityFromStorage = this.statisticsRepository.findByDataQueryRegexOrId(key, key);
+        entityFromStorage
+                .ifPresent(stats -> valueOps.set(createStatsRedisKey(key), stats));
+
+        return entityFromStorage;
     }
 
     @NonNull
     @Override
-    public Flux<LogsStatisticsEntity> findAllStatisticsByUserKeyAndCreationDate(
+    public List<LogsStatisticsEntity> findAllStatisticsByUserKeyAndCreationDate(
             @NonNull String userKey,
             @NonNull LocalDateTime beforeDate) {
         return this.statisticsRepository.findAllByUserKeyAndCreationDateBefore(userKey, beforeDate);
     }
 
-    @NonNull
     @Override
-    public Mono<Void> deleteStatistics(@NonNull Flux<LogsStatisticsEntity> statsFlux) {
-        return this.statisticsRepository.deleteAll(statsFlux)
-                                        .then(deleteAllStatsKeys());
+    public void deleteStatistics(@NonNull List<LogsStatisticsEntity> stats) {
+        this.statisticsRepository.deleteAll(stats);
     }
 
     @NonNull
     @Override
-    public Flux<String> deleteAllStatisticsByUserKeyAndCreationDate(@NonNull String userKey, @NonNull LocalDateTime beforeDate) {
+    public List<String> deleteAllStatisticsByUserKeyAndCreationDate(@NonNull String userKey, @NonNull LocalDateTime beforeDate) {
         return this.statisticsRepository.deleteAllByUserKeyAndCreationDateBefore(userKey, beforeDate)
+                                        .stream()
                                         .map(LogsStatisticsEntity::getId)
-                                        .transform(indexingKeys ->
-                                                deleteAllStatsKeys()
-                                                    .thenReturn(indexingKeys)
-                                        )
-                                        .flatMap(Function.identity());
+                                        .peek(indexingKeys -> deleteAllStatsKeys())
+                                        .toList();
     }
 
-    @NonNull
     @Override
-    public Mono<Void> deleteByQuery(@NonNull SearchQuery deleteQuery) {
-        return this.logRecordRepository.deleteAll(searchByFilterQuery(deleteQuery));
+    public void deleteByQuery(@NonNull SearchQuery deleteQuery) {
+        this.logRecordRepository.deleteAll(searchByFilterQuery(deleteQuery));
     }
 
-    private Mono<Void> deleteAllStatsKeys() {
+    private void deleteAllStatsKeys() {
         final var scanOptions = ScanOptions
                                     .scanOptions()
                                         .match(STATISTICS_CACHE + ":*")
                                     .build();
-        return this.redisTemplate.scan(scanOptions)
-                                    .transform(this.redisTemplate::delete)
-                                    .then();
+
+        try (final var cursor = this.redisTemplate.scan(scanOptions)) {
+            while (cursor.hasNext()) {
+                this.redisTemplate.delete(cursor.next());
+            }
+        }
     }
 
-    private Mono<MapLogsStatistics> analyze(
-            final Flux<LogRecordEntity> recordFlux,
+    private MapLogsStatistics analyze(
+            final List<LogRecordEntity> records,
             final AnalyzeQuery analyzeQuery) {
 
-        return this.logsAnalyzer
-                        .analyze(recordFlux, analyzeQuery)
-                        .doOnNext(stats -> logsAnalyzeCounter.increment())
-                        .flatMap(userStats ->
-                                this.userAccessor.get()
-                                                    .map(UserEntity::getHash)
-                                                    .map(userKey -> processStatsSaving(analyzeQuery, userStats, userKey))
-                                                    .flatMap(Mono::single)
-                                                    .doOnError(ex -> logger.error("", ex))
-                        );
+        final var stats = this.logsAnalyzer.analyze(records, analyzeQuery);
+        logsAnalyzeCounter.increment();
+
+        processStatsSaving(analyzeQuery, stats, this.userAccessor.get().getHash());
+        return stats;
     }
 
-    private Mono<MapLogsStatistics> processStatsSaving(
+    private void processStatsSaving(
             final AnalyzeQuery analyzeQuery,
             final MapLogsStatistics stats,
             final String userKey) {
 
-        if (!analyzeQuery.save()) {
-            return Mono.just(stats);
+        if (analyzeQuery.save()) {
+            saveStatsEntity(analyzeQuery, stats.toResultMap(), userKey);
         }
-
-        return stats.toResultMap()
-                    .flatMap(statsMap -> saveStatsEntity(analyzeQuery, statsMap, userKey))
-                    .thenReturn(stats);
     }
 
-    private Mono<LogsStatisticsEntity> saveStatsEntity(
+    private void saveStatsEntity(
             final AnalyzeQuery analyzeQuery,
             final Map<String, Object> stats,
             final String userKey) {
@@ -256,22 +224,27 @@ public class ElasticLogsService implements LogsService {
                         .setDataQuery(analyzeQuery.toSearchQuery().toJson(this.jsonConverter))
                         .setUserKey(userKey)
                         .setStats(stats);
-        return this.statisticsRepository.save(entity);
+        this.statisticsRepository.save(entity);
     }
 
-    private Flux<LogRecordEntity> searchByFilterQuery(@Nonnull SearchQuery searchQuery) {
+    private List<LogRecordEntity> searchByFilterQuery(@Nonnull SearchQuery searchQuery) {
 
-        final var records = this.userAccessor.get()
-                                            .flatMap(user -> this.queryParser.parse(searchQuery, user.getHash()))
-                                            .doOnNext(query -> (searchQuery.extendedFormat() ? extendedSearchRequestsCounter : simpleSearchRequestsCounter).increment())
-                                            .flatMapMany(query -> template.search(query, LogRecordEntity.class))
-                                            .map(SearchHit::getContent);
+        final var user = this.userAccessor.get();
+        final var query = this.queryParser.parse(searchQuery, user.getHash());
+        (searchQuery.extendedFormat() ? extendedSearchRequestsCounter : simpleSearchRequestsCounter).increment();
 
         final var postFilters = this.postFiltersSequenceBuilder.build(searchQuery.postFilters());
 
+        final List<LogRecordEntity> logRecords =
+                template.search(query, LogRecordEntity.class)
+                        .stream()
+                        .map(SearchHit::getContent)
+                        .toList();
+
         return postFilters
-                .reduce(Function.<Flux<LogRecordEntity>> identity(), Function::andThen)
-                .flatMapMany(f -> f.apply(records));
+                .stream()
+                .reduce(Function.<List<LogRecordEntity>> identity(), Function::andThen, (pf1, pf2) -> pf2)
+                .apply(logRecords);
     }
 
     private Counter createMeterCounter(
@@ -287,18 +260,28 @@ public class ElasticLogsService implements LogsService {
         return builder.register(this.meterRegistry);
     }
 
-    private Mono<Void> sendToAnalyzeLogs(final Tuple2<String, String> userIndexingKey) {
-        return Mono.fromRunnable(
-                () -> this.taskExecutor.execute(
-                        () -> {
-                            final var userKey = userIndexingKey.getT1();
-                            final String indexingKey = this.logKeysFactory.createUserIndexingKey(userKey, userIndexingKey.getT2());
-                            final var analyzeQuery = new AnalyzeQueryOnIndexWrapper(indexingKey);
-                            analyze(analyzeQuery)
-                                    .contextWrite(this.userAccessor.set(userKey))
-                                    .subscribe();
-                        })
-        );
+    private void processLogFile(final UserEntity user, final String indexingKey, final LogRecordFormat recordFormat, final File file) {
+
+        final var userIndexingKey = this.logKeysFactory.createUserIndexingKey(user.getHash(), indexingKey);
+        this.indexedFilesCounter.increment();
+
+        try (final var userContext = this.userAccessor.as(user);
+             final var packageIterator = this.parser.parse(this.logKeysFactory.createIndexedLogFileKey(indexingKey, file.getName()), file, recordFormat)) {
+
+            while (packageIterator.hasNext()) {
+                final var recordsPackage = packageIterator.next();
+
+                this.logRecordRepository.saveAll(recordsPackage);
+                this.indexedRecordsCounter.increment(recordsPackage.size());
+                this.elasticIndexRequestsCounter.increment();
+            }
+
+            // TODO обработка статистики без нагрузок на память
+            final var analyzeQuery = new AnalyzeQueryOnIndexWrapper(indexingKey);
+            analyze(analyzeQuery);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String createStatsRedisKey(final String key) {

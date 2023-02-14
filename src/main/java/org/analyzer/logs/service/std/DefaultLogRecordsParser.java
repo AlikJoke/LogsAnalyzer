@@ -199,8 +199,12 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
         }
 
         @Override
-        public void close() throws Exception {
-            this.reader.close();
+        public void close() {
+            try {
+                this.reader.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         private String readNextLine() {

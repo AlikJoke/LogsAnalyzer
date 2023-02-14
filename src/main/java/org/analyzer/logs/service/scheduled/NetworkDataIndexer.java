@@ -95,10 +95,10 @@ public class NetworkDataIndexer implements Runnable {
             FileUtils.copyInputStreamToFile(is, dataFile);
             final var indexingProcess = this.logsService.index(dataFile, createLogRecordFormat());
 
-            indexingProcess.getProcessMonitor().get(this.indexingTimeout, TimeUnit.SECONDS);
+            indexingProcess.processMonitor().get(this.indexingTimeout, TimeUnit.SECONDS);
 
-            final var statsEntity = this.logsService.findStatisticsByKey(indexingProcess.getIndexingKey());
-            onComplete(statsEntity);
+            this.logsService.findStatisticsByKey(indexingProcess.indexingKey())
+                            .ifPresent(this::onComplete);
         } catch (InterruptedException e) {
             onError(e);
             Thread.currentThread().interrupt();
