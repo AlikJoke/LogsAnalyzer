@@ -109,8 +109,4 @@ public class DefaultUserService implements UserService {
                 ? this.userRepository.countByActive(true)
                 : this.userRepository.count();
     }
-
-    private String createUserRedisKey(final String key) {
-        return USERS_CACHE + ":" + key;
-    }
 }

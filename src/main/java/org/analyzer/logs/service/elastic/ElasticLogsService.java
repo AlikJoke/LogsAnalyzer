@@ -259,8 +259,4 @@ public class ElasticLogsService implements LogsService {
             throw new RuntimeException(e);
         }
     }
-
-    private String createStatsRedisKey(final String key) {
-        return STATISTICS_CACHE + ":" + key;
-    }
 }

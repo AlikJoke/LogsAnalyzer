@@ -57,10 +57,16 @@ public class ElasticSearchQueryParser implements SearchQueryParser<StringQuery> 
                 .stream()
                 .map(e -> Sort.by(e.getValue(), e.getKey()))
                 .reduce(Sort::and)
-                .orElse(Sort.unsorted());
+                .orElse(
+                        Sort.by(
+                                Sort.Order.asc("date").nullsLast(),
+                                Sort.Order.asc("time").nullsLast()
+                        )
+                );
 
+        final var maxSize = query.pageSize() == 0 || query.pageSize() > maxResultsDefault ? maxResultsDefault : query.pageSize();
         return new StringQueryBuilder(resultQueryString)
-                .withPageable(PageRequest.of(query.pageNumber(), query.pageSize() == 0 ? maxResultsDefault : query.pageSize(), sort))
+                .withPageable(PageRequest.of(query.pageNumber(), maxSize, sort))
                 .build();
     }
 }
