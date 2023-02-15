@@ -13,15 +13,20 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 
 import javax.net.ssl.SSLException;
 
 @Configuration
 @EnableScheduling
 @EnableConfigurationProperties({TelegramNotificationBotConfiguration.class, AsyncHttpRequestProperties.class})
-public class ScheduledNetworkIndexingConfig {
+public class ScheduledNetworkIndexingConfig implements SchedulingConfigurer {
+
+    @Value("${logs.task.scheduled.executor.pool-size:2}")
+    private int poolSize;
 
     @Bean
     public AsyncHttpClient asyncHttpClient(
@@ -55,9 +60,9 @@ public class ScheduledNetworkIndexingConfig {
     }
 
     @Bean
-    public ThreadPoolTaskScheduler threadPoolTaskScheduler(@Value("${logs.task.scheduled.executor.pool-size:2}") final int poolSize){
+    public ThreadPoolTaskScheduler threadPoolTaskScheduler(){
         final var threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
-        threadPoolTaskScheduler.setPoolSize(poolSize);
+        threadPoolTaskScheduler.setPoolSize(this.poolSize);
         threadPoolTaskScheduler.setThreadNamePrefix("scheduled-tasks-pool");
         threadPoolTaskScheduler.setThreadFactory(Thread.ofVirtual().factory());
         threadPoolTaskScheduler.setWaitForTasksToCompleteOnShutdown(false);
@@ -74,5 +79,10 @@ public class ScheduledNetworkIndexingConfig {
         threadPoolTaskExecutor.setThreadFactory(Thread.ofVirtual().factory());
         threadPoolTaskExecutor.setWaitForTasksToCompleteOnShutdown(true);
         return threadPoolTaskExecutor;
+    }
+
+    @Override
+    public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
+        taskRegistrar.setTaskScheduler(threadPoolTaskScheduler());
     }
 }
