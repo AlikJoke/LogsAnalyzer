@@ -16,11 +16,11 @@ import org.analyzer.logs.service.util.JsonConverter;
 import org.analyzer.logs.service.util.LongRunningTaskExecutor;
 import org.analyzer.logs.service.util.UnzipperUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.query.StringQuery;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Service;
 import reactor.util.Logger;
 import reactor.util.Loggers;
@@ -69,8 +69,6 @@ public class ElasticLogsService implements LogsService {
     private LogKeysFactory logKeysFactory;
     @Autowired
     private JsonConverter jsonConverter;
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
     @Autowired
     private CurrentUserQueryService currentUserQueryService;
 
@@ -134,19 +132,9 @@ public class ElasticLogsService implements LogsService {
 
     @NonNull
     @Override
+    @Cacheable(value = STATISTICS_CACHE, key = "#root.args[0]")
     public Optional<LogsStatisticsEntity> findStatisticsByKey(@NonNull String key) {
-        final var valueOps = this.redisTemplate.opsForValue();
-        final var entityFromCache = valueOps.get(createStatsRedisKey(key));
-        if (entityFromCache != null) {
-            return Optional.of(entityFromCache)
-                            .map(LogsStatisticsEntity.class::cast);
-        }
-
-        final var entityFromStorage = this.statisticsRepository.findByDataQueryRegexOrId(key, key);
-        entityFromStorage
-                .ifPresent(stats -> valueOps.set(createStatsRedisKey(key), stats));
-
-        return entityFromStorage;
+        return this.statisticsRepository.findByDataQueryRegexOrId(key, key);
     }
 
     @NonNull
@@ -158,36 +146,24 @@ public class ElasticLogsService implements LogsService {
     }
 
     @Override
+    @CacheEvict(allEntries = true)
     public void deleteStatistics(@NonNull List<LogsStatisticsEntity> stats) {
         this.statisticsRepository.deleteAll(stats);
     }
 
     @NonNull
     @Override
+    @CacheEvict(allEntries = true)
     public List<String> deleteAllStatisticsByUserKeyAndCreationDate(@NonNull String userKey, @NonNull LocalDateTime beforeDate) {
         return this.statisticsRepository.deleteAllByUserKeyAndCreationDateBefore(userKey, beforeDate)
                                         .stream()
                                         .map(LogsStatisticsEntity::getId)
-                                        .peek(indexingKeys -> deleteAllStatsKeys())
                                         .toList();
     }
 
     @Override
     public void deleteByQuery(@NonNull SearchQuery deleteQuery) {
         this.logRecordRepository.deleteAll(searchByFilterQuery(deleteQuery));
-    }
-
-    private void deleteAllStatsKeys() {
-        final var scanOptions = ScanOptions
-                                    .scanOptions()
-                                        .match(STATISTICS_CACHE + ":*")
-                                    .build();
-
-        try (final var cursor = this.redisTemplate.scan(scanOptions)) {
-            while (cursor.hasNext()) {
-                this.redisTemplate.delete(cursor.next());
-            }
-        }
     }
 
     private MapLogsStatistics analyze(

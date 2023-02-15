@@ -113,10 +113,10 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
     }
 
     private Map<String, Object> createAdditionalFilterErrors() {
-        return Collections.singletonMap("level", LogLevel.ERROR.name());
+        return Map.of("level", LogLevel.ERROR.name());
     }
 
     private Map<String, Object> createAdditionalFilterWarns() {
-        return Collections.singletonMap("level", LogLevel.WARN.name());
+        return Map.of("level", LogLevel.WARN.name());
     }
 }

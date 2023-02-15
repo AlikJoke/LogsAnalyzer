@@ -51,3 +51,8 @@ openApi {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.withType(JavaCompile).each {
+	it.options.compilerArgs.add('--enable-preview')
+	it.options.compilerArgs.add('-Xlint:preview')
+}

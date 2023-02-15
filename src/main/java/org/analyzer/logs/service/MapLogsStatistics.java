@@ -47,7 +47,7 @@ public interface MapLogsStatistics extends Map<String, List<?>> {
         return entrySet()
                     .stream()
                     .filter(Predicate.not(entry -> CollectionUtils.isEmpty(entry.getValue())))
-                    .collect(Collectors.toMap(Map.Entry::getKey, this::prepareToResponse));
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> prepareToResponse(e.getValue())));
     }
 
     @Nonnull

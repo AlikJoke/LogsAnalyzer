@@ -10,9 +10,7 @@ import org.springframework.boot.actuate.endpoint.web.WebEndpointResponse;
 import org.springframework.boot.actuate.endpoint.web.annotation.EndpointWebExtension;
 import org.springframework.boot.actuate.info.InfoEndpoint;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
 
-import java.util.Collections;
 import java.util.Map;
 
 @Component
@@ -31,45 +29,33 @@ public class InfoWebEndpointExtension {
     private UserQueriesManagementService userQueriesManagementService;
 
     @ReadOperation
-    public Mono<WebEndpointResponse<Map<String, Object>>> info() {
+    public WebEndpointResponse<Map<String, Object>> info() {
         final Map<String, Object> info = this.delegate.info();
-        return
-            this.logsManagementService.existsIndex()
-                    .zipWith(this.logsManagementService.indexInfo())
-                    .doOnNext(tuple -> {
-                        info.put("elasticsearch",
-                                    tuple.getT1()
-                                            ? tuple.getT2()
-                                            : Collections.singletonMap("index-exists", false)
-                        );
-                    })
-                    .mergeWith(this.usersManagementService.existsCollection()
-                            .zipWith(this.usersManagementService.indexesInfo())
-                            .doOnNext(tuple -> {
-                                info.put("mongodb-users",
-                                            tuple.getT1()
-                                                    ? tuple.getT2()
-                                                    : Collections.singletonMap("collection-exists", false)
-                                );
-                            }))
-                    .mergeWith(this.statisticsManagementService.existsCollection()
-                            .zipWith(this.statisticsManagementService.indexesInfo())
-                            .doOnNext(tuple -> {
-                                info.put("mongodb-statistics",
-                                            tuple.getT1()
-                                                    ? tuple.getT2()
-                                                    : Collections.singletonMap("collection-exists", false)
-                                );
-                            }))
-                    .mergeWith(this.userQueriesManagementService.existsCollection()
-                            .zipWith(this.userQueriesManagementService.indexesInfo())
-                            .doOnNext(tuple -> {
-                                info.put("mongodb-queries",
-                                        tuple.getT1()
-                                                ? tuple.getT2()
-                                                : Collections.singletonMap("collection-exists", false)
-                                );
-                            }))
-                    .then(Mono.just(new WebEndpointResponse<>(info)));
+
+        info.put("elasticsearch",
+                this.logsManagementService.existsIndex()
+                        ? this.logsManagementService.indexInfo()
+                        : Map.of("index-exists", false)
+        );
+
+        info.put("mongodb-users",
+                this.usersManagementService.existsCollection()
+                        ? this.usersManagementService.indexesInfo()
+                        : Map.of("collection-exists", false)
+        );
+
+        info.put("mongodb-statistics",
+                this.statisticsManagementService.existsCollection()
+                        ? this.statisticsManagementService.indexesInfo()
+                        : Map.of("collection-exists", false)
+        );
+
+        info.put("mongodb-queries",
+                this.userQueriesManagementService.existsCollection()
+                        ? this.userQueriesManagementService.indexesInfo()
+                        : Map.of("collection-exists", false)
+        );
+
+        return new WebEndpointResponse<>(info);
     }
 }

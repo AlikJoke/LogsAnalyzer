@@ -1,9 +1,8 @@
 package org.analyzer.logs.rest.records;
 
 import lombok.NonNull;
-import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,14 +13,16 @@ import java.util.UUID;
 public class WebUtils {
 
     @NonNull
-    Mono<File> createTempFile(@NonNull final FilePart filePart) {
+    File createTempFile(@NonNull final MultipartFile multipartFile) {
         try {
             final var destDirPath = Files.createTempDirectory(UUID.randomUUID().toString());
             final var destDir = destDirPath.toFile();
             destDir.deleteOnExit();
 
-            final var result = destDirPath.resolve(filePart.filename());
-            return filePart.transferTo(result).thenReturn(result.toFile());
+            final var result = destDirPath.resolve(multipartFile.getOriginalFilename());
+            multipartFile.transferTo(result);
+
+            return result.toFile();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

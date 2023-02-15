@@ -11,7 +11,8 @@ public interface UserService {
     @Nonnull
     UserEntity create(@Nonnull UserEntity user);
 
-    void disable(@Nonnull String username);
+    @Nonnull
+    UserEntity disable(@Nonnull String username);
 
     @Nonnull
     UserEntity update(@Nonnull UserEntity user);

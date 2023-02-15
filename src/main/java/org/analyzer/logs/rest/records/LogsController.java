@@ -9,9 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Mono;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Set;
 
@@ -34,29 +33,21 @@ public class LogsController extends ControllerBase {
     @PostMapping(PATH_INDEX)
     @ResponseStatus(HttpStatus.CREATED)
     @NamedEndpoint(value = "index.logs", includeTo = RootEntrypointResource.class)
-    public Mono<IndexingResult> load(
-            @RequestPart("file") Mono<FilePart> file,
+    public IndexingResult load(
+            @RequestPart("file") MultipartFile file,
             @RequestPart(value = "record_patterns", required = false) LogRecordFormatResource recordPattern) {
 
-        final var tempFiles = file.flatMap(this.webUtils::createTempFile);
-
-        return tempFiles
-                .flatMap(tempFile ->
-                        this.service
-                                .index(tempFile, recordPattern)
-                )
-                .map(indexingKey -> new IndexingResult(indexingKey, this.linksCollector.collectFor(IndexingResult.class)))
-                .onErrorResume(this::onError);
+        final var tempFile = this.webUtils.createTempFile(file);
+        final var indexingProcess = this.service.index(tempFile, recordPattern);
+        return new IndexingResult(indexingProcess.indexingKey(), this.linksCollector.collectFor(IndexingResult.class));
     }
 
     @PostMapping(PATH_SEARCH)
     @ResponseStatus(HttpStatus.OK)
     @NamedEndpoint(value = "search", includeTo = RootEntrypointResource.class)
-    public Mono<LogRecordsCollectionResource> read(@RequestBody RequestSearchQuery query) {
-        return this.service.searchByQuery(query)
-                                .collectList()
-                                .map(records -> new LogRecordsCollectionResource(records, new Paging(query.pageNumber(), records.size())))
-                                .onErrorResume(this::onError);
+    public LogRecordsCollectionResource read(@RequestBody RequestSearchQuery query) {
+        final var records = this.service.searchByQuery(query);
+        return new LogRecordsCollectionResource(records, new Paging(query.pageNumber(), records.size()));
     }
 
     @Override

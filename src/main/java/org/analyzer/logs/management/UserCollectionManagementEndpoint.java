@@ -8,7 +8,6 @@ import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.endpoint.annotation.Selector;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
@@ -22,26 +21,27 @@ public class UserCollectionManagementEndpoint extends MongoDBCollectionManagemen
     }
 
     @ReadOperation
-    public Mono<Map<String, Object>> read(@Selector String operation) {
+    public Map<String, Object> read(@Selector String operation) {
         if ("counters".equals(operation)) {
-            return this.managementService
-                            .count(false)
-                            .zipWith(this.managementService.count(true))
-                            .map(tuple -> Map.of("common", tuple.getT1(), "active", tuple.getT2()));
+            return Map.of(
+                    "common", this.managementService.count(false),
+                    "active", this.managementService.count(true)
+            );
         }
 
         return super.read(operation);
     }
 
     @DeleteOperation
-    public Mono<Boolean> delete(@Selector(match = Selector.Match.ALL_REMAINING) String[] operation) {
+    public boolean delete(@Selector(match = Selector.Match.ALL_REMAINING) String[] operation) {
         if (operation != null && "disable-user".equals(operation[0])) {
 
             if (operation.length == 2) {
-                return this.managementService.disableUser(operation[1]);
+                this.managementService.disableUser(operation[1]);
+                return true;
             }
 
-            return Mono.error(() -> new UnsupportedOperationException("Username not specified"));
+            throw new UnsupportedOperationException("Username not specified");
         }
 
         return super.delete(operation);

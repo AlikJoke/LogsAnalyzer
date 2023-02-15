@@ -29,14 +29,12 @@ public record UserResource(
                     .setActive(true);
     }
 
-    @NonNull
-    public UserEntity update(
+    public void update(
             @NonNull final UserEntity entity,
             @NonNull final PasswordEncoder passwordEncoder) {
         entity.setSettings(settings());
         entity.setEncodedPassword(passwordEncoder.encode(password()));
         entity.setModified(LocalDateTime.now());
-        return entity;
     }
 
     @NonNull

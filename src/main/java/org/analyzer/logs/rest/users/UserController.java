@@ -1,5 +1,6 @@
 package org.analyzer.logs.rest.users;
 
+import lombok.NonNull;
 import org.analyzer.logs.rest.AnonymousRootEntrypointResource;
 import org.analyzer.logs.rest.ControllerBase;
 import org.analyzer.logs.rest.RootEntrypointResource;
@@ -13,7 +14,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Mono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
@@ -39,52 +39,34 @@ public class UserController extends ControllerBase {
     @GetMapping
     @NamedEndpoint(value = "self", includeTo = UserResource.class)
     @NamedEndpoint(value = "current.user", includeTo = RootEntrypointResource.class)
-    public Mono<UserResource> read(Mono<Principal> principalMono) {
-        return principalMono
-                .map(Principal::getName)
-                .flatMap(this.userService::findById)
-                .map(user -> UserResource.convertFrom(user, this.linksCollector))
-                .onErrorResume(this::onError);
+    public UserResource read(@NonNull Principal principal) {
+        final var user = this.userService.findById(principal.getName());
+        return UserResource.convertFrom(user, this.linksCollector);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @NamedEndpoint(value = "create.user", includeTo = AnonymousRootEntrypointResource.class)
-    public Mono<UserResource> create(@RequestBody Mono<UserResource> resource) {
-        final var user = resource.map(
-                userResource -> userResource.composeEntity(this.passwordEncoder)
-        );
-
-        return this.userService.create(user)
-                                .log(logger)
-                                .map(created -> UserResource.convertFrom(created, this.linksCollector))
-                                .onErrorResume(this::onError);
+    public UserResource create(@RequestBody UserResource resource) {
+        final var user = this.userService.create(resource.composeEntity(this.passwordEncoder));
+        return UserResource.convertFrom(user, this.linksCollector);
     }
 
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @NamedEndpoint(value = "disable", includeTo = UserResource.class)
-    public Mono<Void> disable(Mono<Principal> principal) {
-        return principal
-                .map(Principal::getName)
-                .log(logger)
-                .flatMap(this.userService::disable)
-                .onErrorResume(this::onError);
+    public void disable(Principal principal) {
+        this.userService.disable(principal.getName());
     }
 
     @PutMapping
     @NamedEndpoint(value = "edit", includeTo = UserResource.class)
-    public Mono<UserResource> update(@RequestBody Mono<UserResource> resource) {
-        final var user = resource.flatMap(
-                userResource ->
-                        this.userService
-                                .findById(userResource.username())
-                                .map(u -> userResource.update(u, this.passwordEncoder))
-        );
+    public UserResource update(@RequestBody UserResource resource) {
+        final var user = this.userService.findById(resource.username());
+        resource.update(user, this.passwordEncoder);
 
-        return this.userService.update(user)
-                                .map(updatedUser -> UserResource.convertFrom(updatedUser, this.linksCollector))
-                                .onErrorResume(this::onError);
+        final var updatedUser = this.userService.update(user);
+        return UserResource.convertFrom(updatedUser, this.linksCollector);
     }
 
     @Override

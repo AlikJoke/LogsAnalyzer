@@ -8,8 +8,11 @@ import org.analyzer.logs.service.exceptions.UserAlreadyDisabledException;
 import org.analyzer.logs.service.exceptions.UserAlreadyExistsException;
 import org.analyzer.logs.service.exceptions.UserNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,24 +25,25 @@ public class DefaultUserService implements UserService {
 
     @Autowired
     private UserRepository userRepository;
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
 
     @NonNull
     @Override
+    @CachePut(value = USERS_CACHE, key = "#result.getUsername()")
     public UserEntity create(@NonNull UserEntity newUser) {
         try {
-            final var savedUser = this.userRepository.save(newUser);
-            this.redisTemplate.opsForValue().set(createUserRedisKey(savedUser.getUsername()), savedUser);
-
-            return savedUser;
+            return this.userRepository.save(newUser);
         } catch (OptimisticLockingFailureException ex) {
             throw new UserAlreadyExistsException(newUser.getUsername());
         }
     }
 
     @Override
-    public void disable(@NonNull String username) {
+    @Caching(evict = {
+            @CacheEvict(value = USERS_CACHE, key = "#result.getUsername()"),
+            @CacheEvict(value = USERS_CACHE, key = "#result.getHash()")
+    })
+    @NonNull
+    public UserEntity disable(@NonNull String username) {
         final var user = this.userRepository.findById(username)
                                             .orElseThrow(() -> new UserNotFoundException(username));
 
@@ -48,23 +52,21 @@ public class DefaultUserService implements UserService {
         }
 
         user.disable();
-        this.userRepository.save(user);
-
-        this.redisTemplate.delete(List.of(createUserRedisKey(username), createUserRedisKey(user.getHash())));
+        return this.userRepository.save(user);
     }
 
     @Override
     @NonNull
+    @Caching(put = {
+            @CachePut(value = USERS_CACHE, key = "#root.args[0].getUsername()"),
+            @CachePut(value = USERS_CACHE, key = "#root.args[0].getHash()")
+    })
     public UserEntity update(@NonNull UserEntity userToSave) {
         if (!this.userRepository.existsById(userToSave.getUsername())) {
             throw new UserNotFoundException(userToSave.getUsername());
         }
 
-        final var savedUser = this.userRepository.save(userToSave);
-        this.redisTemplate.opsForValue().set(createUserRedisKey(userToSave.getUsername()), savedUser);
-        this.redisTemplate.opsForValue().set(createUserRedisKey(userToSave.getHash()), savedUser);
-
-        return savedUser;
+        return this.userRepository.save(userToSave);
     }
 
     @NonNull
@@ -87,26 +89,18 @@ public class DefaultUserService implements UserService {
 
     @NonNull
     @Override
+    @Cacheable(value = USERS_CACHE, key = "#root.args[0]")
     public UserEntity findById(@NonNull String username) {
-        final var entityFromCache = (UserEntity) this.redisTemplate.opsForValue().get(createUserRedisKey(username));
-        if (entityFromCache == null) {
-            return this.userRepository.findById(username)
-                                        .orElseThrow(() -> new UserNotFoundException(username));
-        }
-
-        return entityFromCache;
+        return this.userRepository.findById(username)
+                                    .orElseThrow(() -> new UserNotFoundException(username));
     }
 
     @NonNull
     @Override
+    @Cacheable(value = USERS_CACHE, key = "#root.args[0]")
     public UserEntity findByUserHash(@NonNull String userHash) {
-        final var entityFromCache = (UserEntity) this.redisTemplate.opsForValue().get(createUserRedisKey(userHash));
-        if (entityFromCache == null) {
-            return this.userRepository.findByHash(userHash)
-                                        .orElseThrow(() -> new UserNotFoundException(userHash));
-        }
-
-        return entityFromCache;
+        return this.userRepository.findByHash(userHash)
+                                    .orElseThrow(() -> new UserNotFoundException(userHash));
     }
 
     @Override
