@@ -30,10 +30,7 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 
 @Service
@@ -126,8 +123,23 @@ public class ElasticLogsService implements LogsService {
     @NonNull
     @Override
     public MapLogsStatistics analyze(@NonNull AnalyzeQuery analyzeQuery) {
-        final var filteredRecords = searchByFilterQuery(analyzeQuery);
-        return analyze(filteredRecords, analyzeQuery);
+
+        MapLogsStatistics stats = null;
+        var pageNumber = 0;
+        while (pageNumber != -1) {
+
+            final var searchQuery = analyzeQuery.toSearchQuery(pageNumber);
+            final var recordsToAnalyzePart = searchByFilterQuery(searchQuery);
+            final var partStats = this.logsAnalyzer.analyze(recordsToAnalyzePart, analyzeQuery);
+
+            stats = stats == null ? partStats : stats.joinWith(partStats);
+            pageNumber = recordsToAnalyzePart.isEmpty() ? -1 : pageNumber + 1;
+        }
+
+        logsAnalyzeCounter.increment();
+
+        processStatsSaving(analyzeQuery, stats, this.userAccessor.get().getHash());
+        return stats;
     }
 
     @NonNull
@@ -166,24 +178,13 @@ public class ElasticLogsService implements LogsService {
         this.logRecordRepository.deleteAll(searchByFilterQuery(deleteQuery));
     }
 
-    private MapLogsStatistics analyze(
-            final List<LogRecordEntity> records,
-            final AnalyzeQuery analyzeQuery) {
-
-        final var stats = this.logsAnalyzer.analyze(records, analyzeQuery);
-        logsAnalyzeCounter.increment();
-
-        processStatsSaving(analyzeQuery, stats, this.userAccessor.get().getHash());
-        return stats;
-    }
-
     private void processStatsSaving(
             final AnalyzeQuery analyzeQuery,
             final MapLogsStatistics stats,
             final String userKey) {
 
         if (analyzeQuery.save()) {
-            saveStatsEntity(analyzeQuery, stats.toResultMap(), userKey);
+            saveStatsEntity(analyzeQuery, new HashMap<>(stats), userKey);
         }
     }
 
@@ -197,7 +198,7 @@ public class ElasticLogsService implements LogsService {
                         .setId(analyzeQuery.getId())
                         .setCreated(LocalDateTime.now())
                         .setTitle(analyzeQuery.analyzeResultName())
-                        .setDataQuery(analyzeQuery.toSearchQuery().toJson(this.jsonConverter))
+                        .setDataQuery(analyzeQuery.toSearchQuery(0).toJson(this.jsonConverter))
                         .setUserKey(userKey)
                         .setStats(stats);
         this.statisticsRepository.save(entity);
@@ -252,7 +253,6 @@ public class ElasticLogsService implements LogsService {
                 this.elasticIndexRequestsCounter.increment();
             }
 
-            // TODO обработка статистики без нагрузок на память
             final var analyzeQuery = new AnalyzeQueryOnIndexWrapper(indexingKey);
             analyze(analyzeQuery);
         } catch (IOException e) {

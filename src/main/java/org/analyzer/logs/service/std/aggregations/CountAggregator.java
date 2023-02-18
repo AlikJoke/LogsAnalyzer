@@ -57,14 +57,13 @@ public class CountAggregator implements Aggregator<Long> {
 
     @Override
     @NonNull
-    public List<Long> apply(@NonNull List<LogRecordEntity> records) {
+    public Long apply(@NonNull List<LogRecordEntity> records) {
         Objects.requireNonNull(this.parameters, "Count parameters isn't specified");
 
-        final var result = records
-                            .stream()
-                            .map(LogRecordEntity.field2FieldValueFunction(this.additionalFilterBy))
-                            .filter(value -> this.additionalFilterValue == null || Objects.equals(value, this.additionalFilterValue))
-                            .count();
-        return List.of(result);
+        return records
+                .stream()
+                .map(LogRecordEntity.field2FieldValueFunction(this.additionalFilterBy))
+                .filter(value -> this.additionalFilterValue == null || Objects.equals(value, this.additionalFilterValue))
+                .count();
     }
 }

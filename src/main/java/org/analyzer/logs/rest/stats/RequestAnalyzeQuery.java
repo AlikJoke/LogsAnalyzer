@@ -58,8 +58,8 @@ public class RequestAnalyzeQuery extends RequestSearchQuery implements AnalyzeQu
     @NonNull
     @Override
     @JsonIgnore
-    public SearchQuery toSearchQuery() {
-        return new RequestSearchQuery(query(), extendedFormat(), postFilters(), pageSize(), pageNumber(), sorts());
+    public SearchQuery toSearchQuery(@Nonnegative int pageNumber) {
+        return new RequestSearchQuery(query(), extendedFormat(), postFilters(), pageSize(), pageNumber, sorts());
     }
 
     @NonNull

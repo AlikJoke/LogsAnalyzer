@@ -7,6 +7,7 @@ import org.analyzer.logs.service.SearchQuery;
 import org.analyzer.logs.service.util.JsonConverter;
 import org.springframework.data.domain.Sort;
 
+import javax.annotation.Nonnegative;
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Map;
@@ -14,9 +15,15 @@ import java.util.Map;
 public final class AnalyzeQueryOnIndexWrapper implements AnalyzeQuery {
 
     private final String key;
+    private final int pageNumber;
 
     public AnalyzeQueryOnIndexWrapper(final String key) {
+        this(key, 0);
+    }
+
+    private AnalyzeQueryOnIndexWrapper(final String key, final int pageNumber) {
         this.key = key;
+        this.pageNumber = pageNumber;
     }
 
     @NonNull
@@ -38,8 +45,8 @@ public final class AnalyzeQueryOnIndexWrapper implements AnalyzeQuery {
 
     @NonNull
     @Override
-    public SearchQuery toSearchQuery() {
-        return this;
+    public SearchQuery toSearchQuery(@Nonnegative int pageNumber) {
+        return new AnalyzeQueryOnIndexWrapper(key, pageNumber);
     }
 
     @NonNull
@@ -72,7 +79,7 @@ public final class AnalyzeQueryOnIndexWrapper implements AnalyzeQuery {
 
     @Override
     public int pageNumber() {
-        return 0;
+        return this.pageNumber;
     }
 
     @NonNull

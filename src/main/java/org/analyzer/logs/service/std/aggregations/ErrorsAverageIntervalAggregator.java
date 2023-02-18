@@ -47,7 +47,7 @@ public class ErrorsAverageIntervalAggregator implements Aggregator<Double> {
 
     @Override
     @NonNull
-    public List<Double> apply(@NonNull List<LogRecordEntity> recordList) {
+    public Double apply(@NonNull List<LogRecordEntity> recordList) {
 
         final List<LogRecordEntity> errorsRecords =
                 recordList
@@ -56,7 +56,7 @@ public class ErrorsAverageIntervalAggregator implements Aggregator<Double> {
                         .toList();
 
         if (errorsRecords.size() < 2) {
-            return List.of(0d);
+            return 0d;
         }
 
         final var intervals = new LinkedHashSet<Long>();
@@ -66,12 +66,11 @@ public class ErrorsAverageIntervalAggregator implements Aggregator<Double> {
             intervals.add(getDiffInterval(recordsBuffer));
         }
 
-        final var averageInterval = intervals
-                                        .stream()
-                                        .mapToLong(i -> i)
-                                        .average()
-                                        .orElse(0);
-        return List.of(averageInterval);
+        return intervals
+                .stream()
+                .mapToLong(i -> i)
+                .average()
+                .orElse(0);
     }
 
     private long getDiffInterval(final List<LogRecordEntity> records) {

@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @Component(FrequencyAggregator.NAME)
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @NotThreadSafe
-public class FrequencyAggregator implements Aggregator<Pair<String, Long>> {
+public class FrequencyAggregator implements Aggregator<List<Pair<String, Long>>> {
 
     public static final String NAME = "frequency";
 

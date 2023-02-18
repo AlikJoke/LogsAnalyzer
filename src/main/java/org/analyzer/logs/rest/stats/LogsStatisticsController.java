@@ -39,7 +39,7 @@ public class LogsStatisticsController extends ControllerBase {
     @ResponseStatus(HttpStatus.OK)
     @NamedEndpoint(value = "analyze.logs", includeTo = RootEntrypointResource.class)
     public Map<String, Object> analyze(@RequestBody RequestAnalyzeQuery query) {
-        return this.service.analyze(query).toResultMap();
+        return this.service.analyze(query);
     }
 
     @GetMapping("/{statisticsKey}")

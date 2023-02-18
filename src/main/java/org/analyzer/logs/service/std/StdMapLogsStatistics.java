@@ -2,15 +2,19 @@ package org.analyzer.logs.service.std;
 
 import lombok.NonNull;
 import org.analyzer.logs.service.MapLogsStatistics;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @NotThreadSafe
-public class StdMapLogsStatistics extends HashMap<String, List<?>> implements MapLogsStatistics {
+public class StdMapLogsStatistics extends HashMap<String, Object> implements MapLogsStatistics {
 
     public static final String ERRORS_FREQUENCIES = "errors-frequencies";
     public static final String MOST_FREQUENT_ERRORS = "most-frequent-errors";
@@ -24,10 +28,13 @@ public class StdMapLogsStatistics extends HashMap<String, List<?>> implements Ma
     public static final String RECORDS_FREQUENCY_BY_THREAD = "records-frequency-by-thread";
     public static final String ALL_RECORDS_COUNT = "common-count";
 
-    @NonNull
     @Override
     public Long commonCount() {
-        return getStatByKey(ALL_RECORDS_COUNT);
+        return getStatByKey(ALL_RECORDS_COUNT, true);
+    }
+
+    public void commonCount(@NonNull Long commonCount) {
+        put(ALL_RECORDS_COUNT, commonCount);
     }
 
     @NonNull
@@ -36,10 +43,8 @@ public class StdMapLogsStatistics extends HashMap<String, List<?>> implements Ma
         return getStatByKey(ERRORS_FREQUENCIES);
     }
 
-    @NonNull
-    public StdMapLogsStatistics errorsFrequencies(@NonNull List<Pair<String, Long>> errorsFrequencies) {
+    public void errorsFrequencies(@NonNull List<Pair<String, Long>> errorsFrequencies) {
         put(ERRORS_FREQUENCIES, errorsFrequencies);
-        return this;
     }
 
     @NonNull
@@ -48,22 +53,17 @@ public class StdMapLogsStatistics extends HashMap<String, List<?>> implements Ma
         return getStatByKey(MOST_FREQUENT_ERRORS);
     }
 
-    @NonNull
-    public StdMapLogsStatistics mostFrequentErrors(@NonNull List<Pair<String, Long>> mostFrequentErrors) {
+    public void mostFrequentErrors(@NonNull List<Pair<String, Long>> mostFrequentErrors) {
         put(MOST_FREQUENT_ERRORS, mostFrequentErrors);
-        return this;
     }
 
-    @NonNull
     @Override
     public Double errorsAverageInterval() {
         return getStatByKey(ERRORS_AVERAGE_INTERVAL, true);
     }
 
-    @NonNull
-    public StdMapLogsStatistics errorsAverageInterval(@NonNull Double errorsAverageInterval) {
+    public void errorsAverageInterval(@NonNull Double errorsAverageInterval) {
         put(ERRORS_AVERAGE_INTERVAL, List.of(errorsAverageInterval));
-        return this;
     }
 
     @NonNull
@@ -72,34 +72,26 @@ public class StdMapLogsStatistics extends HashMap<String, List<?>> implements Ma
         return getStatByKey(ERRORS_FREQUENCIES_BY_CATEGORY);
     }
 
-    @NonNull
-    public StdMapLogsStatistics errorsByCategoryFrequencies(@NonNull List<Pair<String, Long>> errorsByCategoryFrequencies) {
+    public void errorsByCategoryFrequencies(@NonNull List<Pair<String, Long>> errorsByCategoryFrequencies) {
         put(MOST_FREQUENT_ERRORS, errorsByCategoryFrequencies);
-        return this;
     }
 
-    @NonNull
     @Override
     public Long errorsCount() {
         return getStatByKey(ERRORS_COUNT, true);
     }
 
-    @NonNull
-    public StdMapLogsStatistics errorsCount(@NonNull Long errorsCount) {
+    public void errorsCount(@NonNull Long errorsCount) {
         put(ERRORS_COUNT, List.of(errorsCount));
-        return this;
     }
 
-    @NonNull
     @Override
     public Long warnsCount() {
         return getStatByKey(WARNS_COUNT, true);
     }
 
-    @NonNull
-    public StdMapLogsStatistics warnsCount(@NonNull Long warnsCount) {
+    public void warnsCount(@NonNull Long warnsCount) {
         put(WARNS_COUNT, List.of(warnsCount));
-        return this;
     }
 
     @NonNull
@@ -108,22 +100,17 @@ public class StdMapLogsStatistics extends HashMap<String, List<?>> implements Ma
         return getStatByKey(MOST_FREQUENT_WARNS);
     }
 
-    @NonNull
-    public StdMapLogsStatistics mostFrequentWarns(@NonNull List<Pair<String, Long>> mostFrequentWarns) {
+    public void mostFrequentWarns(@NonNull List<Pair<String, Long>> mostFrequentWarns) {
         put(MOST_FREQUENT_WARNS, mostFrequentWarns);
-        return this;
     }
 
-    @NonNull
     @Override
     public Double averageWriteRate() {
         return getStatByKey(AVERAGE_WRITE_RATE, true);
     }
 
-    @NonNull
-    public StdMapLogsStatistics averageWriteRate(@NonNull Double averageWriteRate) {
+    public void averageWriteRate(@NonNull Double averageWriteRate) {
         put(AVERAGE_WRITE_RATE, List.of(averageWriteRate));
-        return this;
     }
 
     @NonNull
@@ -132,10 +119,8 @@ public class StdMapLogsStatistics extends HashMap<String, List<?>> implements Ma
         return getStatByKey(RECORDS_FREQUENCY_BY_CATEGORY);
     }
 
-    @NonNull
-    public StdMapLogsStatistics recordsByCategoryFrequencies(@NonNull List<Pair<String, Long>> recordsByCategoryFrequencies) {
+    public void recordsByCategoryFrequencies(@NonNull List<Pair<String, Long>> recordsByCategoryFrequencies) {
         put(RECORDS_FREQUENCY_BY_CATEGORY, recordsByCategoryFrequencies);
-        return this;
     }
 
     @NonNull
@@ -144,16 +129,81 @@ public class StdMapLogsStatistics extends HashMap<String, List<?>> implements Ma
         return getStatByKey(RECORDS_FREQUENCY_BY_THREAD);
     }
 
-    @NonNull
-    public StdMapLogsStatistics recordsByThreadFrequencies(@NonNull List<Pair<String, Long>> recordsByThreadFrequencies) {
+    public void recordsByThreadFrequencies(@NonNull List<Pair<String, Long>> recordsByThreadFrequencies) {
         put(RECORDS_FREQUENCY_BY_THREAD, recordsByThreadFrequencies);
-        return this;
     }
 
     @NonNull
-    public StdMapLogsStatistics putOne(@NonNull final String statisticKey, @NonNull final List<?> value) {
+    public StdMapLogsStatistics putOne(@NonNull final String statisticKey, @NonNull final Object value) {
         put(statisticKey, value);
         return this;
+    }
+
+    @Override
+    @NonNull
+    public MapLogsStatistics joinWith(@NonNull MapLogsStatistics statistics) {
+        if (statistics.errorsCount() != null) {
+            errorsCount((errorsCount() == null ? 0 : errorsCount()) + statistics.errorsCount());
+        }
+        if (statistics.warnsCount() != null) {
+            warnsCount((warnsCount() == null ? 0 : warnsCount()) + statistics.warnsCount());
+        }
+        if (statistics.averageWriteRate() != null) {
+            averageWriteRate((averageWriteRate() == null ? 0 : averageWriteRate()) + statistics.averageWriteRate());
+        }
+        if (statistics.commonCount() != null) {
+            commonCount((commonCount() == null ? 0 : commonCount()) + statistics.commonCount());
+        }
+        if (statistics.errorsAverageInterval() != null) {
+            errorsAverageInterval((errorsAverageInterval() == null ? 0 : errorsAverageInterval()) + statistics.errorsAverageInterval());
+        }
+
+        if (!statistics.errorsFrequencies().isEmpty()) {
+            errorsFrequencies(joinValues(errorsFrequencies(), statistics.errorsFrequencies()));
+        }
+        if (!statistics.errorsByCategoryFrequencies().isEmpty()) {
+            errorsByCategoryFrequencies(joinValues(errorsByCategoryFrequencies(), statistics.errorsByCategoryFrequencies()));
+        }
+        if (!statistics.mostFrequentErrors().isEmpty()) {
+            mostFrequentErrors(joinValues(mostFrequentErrors(), statistics.mostFrequentErrors()));
+        }
+        if (!statistics.mostFrequentWarns().isEmpty()) {
+            mostFrequentWarns(joinValues(mostFrequentWarns(), statistics.mostFrequentWarns()));
+        }
+        if (!statistics.recordsByThreadFrequencies().isEmpty()) {
+            recordsByThreadFrequencies(joinValues(recordsByThreadFrequencies(), statistics.recordsByThreadFrequencies()));
+        }
+        if (!statistics.recordsByCategoryFrequencies().isEmpty()) {
+            recordsByCategoryFrequencies(joinValues(recordsByCategoryFrequencies(), statistics.recordsByCategoryFrequencies()));
+        }
+
+        return this;
+    }
+
+    private List<Pair<String, Long>> joinValues(
+            final List<Pair<String, Long>> oldValues,
+            final List<Pair<String, Long>> newValues) {
+        if (oldValues.isEmpty()) {
+            return newValues;
+        } else if (newValues.isEmpty()) {
+            return oldValues;
+        }
+
+        final Map<String, Pair<String, Long>> oldValuesMap =
+                oldValues
+                        .stream()
+                        .collect(Collectors.toMap(Pair::getLeft, Function.identity()));
+
+        for (final var newVal : newValues) {
+            final var oldVal = oldValuesMap.get(newVal.getKey());
+            if (oldVal == null) {
+                oldValues.add(newVal);
+            } else {
+                oldValues.set(oldValues.indexOf(oldVal), ImmutablePair.of(oldVal.getKey(), oldVal.getValue() + newVal.getValue()));
+            }
+        }
+
+        return oldValues;
     }
 
     private <T> T getStatByKey(final String key) {
@@ -161,9 +211,9 @@ public class StdMapLogsStatistics extends HashMap<String, List<?>> implements Ma
     }
 
     private <T> T getStatByKey(final String key, final boolean single) {
-        final List<?> value = super.getOrDefault(key, Collections.emptyList());
+        final Object value = super.getOrDefault(key, single ? null : Collections.emptyList());
         @SuppressWarnings("unchecked")
-        final T result = single ? (T) (value.isEmpty() ? null : value.get(0)) : (T) value;
+        final T result = (T) value;
         return result;
     }
 }

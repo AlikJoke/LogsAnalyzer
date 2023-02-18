@@ -1,5 +1,6 @@
 package org.analyzer.logs.service.std;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.NonNull;
 import org.analyzer.logs.model.LogRecordEntity;
 import org.analyzer.logs.service.Aggregator;
@@ -11,14 +12,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.logging.LogLevel;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 public class DefaultLogsAnalyzer implements LogsAnalyzer {
+
+    private final Set<String> mostFrequentAggregations =
+            Set.of(StdMapLogsStatistics.MOST_FREQUENT_ERRORS, StdMapLogsStatistics.MOST_FREQUENT_WARNS);
 
     private final AggregatorFactory aggregatorsFactory;
     private final Map<String, Aggregator<Object>> defaultAggregations;
@@ -35,14 +36,7 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
             @NonNull List<LogRecordEntity> records,
             @NonNull AnalyzeQuery analyzeQuery) {
 
-        Map<String, Aggregator<Object>> aggregations =
-                analyzeQuery.aggregations().entrySet()
-                                            .stream()
-                                            .collect(
-                                                    Collectors.toMap(
-                                                            Map.Entry::getKey,
-                                                            e -> this.aggregatorsFactory.create(e.getKey(), e.getValue()))
-                                            );
+        Map<String, Aggregator<Object>> aggregations = getAggregationsFromQuery(analyzeQuery);
         if (aggregations.isEmpty()) {
             aggregations = this.defaultAggregations;
         }
@@ -56,6 +50,39 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
                             );
     }
 
+    @NonNull
+    @Override
+    public MapLogsStatistics composeBy(
+            @NonNull List<MapLogsStatistics> statistics,
+            @NonNull AnalyzeQuery analyzeQuery) {
+        final var result = new StdMapLogsStatistics();
+        statistics.forEach(result::joinWith);
+
+        final Map<String, Aggregator<Object>> aggregators = getAggregationsFromQuery(analyzeQuery);
+        // TODO apply minFrequency & takeCount to frequencies stats
+
+        return result;
+    }
+
+    private Map<String, Aggregator<Object>> getAggregationsFromQuery(final AnalyzeQuery analyzeQuery) {
+        return analyzeQuery.aggregations().entrySet()
+                .stream()
+                .collect(
+                        Collectors.toMap(
+                                Map.Entry::getKey,
+                                e -> createNonDefaultAggregator(e.getKey(), e.getValue()))
+                );
+    }
+
+    private Aggregator<Object> createNonDefaultAggregator(final String name, final JsonNode settings) {
+        final Aggregator<Object> aggregator = this.aggregatorsFactory.create(name, settings);
+        if (aggregator.getParameters() instanceof Frequency frequency) {
+            aggregator.setParameters(new Frequency(frequency.groupBy(), 1, frequency.additionalFilter(), Integer.MAX_VALUE));
+        }
+
+        return aggregator;
+    }
+
     private Map<String, Aggregator<Object>> createDefaultAggregationsMap() {
 
         final Map<String, Aggregator<Object>> result = new HashMap<>();
@@ -66,12 +93,12 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
 
         result.put(
                 StdMapLogsStatistics.MOST_FREQUENT_ERRORS,
-                this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterErrors(), 5))
+                this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterErrors(), Integer.MAX_VALUE))
         );
 
         result.put(
                 StdMapLogsStatistics.MOST_FREQUENT_WARNS,
-                this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterWarns(), 5))
+                this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterWarns(), Integer.MAX_VALUE))
         );
 
         result.put(
