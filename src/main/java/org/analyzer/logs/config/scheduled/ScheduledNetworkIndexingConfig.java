@@ -1,11 +1,10 @@
-package org.analyzer.logs.service.scheduled.config;
+package org.analyzer.logs.config.scheduled;
 
 import io.micrometer.core.aop.TimedAspect;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import lombok.NonNull;
-import org.analyzer.logs.service.std.config.TelegramNotificationBotConfiguration;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Dsl;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,33 +1,27 @@
-package org.analyzer.logs.caching;
+package org.analyzer.logs.config.redis;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.StdTypeResolverBuilder;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.cache.CacheKeyPrefix;
-import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.*;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.JacksonObjectReader;
+import org.springframework.data.redis.serializer.JacksonObjectWriter;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import java.time.Duration;
+import static org.analyzer.logs.LogsAnalyzerApplication.STANDALONE_MODE_PROPERTY;
 
-@Configuration
-@EnableCaching(proxyTargetClass = true)
-public class CacheConfiguration {
-
-    @Bean
-    public RedisCacheConfiguration redisCacheConfiguration(GenericJackson2JsonRedisSerializer redisValueSerializer) {
-        return RedisCacheConfiguration
-                .defaultCacheConfig()
-                    .computePrefixWith(CacheKeyPrefix.simple())
-                    .entryTtl(Duration.ZERO)
-                    .disableCachingNullValues()
-                    .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(redisValueSerializer));
-    }
+@AutoConfiguration
+@ConditionalOnProperty(name = STANDALONE_MODE_PROPERTY, havingValue = "false", matchIfMissing = true)
+@Import(RedisAutoConfiguration.class)
+public class ConditionalRedisAutoConfiguration {
 
     @Bean
     public GenericJackson2JsonRedisSerializer redisValueSerializer() {
@@ -37,11 +31,15 @@ public class CacheConfiguration {
     }
 
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory, ObjectMapper mapper) {
         final RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(factory);
         template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(redisValueSerializer());
+
+        final GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(
+                mapper, JacksonObjectReader.create(), JacksonObjectWriter.create()
+        );
+        template.setValueSerializer(serializer);
 
         return template;
     }

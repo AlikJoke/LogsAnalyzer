@@ -1,4 +1,4 @@
-package org.analyzer.logs.dao.config;
+package org.analyzer.logs.config.mongo;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;

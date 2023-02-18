@@ -1,4 +1,4 @@
-package org.analyzer.logs.dao.config;
+package org.analyzer.logs.config.elastic;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import org.elasticsearch.client.RestClientBuilder;

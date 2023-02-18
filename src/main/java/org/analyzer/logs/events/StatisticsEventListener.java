@@ -4,7 +4,6 @@ import lombok.NonNull;
 import org.analyzer.logs.model.LogsStatisticsEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -12,9 +11,9 @@ public class StatisticsEventListener extends MongoEventGenerationListener<LogsSt
 
     @Autowired
     protected StatisticsEventListener(
-            @NonNull RedisTemplate<String, Object> redisTemplate,
-            @Value("${logs.analyzer.events.statistics.topic}") @NonNull String topicName) {
-        super(redisTemplate, topicName);
+            @NonNull EventSender eventSender,
+            @Value("${logs.analyzer.events.statistics.channel}") @NonNull String channel) {
+        super(eventSender, channel);
     }
 
     @Override

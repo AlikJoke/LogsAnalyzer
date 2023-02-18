@@ -1,4 +1,4 @@
-package org.analyzer.logs.sec.config;
+package org.analyzer.logs.config.sec;
 
 import org.analyzer.logs.sec.UserDetailsWrapper;
 import org.analyzer.logs.service.UserService;

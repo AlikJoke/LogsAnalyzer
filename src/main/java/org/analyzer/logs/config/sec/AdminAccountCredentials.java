@@ -1,4 +1,4 @@
-package org.analyzer.logs.sec.config;
+package org.analyzer.logs.config.sec;
 
 import lombok.RequiredArgsConstructor;
 import lombok.Value;

@@ -3,7 +3,7 @@ package org.analyzer.logs.service.std;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.analyzer.logs.service.UserNotifier;
-import org.analyzer.logs.service.std.config.TelegramNotificationBotConfiguration;
+import org.analyzer.logs.config.scheduled.TelegramNotificationBotConfiguration;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;

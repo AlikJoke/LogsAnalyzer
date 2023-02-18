@@ -8,7 +8,7 @@ import org.springframework.security.core.userdetails.User;
 
 import java.util.Collections;
 
-import static org.analyzer.logs.sec.config.SecurityConfig.USER_ROLE;
+import static org.analyzer.logs.config.sec.SecurityConfig.USER_ROLE;
 
 @Getter
 public final class UserDetailsWrapper extends User {

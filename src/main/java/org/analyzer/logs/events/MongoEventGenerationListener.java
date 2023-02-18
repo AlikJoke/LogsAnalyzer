@@ -5,21 +5,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.mapping.event.AbstractMongoEventListener;
 import org.springframework.data.mongodb.core.mapping.event.AfterDeleteEvent;
 import org.springframework.data.mongodb.core.mapping.event.AfterSaveEvent;
-import org.springframework.data.redis.core.RedisTemplate;
 
 @Slf4j
 abstract class MongoEventGenerationListener<T> extends AbstractMongoEventListener<T> {
 
     private static final String ID_KEY = "_id";
 
-    protected final RedisTemplate<String, Object> redisTemplate;
-    protected final String topicName;
+    protected final EventSender eventSender;
+    protected final String channel;
 
     protected MongoEventGenerationListener(
-            @NonNull RedisTemplate<String, Object> redisTemplate,
-            @NonNull String topicName) {
-        this.redisTemplate = redisTemplate;
-        this.topicName = topicName;
+            @NonNull EventSender eventSender,
+            @NonNull String channel) {
+        this.eventSender = eventSender;
+        this.channel = channel;
     }
 
     @Override
@@ -29,7 +28,7 @@ abstract class MongoEventGenerationListener<T> extends AbstractMongoEventListene
                 new EntitySavedEvent<T>()
                         .setEntity(buildEntityToSend(event.getSource()))
                         .setSourceCollection(event.getCollectionName());
-        sendEventToTopic(eventToSend);
+        sendEvent(eventToSend);
     }
 
     @Override
@@ -39,12 +38,12 @@ abstract class MongoEventGenerationListener<T> extends AbstractMongoEventListene
                 new EntityDeletedEvent()
                         .setEntityId(event.getSource().getString(ID_KEY))
                         .setSourceCollection(event.getCollectionName());
-        sendEventToTopic(eventToSend);
+        sendEvent(eventToSend);
     }
 
     protected abstract T buildEntityToSend(final T sourceEntity);
 
-    protected void sendEventToTopic(final Object source) {
-        this.redisTemplate.convertAndSend(this.topicName, source);
+    protected void sendEvent(final Object source) {
+        this.eventSender.send(this.channel, source);
     }
 }
