@@ -12,22 +12,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.logging.LogLevel;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
 public class DefaultLogsAnalyzer implements LogsAnalyzer {
 
-    private final Set<String> mostFrequentAggregations =
-            Set.of(StdMapLogsStatistics.MOST_FREQUENT_ERRORS, StdMapLogsStatistics.MOST_FREQUENT_WARNS);
-
     private final AggregatorFactory aggregatorsFactory;
-    private final Map<String, Aggregator<Object>> defaultAggregations;
+    private final Map<String, Aggregator<?>> defaultAggregations;
+    private final Map<String, Aggregator<?>> aggregationsWithLimitations;
 
     @Autowired
     public DefaultLogsAnalyzer(@NonNull AggregatorFactory aggregatorsFactory) {
         this.aggregatorsFactory = aggregatorsFactory;
         this.defaultAggregations = createDefaultAggregationsMap();
+        this.aggregationsWithLimitations = createDefaultAggregationsWithLimitationsMap();
     }
 
     @Override
@@ -36,7 +38,7 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
             @NonNull List<LogRecordEntity> records,
             @NonNull AnalyzeQuery analyzeQuery) {
 
-        Map<String, Aggregator<Object>> aggregations = getAggregationsFromQuery(analyzeQuery);
+        Map<String, Aggregator<?>> aggregations = getAggregationsFromQuery(analyzeQuery);
         if (aggregations.isEmpty()) {
             aggregations = this.defaultAggregations;
         }
@@ -50,21 +52,28 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
                             );
     }
 
-    @NonNull
     @Override
-    public MapLogsStatistics composeBy(
-            @NonNull List<MapLogsStatistics> statistics,
-            @NonNull AnalyzeQuery analyzeQuery) {
-        final var result = new StdMapLogsStatistics();
-        statistics.forEach(result::joinWith);
+    public void applyFinalQueryLimitations(@NonNull MapLogsStatistics statistics, @NonNull AnalyzeQuery analyzeQuery) {
+        final var aggregators = getAggregationsFromQuery(analyzeQuery);
+        final var aggregatorsWithLimitations =
+                aggregators.isEmpty()
+                        ? this.aggregationsWithLimitations
+                        : aggregators;
 
-        final Map<String, Aggregator<Object>> aggregators = getAggregationsFromQuery(analyzeQuery);
-        // TODO apply minFrequency & takeCount to frequencies stats
+        statistics.forEach((k, v) -> {
+            final var aggregatorWithLimitations = aggregatorsWithLimitations.get(k);
+            if (aggregatorWithLimitations == null) {
+                return;
+            }
 
-        return result;
+            @SuppressWarnings("unchecked")
+            final var aggregator = (Aggregator<Object>) aggregatorWithLimitations;
+            aggregator.postFilter()
+                        .ifPresent(pf -> pf.accept(v));
+        });
     }
 
-    private Map<String, Aggregator<Object>> getAggregationsFromQuery(final AnalyzeQuery analyzeQuery) {
+    private Map<String, Aggregator<?>> getAggregationsFromQuery(final AnalyzeQuery analyzeQuery) {
         return analyzeQuery.aggregations().entrySet()
                 .stream()
                 .collect(
@@ -83,9 +92,19 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
         return aggregator;
     }
 
-    private Map<String, Aggregator<Object>> createDefaultAggregationsMap() {
+    private Map<String, Aggregator<?>> createDefaultAggregationsWithLimitationsMap() {
+        return Map.of(
+                StdMapLogsStatistics.MOST_FREQUENT_ERRORS,
+                this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterErrors(), 5)),
 
-        final Map<String, Aggregator<Object>> result = new HashMap<>();
+                StdMapLogsStatistics.MOST_FREQUENT_WARNS,
+                this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterWarns(), 5))
+        );
+    }
+
+    private Map<String, Aggregator<?>> createDefaultAggregationsMap() {
+
+        final Map<String, Aggregator<?>> result = new HashMap<>();
         result.put(
                 StdMapLogsStatistics.ERRORS_FREQUENCIES,
                 this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterErrors(), Integer.MAX_VALUE))

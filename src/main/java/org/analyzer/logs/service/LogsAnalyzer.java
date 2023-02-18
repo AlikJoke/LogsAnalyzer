@@ -13,8 +13,7 @@ public interface LogsAnalyzer {
             @NonNull List<LogRecordEntity> records,
             @NonNull AnalyzeQuery analyzeQuery);
 
-    @Nonnull
-    MapLogsStatistics composeBy(
-            @NonNull List<MapLogsStatistics> statistics,
+    void applyFinalQueryLimitations(
+            @NonNull MapLogsStatistics statistics,
             @NonNull AnalyzeQuery analyzeQuery);
 }

@@ -3,6 +3,7 @@ package org.analyzer.logs.service.std.aggregations;
 import lombok.NonNull;
 import org.analyzer.logs.model.LogRecordEntity;
 import org.analyzer.logs.service.Aggregator;
+import org.analyzer.logs.service.PostAggregationFilter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -13,6 +14,7 @@ import org.springframework.util.CollectionUtils;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -22,6 +24,16 @@ import java.util.stream.Collectors;
 public class FrequencyAggregator implements Aggregator<List<Pair<String, Long>>> {
 
     public static final String NAME = "frequency";
+
+    private final PostAggregationFilter<List<Pair<String, Long>>> postAggregationFilter = values -> {
+
+        final var params = Objects.requireNonNull(getParameters());
+        values.sort((o1, o2) -> Long.compare(o2.getValue(), o1.getValue()));
+        values.removeIf(value -> value.getValue() < params.minFrequency());
+
+        final var redundantValues = values.subList(0, values.size() > params.takeCount() ? params.takeCount() : values.size());
+        values.removeAll(redundantValues);
+    };
 
     private Frequency parameters;
 
@@ -57,6 +69,12 @@ public class FrequencyAggregator implements Aggregator<List<Pair<String, Long>>>
     @Override
     public String getName() {
         return NAME;
+    }
+
+    @NonNull
+    @Override
+    public Optional<PostAggregationFilter<List<Pair<String, Long>>>> postFilter() {
+        return Optional.of(this.postAggregationFilter);
     }
 
     @Override

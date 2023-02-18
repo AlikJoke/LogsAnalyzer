@@ -136,7 +136,9 @@ public class ElasticLogsService implements LogsService {
             pageNumber = recordsToAnalyzePart.isEmpty() ? -1 : pageNumber + 1;
         }
 
-        logsAnalyzeCounter.increment();
+        this.logsAnalyzer.applyFinalQueryLimitations(stats, analyzeQuery);
+
+        this.logsAnalyzeCounter.increment();
 
         processStatsSaving(analyzeQuery, stats, this.userAccessor.get().getHash());
         return stats;
