@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 @Service
@@ -88,18 +89,16 @@ public class ElasticLogsService implements LogsService {
 
     @Override
     @NonNull
-    public IndexingProcess index(
+    public CompletableFuture<String> index(
             @NonNull File logFile,
             @Nullable LogRecordFormat recordFormat) {
 
         final var uuidKey = UUID.randomUUID().toString();
         final var userEntity = this.userAccessor.get();
-        final var processFuture = this.taskExecutor.execute(
+        return this.taskExecutor.execute(
                 () -> this.zipUtil.flat(logFile)
                                     .forEach(file -> processLogFile(userEntity, uuidKey, recordFormat, file))
-        );
-
-        return new IndexingProcess(uuidKey, processFuture);
+        ).thenApply(v -> uuidKey);
     }
 
     @Nonnull
@@ -126,15 +125,16 @@ public class ElasticLogsService implements LogsService {
 
         MapLogsStatistics stats = null;
         var pageNumber = 0;
-        while (pageNumber != -1) {
+        do {
 
             final var searchQuery = analyzeQuery.toSearchQuery(pageNumber);
             final var recordsToAnalyzePart = searchByFilterQuery(searchQuery);
-            final var partStats = this.logsAnalyzer.analyze(recordsToAnalyzePart, analyzeQuery);
 
+            final var partStats = this.logsAnalyzer.analyze(recordsToAnalyzePart, analyzeQuery);
             stats = stats == null ? partStats : stats.joinWith(partStats);
+
             pageNumber = recordsToAnalyzePart.isEmpty() ? -1 : pageNumber + 1;
-        }
+        } while (pageNumber != -1);
 
         this.logsAnalyzer.applyFinalQueryLimitations(stats, analyzeQuery);
 
@@ -245,7 +245,7 @@ public class ElasticLogsService implements LogsService {
         this.indexedFilesCounter.increment();
 
         try (final var userContext = this.userAccessor.as(user);
-             final var packageIterator = this.parser.parse(this.logKeysFactory.createIndexedLogFileKey(indexingKey, file.getName()), file, recordFormat)) {
+             final var packageIterator = this.parser.parse(this.logKeysFactory.createIndexedLogFileKey(userIndexingKey, file.getName()), file, recordFormat)) {
 
             while (packageIterator.hasNext()) {
                 final var recordsPackage = packageIterator.next();

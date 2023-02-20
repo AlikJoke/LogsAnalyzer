@@ -167,8 +167,7 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
                 final var matcher = this.pattern.matcher(this.lastLine);
                 if (matcher.matches()) {
 
-                    final long counter = this.offset + 1;
-                    if (counter % PACKAGE_SIZE == 0) {
+                    if (result.size() == PACKAGE_SIZE) {
                         break;
                     }
 
@@ -183,6 +182,7 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
                                             .source(this.lastLine)
                                             .record(matcher.group("text"))
                                         .build();
+
                     result.add(lastRecord);
                 } else if (lastRecord != null) {
                     final var separatedLine = System.lineSeparator() + this.lastLine;
@@ -192,7 +192,6 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
                     throw new RuntimeException("Unsupported log record format: " + this.lastLine);
                 }
 
-                this.lastLine = readNextLine();
             } while ((this.lastLine = readNextLine()) != null);
 
             return result;

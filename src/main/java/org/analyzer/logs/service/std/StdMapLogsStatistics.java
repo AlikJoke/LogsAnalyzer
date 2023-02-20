@@ -63,7 +63,7 @@ public class StdMapLogsStatistics extends HashMap<String, Object> implements Map
     }
 
     public void errorsAverageInterval(@NonNull Double errorsAverageInterval) {
-        put(ERRORS_AVERAGE_INTERVAL, List.of(errorsAverageInterval));
+        put(ERRORS_AVERAGE_INTERVAL, errorsAverageInterval);
     }
 
     @NonNull
@@ -82,7 +82,7 @@ public class StdMapLogsStatistics extends HashMap<String, Object> implements Map
     }
 
     public void errorsCount(@NonNull Long errorsCount) {
-        put(ERRORS_COUNT, List.of(errorsCount));
+        put(ERRORS_COUNT, errorsCount);
     }
 
     @Override
@@ -91,7 +91,7 @@ public class StdMapLogsStatistics extends HashMap<String, Object> implements Map
     }
 
     public void warnsCount(@NonNull Long warnsCount) {
-        put(WARNS_COUNT, List.of(warnsCount));
+        put(WARNS_COUNT, warnsCount);
     }
 
     @NonNull
@@ -110,7 +110,7 @@ public class StdMapLogsStatistics extends HashMap<String, Object> implements Map
     }
 
     public void averageWriteRate(@NonNull Double averageWriteRate) {
-        put(AVERAGE_WRITE_RATE, List.of(averageWriteRate));
+        put(AVERAGE_WRITE_RATE, averageWriteRate);
     }
 
     @NonNull

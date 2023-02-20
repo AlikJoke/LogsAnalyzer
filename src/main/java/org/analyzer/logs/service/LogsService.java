@@ -9,12 +9,12 @@ import java.io.File;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 public interface LogsService {
 
     @Nonnull
-    IndexingProcess index(
+    CompletableFuture<String> index(
             @Nonnull File logFile,
             @Nullable LogRecordFormat patternFormat);
 
@@ -40,7 +40,4 @@ public interface LogsService {
             @NonNull LocalDateTime beforeDate);
 
     void deleteByQuery(@Nonnull SearchQuery deleteQuery);
-
-    record IndexingProcess(@Nonnull String indexingKey, @Nonnull Future<?> processMonitor) {
-    }
 }
