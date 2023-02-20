@@ -28,7 +28,7 @@ public class LinksCollector {
     @Autowired
     public LinksCollector(
             @NonNull ApplicationContext applicationContext,
-            @Value("${spring.web-flux.base-path}") String apiPrefix) {
+            @Value("${server.servlet.context-path}") String apiPrefix) {
         final Map<Class<?>, List<ResourceLink>> collectedLinks = new HashMap<>();
         applicationContext.getBeansWithAnnotation(RestController.class)
                 .values()

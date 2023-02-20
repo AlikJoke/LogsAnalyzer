@@ -37,11 +37,11 @@ dependencies {
 	implementation 'commons-io:commons-io:2.11.0'
 	implementation 'org.apache.commons:commons-compress:1.22'
 	implementation 'org.asynchttpclient:async-http-client:2.12.3'
+	implementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:3.5.3'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
-	testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:3.5.3'
 }
 
 springBoot {

@@ -27,7 +27,7 @@ public class UserNotificationsEndpoint {
             throw new UnsupportedOperationException("Not enough parameters for notification operations");
         }
 
-        final String operationType = operation[0];
+        final var operationType = operation[0];
         switch (operationType) {
             case "broadcast" -> {
                 this.broadcastUserNotifier.broadcast(operation[1]);

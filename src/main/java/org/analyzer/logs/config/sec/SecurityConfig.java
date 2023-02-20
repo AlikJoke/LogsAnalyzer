@@ -12,6 +12,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -20,6 +21,9 @@ import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
+
+import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
 @EnableWebSecurity
 @Configuration
@@ -35,35 +39,35 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .authorizeHttpRequests()
-                    .requestMatchers("/actuator/**")
-                    .hasAuthority(ADMIN_ROLE)
-                    .requestMatchers(HttpMethod.POST, "/user")
-                    .permitAll()
-                    .requestMatchers("/anonymous", "/docs", "/swagger-ui.html", "/webjars/**")
-                    .permitAll()
-                .anyRequest()
-                    .hasAuthority(USER_ROLE)
-                    .and()
-                        .formLogin()
-                    .and()
-                        .httpBasic()
-                    .and()
-                        .cors(corsSpec -> corsSpec.configurationSource(exchange -> {
-                            final var allowedMethods =
-                                    Arrays.stream(RequestMethod.values())
-                                        .map(RequestMethod::name)
-                                        .toList();
-                            final var result = new CorsConfiguration().applyPermitDefaultValues();
-                            result
-                                    .setAllowedOriginPatterns(allowedOrigins)
-                                    .setAllowedMethods(allowedMethods);
-
-                            return result;
-                        }))
-                        .csrf()
-                            .disable()
-                    .build();
+                .authorizeHttpRequests(requests ->
+                        requests
+                            .requestMatchers(antMatcher("/actuator/**"))
+                                .hasAuthority(ADMIN_ROLE)
+                            .requestMatchers(HttpMethod.POST, "/user")
+                                .anonymous()
+                            .requestMatchers("/anonymous", "/docs", "/swagger-ui.html", "/webjars/**")
+                                .anonymous()
+                            .anyRequest()
+                                .hasAuthority(USER_ROLE)
+                )
+                .formLogin()
+                .and()
+                .httpBasic()
+                .and()
+                .cors(corsSpec -> corsSpec.configurationSource(exchange -> {
+                    final var allowedMethods =
+                            Arrays.stream(RequestMethod.values())
+                                    .map(RequestMethod::name)
+                                    .toList();
+                    final var result = new CorsConfiguration().applyPermitDefaultValues();
+                    result
+                            .setAllowedOriginPatterns(allowedOrigins)
+                            .setAllowedMethods(allowedMethods);
+                     return result;
+                }))
+                .csrf()
+                    .disable()
+                .build();
     }
 
     @Bean
@@ -81,14 +85,15 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService(
             UserService userService,
             AdminAccountCredentials adminAccountCredentials) {
-        final var adminUser = User.withUsername(adminAccountCredentials.getUsername())
-                                    .password(adminAccountCredentials.getEncodedPassword())
-                                    .disabled(false)
-                                    .authorities(ADMIN_ROLE)
-                                .build();
+        final Supplier<UserDetails> adminUserSupplier = () ->
+                User.withUsername(adminAccountCredentials.getUsername())
+                        .password(adminAccountCredentials.getEncodedPassword())
+                        .disabled(false)
+                        .authorities(ADMIN_ROLE)
+                        .build();
         return username ->
                 adminAccountCredentials.getUsername().equals(username)
-                        ? adminUser
+                        ? adminUserSupplier.get()
                         : new UserDetailsWrapper(userService.findById(username));
     }
 

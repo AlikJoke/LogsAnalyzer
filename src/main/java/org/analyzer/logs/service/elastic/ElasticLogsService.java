@@ -214,7 +214,7 @@ public class ElasticLogsService implements LogsService {
 
         final var postFilters = this.postFiltersSequenceBuilder.build(searchQuery.postFilters());
 
-        final List<LogRecordEntity> logRecords =
+        final var logRecords =
                 template.search(query, LogRecordEntity.class)
                         .stream()
                         .map(SearchHit::getContent)

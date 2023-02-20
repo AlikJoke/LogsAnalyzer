@@ -24,7 +24,7 @@ abstract class MongoEventGenerationListener<T> extends AbstractMongoEventListene
     @Override
     public void onAfterSave(@NonNull AfterSaveEvent<T> event) {
         super.onAfterSave(event);
-        final EntitySavedEvent<T> eventToSend =
+        final var eventToSend =
                 new EntitySavedEvent<T>()
                         .setEntity(buildEntityToSend(event.getSource()))
                         .setSourceCollection(event.getCollectionName());
@@ -34,7 +34,7 @@ abstract class MongoEventGenerationListener<T> extends AbstractMongoEventListene
     @Override
     public void onAfterDelete(@NonNull AfterDeleteEvent<T> event) {
         super.onAfterDelete(event);
-        final EntityDeletedEvent eventToSend =
+        final var eventToSend =
                 new EntityDeletedEvent()
                         .setEntityId(event.getSource().getString(ID_KEY))
                         .setSourceCollection(event.getCollectionName());

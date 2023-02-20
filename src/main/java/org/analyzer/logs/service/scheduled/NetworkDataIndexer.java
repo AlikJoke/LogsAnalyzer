@@ -133,7 +133,7 @@ public class NetworkDataIndexer implements Runnable {
 
     private void onError(final Throwable ex) {
         log.error("Exception while indexing for user " + this.user.getUsername(), ex);
-        final IndexingNotificationSettings notificationSettings = this.indexingSettings.getNotificationSettings();
+        final var notificationSettings = this.indexingSettings.getNotificationSettings();
         if (!notificationSettings.isErrorNotificationsEnabled()) {
             log.trace("Error notifications for user {} disabled", this.user.getUsername());
             return;

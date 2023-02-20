@@ -12,6 +12,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
@@ -32,7 +33,7 @@ public class DefaultUserService implements UserService {
     public UserEntity create(@NonNull UserEntity newUser) {
         try {
             return this.userRepository.save(newUser);
-        } catch (OptimisticLockingFailureException ex) {
+        } catch (OptimisticLockingFailureException | DuplicateKeyException ex) {
             throw new UserAlreadyExistsException(newUser.getUsername());
         }
     }
