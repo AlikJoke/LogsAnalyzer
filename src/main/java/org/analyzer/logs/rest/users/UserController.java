@@ -7,15 +7,12 @@ import org.analyzer.logs.rest.RootEntrypointResource;
 import org.analyzer.logs.rest.hateoas.LinksCollector;
 import org.analyzer.logs.rest.hateoas.NamedEndpoint;
 import org.analyzer.logs.service.UserService;
-import org.analyzer.logs.service.elastic.ElasticLogsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import reactor.util.Logger;
-import reactor.util.Loggers;
 
 import java.security.Principal;
 import java.util.Set;
@@ -23,8 +20,6 @@ import java.util.Set;
 @RestController
 @RequestMapping(UserController.BASE_PATH)
 public class UserController extends ControllerBase {
-
-    private static final Logger logger = Loggers.getLogger(ElasticLogsService.class);
 
     static final String BASE_PATH = "/user";
 

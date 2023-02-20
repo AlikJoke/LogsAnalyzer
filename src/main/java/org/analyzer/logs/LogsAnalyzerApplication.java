@@ -7,7 +7,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
-import reactor.util.Loggers;
 
 @SpringBootApplication(exclude = RedisAutoConfiguration.class)
 @ImportAutoConfiguration({ ConditionalRedisAutoConfiguration.class, EventAutoConfiguration.class, CacheAutoConfiguration.class })
@@ -16,7 +15,6 @@ public class LogsAnalyzerApplication {
 	public static final String RUN_MODE_PROPERTY = "logs.analyzer.run.mode";
 
 	public static void main(String[] args) {
-		Loggers.useSl4jLoggers();
 		SpringApplication.run(LogsAnalyzerApplication.class, args).registerShutdownHook();
 	}
 }

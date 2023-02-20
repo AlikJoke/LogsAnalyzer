@@ -7,16 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.IndexOperations;
 import org.springframework.stereotype.Service;
-import reactor.util.Logger;
-import reactor.util.Loggers;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
 public class ElasticLogsManagementService implements LogsManagementService {
-
-    private static final Logger logger = Loggers.getLogger(ElasticLogsManagementService.class);
 
     private final LogRecordRepository logsRepository;
     private final IndexOperations indexOps;

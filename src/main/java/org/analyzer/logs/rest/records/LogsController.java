@@ -63,8 +63,15 @@ public class LogsController extends ControllerBase {
         return new LogRecordsCollectionResource(records, new Paging(query.pageNumber(), records.size()));
     }
 
+    @DeleteMapping
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @NamedEndpoint(value = "delete.logs", includeTo = RootEntrypointResource.class)
+    public void delete(@RequestBody RequestSearchQuery query) {
+        this.service.deleteByQuery(query);
+    }
+
     @Override
     protected Set<HttpMethod> supportedMethods() {
-        return Set.of(HttpMethod.OPTIONS, HttpMethod.POST);
+        return Set.of(HttpMethod.OPTIONS, HttpMethod.POST, HttpMethod.DELETE);
     }
 }

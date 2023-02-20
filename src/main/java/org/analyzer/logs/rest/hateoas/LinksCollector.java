@@ -3,6 +3,8 @@ package org.analyzer.logs.rest.hateoas;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.analyzer.logs.rest.ResourceLink;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
@@ -11,8 +13,6 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -51,8 +51,8 @@ public class LinksCollector {
                                     log.debug("Process endpoint configuration {}:{} for controller {}",
                                             ne.value(), ne.includeTo(), controllerClass);
 
-                                    final var path = path2method.getT1();
-                                    final var link = new ResourceLink(ne.value(), apiPrefix + basePath + path, path2method.getT2());
+                                    final var path = path2method.getKey();
+                                    final var link = new ResourceLink(ne.value(), apiPrefix + basePath + path, path2method.getValue());
                                     final var links = collectedLinks.getOrDefault(ne.includeTo(), new ArrayList<>());
                                     links.add(link);
                                     collectedLinks.putIfAbsent(ne.includeTo(), links);
@@ -70,30 +70,30 @@ public class LinksCollector {
         return this.linksCache.getOrDefault(resourceClass, Collections.emptyList());
     }
 
-    private Tuple2<String, RequestMethod> getMapping2HttpMethodFromJavaMethod(final Method method) {
+    private Pair<String, RequestMethod> getMapping2HttpMethodFromJavaMethod(final Method method) {
         final var getMapping = method.getAnnotation(GetMapping.class);
         if (getMapping != null) {
-            return Tuples.of(getFirstFromArrayOrDefault(getMapping.value(), ""), RequestMethod.GET);
+            return ImmutablePair.of(getFirstFromArrayOrDefault(getMapping.value(), ""), RequestMethod.GET);
         }
 
         final var postMapping = method.getAnnotation(PostMapping.class);
         if (postMapping != null) {
-            return Tuples.of(getFirstFromArrayOrDefault(postMapping.value(), ""), RequestMethod.POST);
+            return ImmutablePair.of(getFirstFromArrayOrDefault(postMapping.value(), ""), RequestMethod.POST);
         }
 
         final var putMapping = method.getAnnotation(PutMapping.class);
         if (putMapping != null) {
-            return Tuples.of(getFirstFromArrayOrDefault(putMapping.value(), ""), RequestMethod.PUT);
+            return ImmutablePair.of(getFirstFromArrayOrDefault(putMapping.value(), ""), RequestMethod.PUT);
         }
 
         final var deleteMapping = method.getAnnotation(DeleteMapping.class);
         if (deleteMapping != null) {
-            return Tuples.of(getFirstFromArrayOrDefault(deleteMapping.value(), ""), RequestMethod.DELETE);
+            return ImmutablePair.of(getFirstFromArrayOrDefault(deleteMapping.value(), ""), RequestMethod.DELETE);
         }
 
         final var mapping = method.getAnnotation(RequestMapping.class);
         if (mapping != null) {
-            return Tuples.of(getFirstFromArrayOrDefault(mapping.value(), ""), getFirstFromArray(mapping.method()));
+            return ImmutablePair.of(getFirstFromArrayOrDefault(mapping.value(), ""), getFirstFromArray(mapping.method()));
         }
 
         return null;

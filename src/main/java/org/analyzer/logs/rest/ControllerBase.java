@@ -2,6 +2,7 @@ package org.analyzer.logs.rest;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.analyzer.logs.service.exceptions.UserAlreadyDisabledException;
 import org.analyzer.logs.service.exceptions.UserAlreadyExistsException;
 import org.analyzer.logs.service.exceptions.UserNotFoundException;
@@ -11,8 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.HttpClientErrorException;
-import reactor.util.Logger;
-import reactor.util.Loggers;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -22,9 +21,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
+@Slf4j
 public class ControllerBase {
-
-    private final Logger logger = Loggers.getLogger(getClass());
 
     @RequestMapping(method = RequestMethod.OPTIONS)
     public void options(HttpServletRequest request, HttpServletResponse response) {
@@ -41,7 +39,7 @@ public class ControllerBase {
 
     @ExceptionHandler(RuntimeException.class)
     protected ResponseEntity<ExceptionResource> commonHandler(RuntimeException ex) {
-        logger.error("", ex);
+        log.error("", ex);
         return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                     .body(new ExceptionResource(exceptionToString(ex)));
@@ -49,7 +47,7 @@ public class ControllerBase {
 
     @ExceptionHandler(HttpClientErrorException.class)
     protected ResponseEntity<ExceptionResource> clientErrorHandler(HttpClientErrorException ex) {
-        logger.error("", ex);
+        log.error("", ex);
         return ResponseEntity
                     .status(ex.getStatusCode())
                     .body(new ExceptionResource(exceptionToString(ex)));
@@ -57,7 +55,7 @@ public class ControllerBase {
 
     @ExceptionHandler({UserAlreadyDisabledException.class, UserNotFoundException.class, UserAlreadyExistsException.class})
     protected ResponseEntity<ExceptionResource> userNotFoundHandler(RuntimeException ex) {
-        logger.error("", ex);
+        log.error("", ex);
         return ResponseEntity
                     .badRequest()
                     .body(new ExceptionResource(exceptionToString(ex)));

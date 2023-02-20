@@ -10,7 +10,6 @@ import org.analyzer.logs.model.LogRecordEntity;
 import org.analyzer.logs.model.LogsStatisticsEntity;
 import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.*;
-import org.analyzer.logs.service.std.DefaultLogsAnalyzer;
 import org.analyzer.logs.service.std.postfilters.PostFiltersSequenceBuilder;
 import org.analyzer.logs.service.util.JsonConverter;
 import org.analyzer.logs.service.util.LongRunningTaskExecutor;
@@ -22,8 +21,6 @@ import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.query.StringQuery;
 import org.springframework.stereotype.Service;
-import reactor.util.Logger;
-import reactor.util.Loggers;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,8 +33,6 @@ import java.util.function.Function;
 
 @Service
 public class ElasticLogsService implements LogsService {
-
-    private static final Logger logger = Loggers.getLogger(ElasticLogsService.class);
 
     private static final String STATISTICS_CACHE = "statistics";
 
@@ -54,7 +49,7 @@ public class ElasticLogsService implements LogsService {
     @Autowired
     private PostFiltersSequenceBuilder postFiltersSequenceBuilder;
     @Autowired
-    private DefaultLogsAnalyzer logsAnalyzer;
+    private LogsAnalyzer logsAnalyzer;
     @Autowired
     private MeterRegistry meterRegistry;
     @Autowired
@@ -98,7 +93,13 @@ public class ElasticLogsService implements LogsService {
         return this.taskExecutor.execute(
                 () -> this.zipUtil.flat(logFile)
                                     .forEach(file -> processLogFile(userEntity, uuidKey, recordFormat, file))
-        ).thenApply(v -> uuidKey);
+                )
+                .thenApply(v -> uuidKey)
+                .whenComplete((result, ex) -> {
+            if (ex != null) {
+                this.logRecordRepository.deleteAllByIdRegex(uuidKey);
+            }
+        });
     }
 
     @Nonnull
