@@ -13,7 +13,7 @@ import reactor.util.Loggers;
 @ImportAutoConfiguration({ ConditionalRedisAutoConfiguration.class, EventAutoConfiguration.class, CacheAutoConfiguration.class })
 public class LogsAnalyzerApplication {
 
-	public static final String STANDALONE_MODE_PROPERTY = "logs.analyzer.standalone.mode";
+	public static final String RUN_MODE_PROPERTY = "logs.analyzer.run.mode";
 
 	public static void main(String[] args) {
 		Loggers.useSl4jLoggers();

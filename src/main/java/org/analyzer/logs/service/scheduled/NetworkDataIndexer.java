@@ -4,7 +4,6 @@ import io.micrometer.core.annotation.Timed;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.analyzer.logs.model.IndexingNotificationSettings;
 import org.analyzer.logs.model.LogsStatisticsEntity;
 import org.analyzer.logs.model.ScheduledIndexingSettings;
 import org.analyzer.logs.model.UserEntity;
@@ -99,9 +98,6 @@ public class NetworkDataIndexer implements Runnable {
 
             this.logsService.findStatisticsByKey(indexingProcess.indexingKey())
                             .ifPresent(this::onComplete);
-        } catch (InterruptedException e) {
-            onError(e);
-            Thread.currentThread().interrupt();
         } catch (Exception e) {
             onError(e);
         } finally {

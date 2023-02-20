@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
-import static org.analyzer.logs.LogsAnalyzerApplication.STANDALONE_MODE_PROPERTY;
+import static org.analyzer.logs.LogsAnalyzerApplication.RUN_MODE_PROPERTY;
 
 @Configuration
 @EnableMongoRepositories(basePackages = "org.analyzer.logs.dao")
@@ -30,7 +30,7 @@ public class MongoConfig {
     }
 
     @Bean(initMethod = "start", destroyMethod = "stop")
-    @ConditionalOnProperty(name = STANDALONE_MODE_PROPERTY, havingValue = "true")
+    @ConditionalOnProperty(name = RUN_MODE_PROPERTY, havingValue = "box")
     public MongodExecutable embeddedMongoServer(MongoProperties mongoProperties) {
         final var dataPath = new UserHome(this.embeddedDataPath);
         final var storage = new Storage(

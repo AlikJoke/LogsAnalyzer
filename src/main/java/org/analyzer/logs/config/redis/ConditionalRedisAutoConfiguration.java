@@ -16,10 +16,10 @@ import org.springframework.data.redis.serializer.JacksonObjectReader;
 import org.springframework.data.redis.serializer.JacksonObjectWriter;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import static org.analyzer.logs.LogsAnalyzerApplication.STANDALONE_MODE_PROPERTY;
+import static org.analyzer.logs.LogsAnalyzerApplication.RUN_MODE_PROPERTY;
 
 @AutoConfiguration
-@ConditionalOnProperty(name = STANDALONE_MODE_PROPERTY, havingValue = "false", matchIfMissing = true)
+@ConditionalOnProperty(name = RUN_MODE_PROPERTY, havingValue = "distributed", matchIfMissing = true)
 @Import(RedisAutoConfiguration.class)
 public class ConditionalRedisAutoConfiguration {
 
