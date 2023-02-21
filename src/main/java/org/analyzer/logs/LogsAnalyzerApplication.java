@@ -9,7 +9,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 
 @SpringBootApplication(exclude = RedisAutoConfiguration.class)
-@ImportAutoConfiguration({ ConditionalRedisAutoConfiguration.class, EventAutoConfiguration.class, CacheAutoConfiguration.class })
+@ImportAutoConfiguration({
+		ConditionalRedisAutoConfiguration.class,
+		EventAutoConfiguration.class,
+		CacheAutoConfiguration.class
+})
 public class LogsAnalyzerApplication {
 
 	public static final String RUN_MODE_PROPERTY = "logs.analyzer.run.mode";
