@@ -1,8 +1,5 @@
 package org.analyzer.logs.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.*;
 import lombok.experimental.Accessors;
 import org.bson.json.JsonObject;
@@ -35,14 +32,4 @@ public class HttpArchiveEntity {
     @Field("user_key")
     private String userKey;
     private String title;
-
-    @NonNull
-    public HttpArchiveBody getJsonBodyWrapper(@NonNull final ObjectMapper mapper) {
-        try {
-            final var json = mapper.readTree(getBody().getJson());
-            return new HttpArchiveBody((ObjectNode) json);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

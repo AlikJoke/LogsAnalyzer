@@ -3,6 +3,7 @@ package org.analyzer.logs.rest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.analyzer.logs.service.exceptions.EntityNotFoundException;
 import org.analyzer.logs.service.exceptions.UserAlreadyDisabledException;
 import org.analyzer.logs.service.exceptions.UserAlreadyExistsException;
 import org.analyzer.logs.service.exceptions.UserNotFoundException;
@@ -53,8 +54,16 @@ public class ControllerBase {
                     .body(new ExceptionResource(exceptionToString(ex)));
     }
 
-    @ExceptionHandler({UserAlreadyDisabledException.class, UserNotFoundException.class, UserAlreadyExistsException.class})
-    protected ResponseEntity<ExceptionResource> userNotFoundHandler(RuntimeException ex) {
+    @ExceptionHandler({UserNotFoundException.class, EntityNotFoundException.class})
+    protected ResponseEntity<ExceptionResource> entityNotFoundHandler(RuntimeException ex) {
+        log.error("", ex);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ExceptionResource(exceptionToString(ex)));
+    }
+
+    @ExceptionHandler({UserAlreadyDisabledException.class, UserAlreadyExistsException.class})
+    protected ResponseEntity<ExceptionResource> userOperationsHandler(RuntimeException ex) {
         log.error("", ex);
         return ResponseEntity
                     .badRequest()

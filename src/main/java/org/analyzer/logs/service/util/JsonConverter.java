@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.IOException;
+
 
 @Component
 public class JsonConverter {
@@ -35,6 +38,15 @@ public class JsonConverter {
         try {
             return mapper.writeValueAsString(object);
         } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @NonNull
+    public JsonNode convertFromFile(@NonNull File file) {
+        try {
+            return mapper.readTree(file);
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

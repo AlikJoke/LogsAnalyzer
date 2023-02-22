@@ -29,6 +29,8 @@ public class ScheduledDataCleaningTask {
     private LogKeysFactory logKeysFactory;
     @Autowired
     private CurrentUserAccessor userAccessor;
+    @Autowired
+    private HttpArchiveService httpArchiveService;
 
     @Scheduled(fixedRate = 5, timeUnit = TimeUnit.MINUTES)
     @Timed(
@@ -48,6 +50,8 @@ public class ScheduledDataCleaningTask {
         try (final var userContext = this.userAccessor.as(user)) {
             this.logsService.deleteByQuery(createSearchQueryToDelete(user, indexingKeys));
         }
+
+        this.httpArchiveService.deleteAllByUserKeyAndCreationDate(user.getHash(), timestamp);
     }
 
     private LocalDateTime createTimestamp(final long intervalInMinutes) {
