@@ -3,11 +3,11 @@ package org.analyzer.logs.service.std;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.NonNull;
 import org.analyzer.logs.model.LogRecordEntity;
-import org.analyzer.logs.service.Aggregator;
+import org.analyzer.logs.service.LogsAggregator;
 import org.analyzer.logs.service.AnalyzeQuery;
 import org.analyzer.logs.service.LogsAnalyzer;
 import org.analyzer.logs.service.MapLogsStatistics;
-import org.analyzer.logs.service.std.aggregations.*;
+import org.analyzer.logs.service.std.aggregations.logs.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.logging.LogLevel;
 import org.springframework.stereotype.Component;
@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 public class DefaultLogsAnalyzer implements LogsAnalyzer {
 
     private final AggregatorFactory aggregatorsFactory;
-    private final Map<String, Aggregator<?>> defaultAggregations;
-    private final Map<String, Aggregator<?>> aggregationsWithLimitations;
+    private final Map<String, LogsAggregator<?>> defaultAggregations;
+    private final Map<String, LogsAggregator<?>> aggregationsWithLimitations;
 
     @Autowired
     public DefaultLogsAnalyzer(@NonNull AggregatorFactory aggregatorsFactory) {
@@ -38,7 +38,7 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
             @NonNull List<LogRecordEntity> records,
             @NonNull AnalyzeQuery analyzeQuery) {
 
-        Map<String, Aggregator<?>> aggregations = getAggregationsFromQuery(analyzeQuery);
+        Map<String, LogsAggregator<?>> aggregations = getAggregationsFromQuery(analyzeQuery);
         if (aggregations.isEmpty()) {
             aggregations = this.defaultAggregations;
         }
@@ -67,13 +67,13 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
             }
 
             @SuppressWarnings("unchecked")
-            final var aggregator = (Aggregator<Object>) aggregatorWithLimitations;
+            final var aggregator = (LogsAggregator<Object>) aggregatorWithLimitations;
             aggregator.postFilter()
                         .ifPresent(pf -> pf.accept(v));
         });
     }
 
-    private Map<String, Aggregator<?>> getAggregationsFromQuery(final AnalyzeQuery analyzeQuery) {
+    private Map<String, LogsAggregator<?>> getAggregationsFromQuery(final AnalyzeQuery analyzeQuery) {
         return analyzeQuery.aggregations().entrySet()
                 .stream()
                 .collect(
@@ -83,8 +83,8 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
                 );
     }
 
-    private Aggregator<Object> createNonDefaultAggregator(final String name, final JsonNode settings) {
-        final Aggregator<Object> aggregator = this.aggregatorsFactory.create(name, settings);
+    private LogsAggregator<Object> createNonDefaultAggregator(final String name, final JsonNode settings) {
+        final LogsAggregator<Object> aggregator = this.aggregatorsFactory.create(name, settings);
         if (aggregator.getParameters() instanceof Frequency frequency) {
             aggregator.setParameters(new Frequency(frequency.groupBy(), 1, frequency.additionalFilter(), Integer.MAX_VALUE));
         }
@@ -92,67 +92,67 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
         return aggregator;
     }
 
-    private Map<String, Aggregator<?>> createDefaultAggregationsWithLimitationsMap() {
+    private Map<String, LogsAggregator<?>> createDefaultAggregationsWithLimitationsMap() {
         return Map.of(
                 StdMapLogsStatistics.MOST_FREQUENT_ERRORS,
-                this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterErrors(), 5)),
+                this.aggregatorsFactory.create(FrequencyLogsAggregator.NAME, new Frequency("record", 1, createAdditionalFilterErrors(), 5)),
 
                 StdMapLogsStatistics.MOST_FREQUENT_WARNS,
-                this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterWarns(), 5))
+                this.aggregatorsFactory.create(FrequencyLogsAggregator.NAME, new Frequency("record", 1, createAdditionalFilterWarns(), 5))
         );
     }
 
-    private Map<String, Aggregator<?>> createDefaultAggregationsMap() {
+    private Map<String, LogsAggregator<?>> createDefaultAggregationsMap() {
 
-        final Map<String, Aggregator<?>> result = new HashMap<>();
+        final Map<String, LogsAggregator<?>> result = new HashMap<>();
         result.put(
                 StdMapLogsStatistics.ERRORS_FREQUENCIES,
-                this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterErrors(), Integer.MAX_VALUE))
+                this.aggregatorsFactory.create(FrequencyLogsAggregator.NAME, new Frequency("record", 1, createAdditionalFilterErrors(), Integer.MAX_VALUE))
         );
 
         result.put(
                 StdMapLogsStatistics.MOST_FREQUENT_ERRORS,
-                this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterErrors(), Integer.MAX_VALUE))
+                this.aggregatorsFactory.create(FrequencyLogsAggregator.NAME, new Frequency("record", 1, createAdditionalFilterErrors(), Integer.MAX_VALUE))
         );
 
         result.put(
                 StdMapLogsStatistics.MOST_FREQUENT_WARNS,
-                this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("record", 1, createAdditionalFilterWarns(), Integer.MAX_VALUE))
+                this.aggregatorsFactory.create(FrequencyLogsAggregator.NAME, new Frequency("record", 1, createAdditionalFilterWarns(), Integer.MAX_VALUE))
         );
 
         result.put(
                 StdMapLogsStatistics.ERRORS_COUNT,
-                this.aggregatorsFactory.create(CountAggregator.NAME, new Count(createAdditionalFilterErrors()))
+                this.aggregatorsFactory.create(CountLogsAggregator.NAME, new Count(createAdditionalFilterErrors()))
         );
 
         result.put(
                 StdMapLogsStatistics.ALL_RECORDS_COUNT,
-                this.aggregatorsFactory.create(CountAggregator.NAME, new Count(Collections.emptyMap()))
+                this.aggregatorsFactory.create(CountLogsAggregator.NAME, new Count(Collections.emptyMap()))
         );
 
         result.put(
                 StdMapLogsStatistics.WARNS_COUNT,
-                this.aggregatorsFactory.create(CountAggregator.NAME, new Count(createAdditionalFilterWarns()))
+                this.aggregatorsFactory.create(CountLogsAggregator.NAME, new Count(createAdditionalFilterWarns()))
         );
 
         result.put(
                 StdMapLogsStatistics.ERRORS_FREQUENCIES_BY_CATEGORY,
-                this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("category", 1, createAdditionalFilterErrors(), Integer.MAX_VALUE))
+                this.aggregatorsFactory.create(FrequencyLogsAggregator.NAME, new Frequency("category", 1, createAdditionalFilterErrors(), Integer.MAX_VALUE))
         );
 
         result.put(
                 StdMapLogsStatistics.RECORDS_FREQUENCY_BY_CATEGORY,
-                this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("category", 1, Collections.emptyMap(), Integer.MAX_VALUE))
+                this.aggregatorsFactory.create(FrequencyLogsAggregator.NAME, new Frequency("category", 1, Collections.emptyMap(), Integer.MAX_VALUE))
         );
 
         result.put(
                 StdMapLogsStatistics.RECORDS_FREQUENCY_BY_THREAD,
-                this.aggregatorsFactory.create(FrequencyAggregator.NAME, new Frequency("thread", 1, Collections.emptyMap(), Integer.MAX_VALUE))
+                this.aggregatorsFactory.create(FrequencyLogsAggregator.NAME, new Frequency("thread", 1, Collections.emptyMap(), Integer.MAX_VALUE))
         );
 
         result.put(
                 StdMapLogsStatistics.ERRORS_AVERAGE_INTERVAL,
-                this.aggregatorsFactory.create(ErrorsAverageIntervalAggregator.NAME, new Object())
+                this.aggregatorsFactory.create(ErrorsAverageIntervalLogsAggregator.NAME, new Object())
         );
 
         return result;

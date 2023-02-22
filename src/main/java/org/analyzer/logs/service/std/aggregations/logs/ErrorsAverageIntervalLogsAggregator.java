@@ -1,8 +1,8 @@
-package org.analyzer.logs.service.std.aggregations;
+package org.analyzer.logs.service.std.aggregations.logs;
 
 import lombok.NonNull;
 import org.analyzer.logs.model.LogRecordEntity;
-import org.analyzer.logs.service.Aggregator;
+import org.analyzer.logs.service.LogsAggregator;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.logging.LogLevel;
 import org.springframework.context.annotation.Scope;
@@ -15,10 +15,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-@Component(ErrorsAverageIntervalAggregator.NAME)
+@Component(ErrorsAverageIntervalLogsAggregator.NAME)
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @NotThreadSafe
-public class ErrorsAverageIntervalAggregator implements Aggregator<Double> {
+public class ErrorsAverageIntervalLogsAggregator implements LogsAggregator<Double> {
 
     public static final String NAME = "errors-average-interval";
 

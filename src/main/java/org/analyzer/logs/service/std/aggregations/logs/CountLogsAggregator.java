@@ -1,8 +1,8 @@
-package org.analyzer.logs.service.std.aggregations;
+package org.analyzer.logs.service.std.aggregations.logs;
 
 import lombok.NonNull;
 import org.analyzer.logs.model.LogRecordEntity;
-import org.analyzer.logs.service.Aggregator;
+import org.analyzer.logs.service.LogsAggregator;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -12,10 +12,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.util.List;
 import java.util.Objects;
 
-@Component(CountAggregator.NAME)
+@Component(CountLogsAggregator.NAME)
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @NotThreadSafe
-public class CountAggregator implements Aggregator<Long> {
+public class CountLogsAggregator implements LogsAggregator<Long> {
 
     public static final String NAME = "count";
 

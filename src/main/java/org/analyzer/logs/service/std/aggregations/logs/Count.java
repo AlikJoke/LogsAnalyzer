@@ -1,4 +1,4 @@
-package org.analyzer.logs.service.std.aggregations;
+package org.analyzer.logs.service.std.aggregations.logs;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

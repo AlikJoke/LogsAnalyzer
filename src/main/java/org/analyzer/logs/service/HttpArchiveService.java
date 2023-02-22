@@ -23,6 +23,12 @@ public interface HttpArchiveService {
     Optional<HttpArchiveBody> findById(@Nonnull String id);
 
     @Nonnull
+    Map<String, Object> analyze(@Nonnull File harFile);
+
+    @Nonnull
+    Map<String, Object> analyze(@Nonnull String harId);
+
+    @Nonnull
     Map<JsonNode, List<String>> groupLogRecordsByRequests(@Nonnull String id);
 
     @Nonnull

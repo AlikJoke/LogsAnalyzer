@@ -1,8 +1,8 @@
-package org.analyzer.logs.service.std.aggregations;
+package org.analyzer.logs.service.std.aggregations.logs;
 
 import lombok.NonNull;
 import org.analyzer.logs.model.LogRecordEntity;
-import org.analyzer.logs.service.Aggregator;
+import org.analyzer.logs.service.LogsAggregator;
 import org.analyzer.logs.service.PostAggregationFilter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -18,10 +18,10 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@Component(FrequencyAggregator.NAME)
+@Component(FrequencyLogsAggregator.NAME)
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @NotThreadSafe
-public class FrequencyAggregator implements Aggregator<List<Pair<String, Long>>> {
+public class FrequencyLogsAggregator implements LogsAggregator<List<Pair<String, Long>>> {
 
     public static final String NAME = "frequency";
 
