@@ -7,6 +7,7 @@ import lombok.NonNull;
 import org.analyzer.logs.dao.HttpArchiveRepository;
 import org.analyzer.logs.model.HttpArchiveBody;
 import org.analyzer.logs.model.HttpArchiveEntity;
+import org.analyzer.logs.rest.har.HttpArchiveGroupLogsByRequestsQuery;
 import org.analyzer.logs.service.*;
 import org.analyzer.logs.service.exceptions.EntityNotFoundException;
 import org.analyzer.logs.service.util.JsonConverter;
@@ -71,7 +72,21 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
 
     @NonNull
     @Override
-    public Map<String, Object> analyze(@NonNull File harFileOrArchive) {
+    public HttpArchiveBody applyOperations(@NonNull String harId, @NonNull HttpArchiveOperationsQuery operationsQuery) {
+        final var body = findArchiveBody(harId);
+        return operationsQuery.applyTo(body);
+    }
+
+    @NonNull
+    @Override
+    public HttpArchiveBody applyOperations(@NonNull File har, @NonNull HttpArchiveOperationsQuery operationsQuery) {
+        final var body = findSingleArchiveBody(har);
+        return operationsQuery.applyTo(body);
+    }
+
+    @NonNull
+    @Override
+    public Map<String, Object> analyze(@NonNull File harFileOrArchive, @Nullable HttpArchiveOperationsQuery operationsQuery) {
         final var flatFiles = this.unzipperUtil.flat(harFileOrArchive);
         if (flatFiles.isEmpty()) {
             throw new IllegalStateException("Files to analyze not found");
@@ -79,10 +94,10 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
 
         final Map<String, Object> resultByFiles = new HashMap<>(flatFiles.size(), 1);
         flatFiles.forEach(file -> {
-            final var jsonBody = this.jsonConverter.convertFromFile(flatFiles.get(0));
-            final var body = new HttpArchiveBody((ObjectNode) jsonBody);
+            final var body = findSingleArchiveBody(file);
+            final var bodyToAnalyze = operationsQuery == null ? body : operationsQuery.applyTo(body);
 
-            resultByFiles.put(file.getName(), this.analyzer.analyze(body));
+            resultByFiles.put(file.getName(), this.analyzer.analyze(bodyToAnalyze));
         });
 
         return resultByFiles;
@@ -90,34 +105,95 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
 
     @NonNull
     @Override
-    public Map<String, Object> analyze(@NonNull String harId) {
-        return this.findById(harId)
-                    .map(HttpArchiveEntity::getBody)
-                    .map(JsonObject::getJson)
-                    .map(this.jsonConverter::convert)
-                    .map(ObjectNode.class::cast)
-                    .map(HttpArchiveBody::new)
-                    .map(this.analyzer::analyze)
-                    .orElseThrow(() -> new EntityNotFoundException("HAR not found by id: " + harId));
+    public Map<String, Object> analyze(@NonNull String harId, @Nullable HttpArchiveOperationsQuery operationsQuery) {
+        final var body = findArchiveBody(harId);
+        final var bodyToAnalyze = operationsQuery == null ? body : operationsQuery.applyTo(body);
+        return this.analyzer.analyze(bodyToAnalyze);
     }
 
     @NonNull
     @Override
-    public Map<JsonNode, List<String>> groupLogRecordsByRequests(@NonNull String harId) {
-        return groupLogRecordsByRequests(harId, null);
+    public Map<JsonNode, List<String>> groupLogRecordsByRequests(@NonNull String harId, @Nullable HttpArchiveOperationsQuery operationsQuery) {
+        final var body = findArchiveBody(harId);
+        final var resultBody = operationsQuery == null ? body : operationsQuery.applyTo(body);
+        return groupLogRecordsByRequests(resultBody, null);
     }
 
     @NonNull
     @Override
-    public Map<JsonNode, List<String>> groupLogRecordsByRequests(@NonNull String harId, @Nullable SearchQuery searchQuery) {
+    public Map<JsonNode, List<String>> groupLogRecordsByRequests(@NonNull String harId, @NonNull HttpArchiveGroupLogsByRequestsQuery operationsQuery) {
+        final var body = findArchiveBody(harId);
+        final var resultBody = operationsQuery.applyTo(body);
+        return groupLogRecordsByRequests(resultBody, operationsQuery.additionalLogsSearchQuery());
+    }
 
-        if (searchQuery != null && searchQuery.extendedFormat()) {
-            throw new UnsupportedOperationException("Extended query format not supported here");
+    @NonNull
+    @Override
+    public Map<JsonNode, List<String>> groupLogRecordsByRequests(@NonNull File harFileOrArchive, @Nullable HttpArchiveOperationsQuery operationsQuery) {
+        final var body = findSingleArchiveBody(harFileOrArchive);
+        final var resultBody = operationsQuery == null ? body : operationsQuery.applyTo(body);
+        return groupLogRecordsByRequests(resultBody, null);
+    }
+
+    @NonNull
+    @Override
+    public Map<JsonNode, List<String>> groupLogRecordsByRequests(@NonNull File harFileOrArchive, @NonNull HttpArchiveGroupLogsByRequestsQuery operationsQuery) {
+        final var body = findSingleArchiveBody(harFileOrArchive);
+        final var resultBody = operationsQuery.applyTo(body);
+        return groupLogRecordsByRequests(resultBody, operationsQuery.additionalLogsSearchQuery());
+    }
+
+    @NonNull
+    @Override
+    public List<HttpArchiveEntity> create(@NonNull File harFileOrArchive) {
+        final var flatFiles = this.unzipperUtil.flat(harFileOrArchive);
+        if (flatFiles.isEmpty()) {
+            throw new IllegalStateException("Files to analyze not found");
         }
 
-        final var har = this.httpArchiveRepository.findById(harId).orElseThrow(() -> new EntityNotFoundException(harId));
-        final var body = this.jsonConverter.convert(har.getBody().getJson());
-        final var entries = (ArrayNode) getFieldValueByPath(body, "log", "entries").orElseThrow();
+        final List<HttpArchiveEntity> entitiesToSave = new ArrayList<>(flatFiles.size());
+        flatFiles.forEach(file -> {
+            final var jsonBody = this.jsonConverter.convertFromFile(file);
+            final var jsonBodyAsString = this.jsonConverter.convertToJson(jsonBody);
+            final var archiveEntity = new HttpArchiveEntity()
+                                            .setId(UUID.randomUUID().toString())
+                                            .setBody(new JsonObject(jsonBodyAsString))
+                                            .setCreated(LocalDateTime.now())
+                                            .setTitle(file.getName())
+                                            .setUserKey(this.userAccessor.get().getHash());
+
+            entitiesToSave.add(archiveEntity);
+        });
+
+        return this.httpArchiveRepository.saveAll(entitiesToSave);
+    }
+
+    private HttpArchiveBody findSingleArchiveBody(final File har) {
+        final var flatFiles = this.unzipperUtil.flat(har);
+        if (flatFiles.isEmpty()) {
+            throw new IllegalStateException("HAR file not found");
+        } else if (flatFiles.size() > 1) {
+            throw new IllegalStateException("Found more than 1 HAR file");
+        }
+
+        final var jsonBody = this.jsonConverter.convertFromFile(flatFiles.get(0));
+        return new HttpArchiveBody((ObjectNode) jsonBody);
+    }
+
+    private HttpArchiveBody findArchiveBody(final String harId) {
+        final var har = this.httpArchiveRepository.findById(harId)
+                                                    .orElseThrow(() -> new EntityNotFoundException(harId));
+        final var bodyNode = this.jsonConverter.convert(har.getBody().getJson());
+        return new HttpArchiveBody((ObjectNode) bodyNode);
+    }
+
+    private Map<JsonNode, List<String>> groupLogRecordsByRequests(@NonNull HttpArchiveBody harBody, @Nullable SearchQuery searchQuery) {
+
+        if (searchQuery != null && searchQuery.extendedFormat()) {
+            throw new UnsupportedOperationException("Extended query format not supported for grouping logs");
+        }
+
+        final var entries = (ArrayNode) harBody.getFieldValueByPath("log", "entries").orElseThrow();
 
         final var baseQuery = searchQuery == null ? "" : ("(" + searchQuery.query() + ") AND ");
         final Map<JsonNode, List<String>> result = new HashMap<>(entries.size(), 1);
@@ -158,31 +234,6 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
         });
 
         return result;
-    }
-
-    @NonNull
-    @Override
-    public List<HttpArchiveEntity> create(@NonNull File harFileOrArchive) {
-        final var flatFiles = this.unzipperUtil.flat(harFileOrArchive);
-        if (flatFiles.isEmpty()) {
-            throw new IllegalStateException("Files to analyze not found");
-        }
-
-        final List<HttpArchiveEntity> entitiesToSave = new ArrayList<>(flatFiles.size());
-        flatFiles.forEach(file -> {
-            final var jsonBody = this.jsonConverter.convertFromFile(flatFiles.get(0));
-            final var jsonBodyAsString = this.jsonConverter.convertToJson(jsonBody);
-            final var archiveEntity = new HttpArchiveEntity()
-                                            .setId(UUID.randomUUID().toString())
-                                            .setBody(new JsonObject(jsonBodyAsString))
-                                            .setCreated(LocalDateTime.now())
-                                            .setTitle(file.getName())
-                                            .setUserKey(this.userAccessor.get().getHash());
-
-            entitiesToSave.add(archiveEntity);
-        });
-
-        return this.httpArchiveRepository.saveAll(entitiesToSave);
     }
 
     private Optional<String> findTraceIdHeader(final JsonNode request) {

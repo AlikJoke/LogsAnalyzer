@@ -2,7 +2,9 @@ package org.analyzer.logs.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.NonNull;
+import org.analyzer.logs.model.HttpArchiveBody;
 import org.analyzer.logs.model.HttpArchiveEntity;
+import org.analyzer.logs.rest.har.HttpArchiveGroupLogsByRequestsQuery;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,14 +31,26 @@ public interface HttpArchiveService {
     Optional<HttpArchiveEntity> findById(@Nonnull String id);
 
     @Nonnull
-    Map<String, Object> analyze(@Nonnull File harFile);
+    HttpArchiveBody applyOperations(@Nonnull String harId, @Nonnull HttpArchiveOperationsQuery operationsQuery);
 
     @Nonnull
-    Map<String, Object> analyze(@Nonnull String harId);
+    HttpArchiveBody applyOperations(@Nonnull File har, @Nonnull HttpArchiveOperationsQuery operationsQuery);
 
     @Nonnull
-    Map<JsonNode, List<String>> groupLogRecordsByRequests(@Nonnull String harId);
+    Map<String, Object> analyze(@Nonnull File harFile, @Nullable HttpArchiveOperationsQuery operationsQuery);
 
     @Nonnull
-    Map<JsonNode, List<String>> groupLogRecordsByRequests(@Nonnull String harId, @Nullable SearchQuery searchQuery);
+    Map<String, Object> analyze(@Nonnull String harId, @Nullable HttpArchiveOperationsQuery operationsQuery);
+
+    @Nonnull
+    Map<JsonNode, List<String>> groupLogRecordsByRequests(@Nonnull String harId, @Nullable HttpArchiveOperationsQuery operationsQuery);
+
+    @Nonnull
+    Map<JsonNode, List<String>> groupLogRecordsByRequests(@Nonnull String harId, @Nonnull HttpArchiveGroupLogsByRequestsQuery operationsQuery);
+
+    @Nonnull
+    Map<JsonNode, List<String>> groupLogRecordsByRequests(@Nonnull File har, @Nullable HttpArchiveOperationsQuery operationsQuery);
+
+    @Nonnull
+    Map<JsonNode, List<String>> groupLogRecordsByRequests(@Nonnull File har, @Nonnull HttpArchiveGroupLogsByRequestsQuery operationsQuery);
 }
