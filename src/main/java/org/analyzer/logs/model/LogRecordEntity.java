@@ -37,6 +37,8 @@ public class LogRecordEntity {
     private String source;
     private String category;
     private String thread;
+    @Field("trace_id")
+    private String traceId;
     private String record;
 
     @NonNull
@@ -47,6 +49,7 @@ public class LogRecordEntity {
             case "record", "record.keyword" -> LogRecordEntity::getRecord;
             case "date", "date.keyword" -> LogRecordEntity::getDate;
             case "time", "time.keyword" -> LogRecordEntity::getTime;
+            case "trace_id", "trace_id.keyword" -> LogRecordEntity::getTraceId;
             case "level", "level.keyword" -> LogRecordEntity::getLevel;
             case "id", "id.keyword" -> LogRecordEntity::getId;
             default -> throw new IllegalArgumentException("Unsupported field: " + fieldName);

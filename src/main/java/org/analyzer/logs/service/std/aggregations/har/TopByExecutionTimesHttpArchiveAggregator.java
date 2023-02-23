@@ -3,7 +3,6 @@ package org.analyzer.logs.service.std.aggregations.har;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import lombok.NonNull;
-import org.analyzer.logs.model.HttpArchiveBody;
 import org.analyzer.logs.service.HttpArchiveAggregator;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -13,6 +12,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static org.analyzer.logs.model.HttpArchiveBody.getFieldValueByPath;
+
 abstract class TopByExecutionTimesHttpArchiveAggregator implements HttpArchiveAggregator<Map<String, Double>> {
 
     @Override
@@ -20,11 +21,11 @@ abstract class TopByExecutionTimesHttpArchiveAggregator implements HttpArchiveAg
     public Map<String, Double> apply(@NonNull ArrayNode requests) {
         return StreamSupport.stream(requests.spliterator(), false)
                                 .map(request ->
-                                        HttpArchiveBody.getFieldValueByPath(request, getTimingPath())
+                                        getFieldValueByPath(request, getTimingPath())
                                                         .map(JsonNode::asDouble)
                                                         .map(timing ->
                                                                 ImmutablePair.of(
-                                                                        HttpArchiveBody.getFieldValueByPath(request, "request", "url")
+                                                                        getFieldValueByPath(request, "request", "url")
                                                                                     .map(JsonNode::asText)
                                                                                     .orElseThrow(),
                                                                         timing)

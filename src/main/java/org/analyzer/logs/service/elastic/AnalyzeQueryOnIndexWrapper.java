@@ -84,6 +84,12 @@ public final class AnalyzeQueryOnIndexWrapper implements AnalyzeQuery {
 
     @NonNull
     @Override
+    public SearchQuery toNextPageQuery() {
+        return new AnalyzeQueryOnIndexWrapper(key, this.pageNumber + 1);
+    }
+
+    @NonNull
+    @Override
     public Map<String, Sort.Direction> sorts() {
         return Collections.emptyMap();
     }

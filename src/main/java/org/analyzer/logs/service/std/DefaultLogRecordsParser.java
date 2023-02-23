@@ -17,8 +17,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
@@ -36,6 +38,8 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
      */
     private static final Pattern defaultRecordPattern =
             Pattern.compile("^(((?<date>\\d{4}-\\d{2}-\\d{2})\\s)?(?<time>\\d{2}:\\d{2}:\\d{2}[0-9,.]*?))\\s*(?<level>[A-Za-z]*)\\s*\\[(?<category>[A-Za-z0-9._]*)]\\s*\\((?<thread>[A-Za-z0-9.,\\-_\\s]*)\\)\\s*(?<text>[\\S\\s]*)(\\n?)$");
+
+    private static final LocalDate emptyDate = LocalDate.ofInstant(Instant.EPOCH, ZoneId.systemDefault());
 
     private static final DateTimeFormatter defaultDateFormatter = DateTimeFormatter.ISO_DATE;
     private static final DateTimeFormatter defaultTimeFormatter
@@ -116,7 +120,7 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
     private LocalDate parseDate(final DateTimeFormatter dateFormatter, final Matcher matcher) {
         final var date = matcher.group("date");
         if (!StringUtils.hasLength(date)) {
-            return null;
+            return emptyDate;
         }
 
         return LocalDate.from(dateFormatter.parse(date));
@@ -178,6 +182,7 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
                                             .date(parseDate(this.dateFormatter, matcher))
                                             .level(matcher.group("level"))
                                             .thread(matcher.group("thread"))
+                                            .traceId(matcher.group("traceId"))
                                             .category(matcher.group("category"))
                                             .source(this.lastLine)
                                             .record(matcher.group("text"))

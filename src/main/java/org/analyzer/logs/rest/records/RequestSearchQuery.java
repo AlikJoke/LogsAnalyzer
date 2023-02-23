@@ -67,4 +67,10 @@ public class RequestSearchQuery implements SearchQuery {
     public Map<String, JsonNode> postFilters() {
         return postFilters == null ? Collections.emptyMap() : postFilters;
     }
+
+    @NonNull
+    @Override
+    public SearchQuery toNextPageQuery() {
+        return new RequestSearchQuery(this.query, this.extendedFormat, this.postFilters, this.pageSize, this.pageNumber + 1, this.sorts);
+    }
 }

@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.analyzer.logs.service.exceptions.EntityNotFoundException;
 import org.analyzer.logs.service.exceptions.UserAlreadyDisabledException;
 import org.analyzer.logs.service.exceptions.UserAlreadyExistsException;
-import org.analyzer.logs.service.exceptions.UserNotFoundException;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,7 +53,7 @@ public class ControllerBase {
                     .body(new ExceptionResource(exceptionToString(ex)));
     }
 
-    @ExceptionHandler({UserNotFoundException.class, EntityNotFoundException.class})
+    @ExceptionHandler(EntityNotFoundException.class)
     protected ResponseEntity<ExceptionResource> entityNotFoundHandler(RuntimeException ex) {
         log.error("", ex);
         return ResponseEntity

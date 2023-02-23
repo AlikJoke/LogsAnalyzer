@@ -1,20 +1,15 @@
 package org.analyzer.logs.service.scheduled;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.micrometer.core.annotation.Timed;
-import lombok.NonNull;
 import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.*;
-import org.analyzer.logs.service.util.JsonConverter;
+import org.analyzer.logs.service.std.SimpleSearchQuery;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -64,45 +59,6 @@ public class ScheduledDataCleaningTask {
                                                 .map(indexingKey -> this.logKeysFactory.createUserIndexingKey(user.getHash(), indexingKey))
                                                 .map(key -> "id.keyword:" + key + "*")
                                                 .collect(Collectors.joining(" OR "));
-        return new SearchQuery() {
-            @NonNull
-            @Override
-            public String query() {
-                return indexingKeysString;
-            }
-
-            @Override
-            public boolean extendedFormat() {
-                return false;
-            }
-
-            @NonNull
-            @Override
-            public Map<String, JsonNode> postFilters() {
-                return Collections.emptyMap();
-            }
-
-            @Override
-            public int pageSize() {
-                return 0;
-            }
-
-            @Override
-            public int pageNumber() {
-                return 0;
-            }
-
-            @NonNull
-            @Override
-            public Map<String, Sort.Direction> sorts() {
-                return Collections.emptyMap();
-            }
-
-            @NonNull
-            @Override
-            public String toJson(@NonNull JsonConverter jsonConverter) {
-                return "{" + query() + "}";
-            }
-        };
+        return new SimpleSearchQuery(indexingKeysString);
     }
 }

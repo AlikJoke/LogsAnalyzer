@@ -5,6 +5,7 @@ import lombok.NonNull;
 import org.analyzer.logs.model.HttpArchiveEntity;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,5 +38,5 @@ public interface HttpArchiveService {
     Map<JsonNode, List<String>> groupLogRecordsByRequests(@Nonnull String harId);
 
     @Nonnull
-    Map<JsonNode, List<String>> groupLogRecordsByRequests(@Nonnull String harId, @Nonnull SearchQuery searchQuery);
+    Map<JsonNode, List<String>> groupLogRecordsByRequests(@Nonnull String harId, @Nullable SearchQuery searchQuery);
 }

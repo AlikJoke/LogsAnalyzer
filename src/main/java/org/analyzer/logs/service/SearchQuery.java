@@ -25,6 +25,9 @@ public interface SearchQuery {
     int pageNumber();
 
     @Nonnull
+    SearchQuery toNextPageQuery();
+
+    @Nonnull
     Map<String, Sort.Direction> sorts();
 
     @Nonnull

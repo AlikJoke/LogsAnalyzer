@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.stream.StreamSupport;
 
+import static org.analyzer.logs.model.HttpArchiveBody.getFieldValueByPath;
+
 @Component
 public class RequestMaxBlockingTimeHttpArchiveAggregator implements HttpArchiveAggregator<Double> {
     @NonNull
@@ -22,7 +24,7 @@ public class RequestMaxBlockingTimeHttpArchiveAggregator implements HttpArchiveA
     public Double apply(@NonNull ArrayNode requests) {
         return StreamSupport
                 .stream(requests.spliterator(), false)
-                .mapToDouble(request -> HttpArchiveBody.getFieldValueByPath(request, "timings", "blocked").map(JsonNode::asDouble).orElse(0.0))
+                .mapToDouble(request -> getFieldValueByPath(request, "timings", "blocked").map(JsonNode::asDouble).orElse(0.0))
                 .sum() / 1_000;
     }
 }

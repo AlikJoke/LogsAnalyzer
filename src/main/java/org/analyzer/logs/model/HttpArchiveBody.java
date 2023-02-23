@@ -9,8 +9,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Sort;
 
 import javax.annotation.Nullable;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -20,25 +18,18 @@ public record HttpArchiveBody(@NonNull ObjectNode body) {
 
     public HttpArchiveBody {
         if (body.get("log") == null || !(body.get("log").get("entries") instanceof ArrayNode)) {
-            throw new IllegalArgumentException("Unsupported har body: " + body);
+            throw new IllegalArgumentException("Unsupported HAR body: " + body);
         }
     }
 
     @NonNull
     public HttpArchiveBody toSortedByRequestsResponseTime(@Nullable Sort.Order sortBy) {
         final var bodyCopy = body.deepCopy();
-        final var entries = (ArrayNode) bodyCopy.get("log").get("entries");
+        final var entries = (ArrayNode) getFieldValueByPath(bodyCopy, "log", "entries").orElseThrow();
         final List<Pair<JsonNode, Double>> requestsByTime = new ArrayList<>(entries.size());
         entries.forEach(request -> {
             final var responseTime = getTimeFieldValueToSorting(request, sortBy);
-            final var startedDtInMillis = getFieldValueByPath(request, "startedDateTime")
-                                                .map(JsonNode::asText)
-                                                .map(DateTimeFormatter.ISO_INSTANT::parse)
-                                                .map(Instant::from)
-                                                .map(Instant::toEpochMilli)
-                                                .orElse(0L);
-            final var resultMillis = startedDtInMillis - responseTime;
-            requestsByTime.add(ImmutablePair.of(request, resultMillis));
+            requestsByTime.add(ImmutablePair.of(request, responseTime));
         });
 
         final var direction = sortBy == null ? Sort.Direction.DESC : sortBy.getDirection();
@@ -56,7 +47,7 @@ public record HttpArchiveBody(@NonNull ObjectNode body) {
     @NonNull
     public HttpArchiveBody applyFilterBy(@NonNull String key) {
         final var bodyCopy = body.deepCopy();
-        final var entries = (ArrayNode) bodyCopy.get("log").get("entries");
+        final var entries = (ArrayNode) getFieldValueByPath(bodyCopy, "log", "entries").orElseThrow();
         final List<JsonNode> filteredRequests = new ArrayList<>(entries.size());
         final var keyInLowerCase = key.toLowerCase();
         entries.forEach(request -> {
@@ -92,7 +83,7 @@ public record HttpArchiveBody(@NonNull ObjectNode body) {
         JsonNode temp = obj;
         for (final String pathPart : path) {
             temp = temp.get(pathPart);
-            if (temp == null || temp.isMissingNode() || temp.isArray()) {
+            if (temp == null || temp.isMissingNode()) {
                 return Optional.empty();
             }
         }
@@ -105,9 +96,9 @@ public record HttpArchiveBody(@NonNull ObjectNode body) {
         return sort == null || defaultSortingField.equals(sort.getProperty())
                 ? getFieldValueByPath(requestNode, defaultSortingField)
                         .map(JsonNode::asDouble)
-                        .orElse(0.0d)
+                        .orElse(0.0)
                 : getFieldValueByPath(requestNode, "timings", sort.getProperty())
                         .map(JsonNode::asDouble)
-                        .orElse(0.0d);
+                        .orElse(0.0);
     }
 }

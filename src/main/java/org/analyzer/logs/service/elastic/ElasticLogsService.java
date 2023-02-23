@@ -126,14 +126,14 @@ public class ElasticLogsService implements LogsService {
 
         MapLogsStatistics stats = null;
         var pageNumber = 0;
+        SearchQuery searchQuery = analyzeQuery;
         do {
-
-            final var searchQuery = analyzeQuery.toSearchQuery(pageNumber);
             final var recordsToAnalyzePart = searchByFilterQuery(searchQuery);
 
             final var partStats = this.logsAnalyzer.analyze(recordsToAnalyzePart, analyzeQuery);
             stats = stats == null ? partStats : stats.joinWith(partStats);
 
+            searchQuery = analyzeQuery.toNextPageQuery();
             pageNumber = recordsToAnalyzePart.isEmpty() ? -1 : pageNumber + 1;
         } while (pageNumber != -1);
 
@@ -178,7 +178,11 @@ public class ElasticLogsService implements LogsService {
 
     @Override
     public void deleteByQuery(@NonNull SearchQuery deleteQuery) {
-        this.logRecordRepository.deleteAll(searchByFilterQuery(deleteQuery));
+        List<LogRecordEntity> records;
+        while (!(records = searchByFilterQuery(deleteQuery)).isEmpty()) {
+            this.logRecordRepository.deleteAll(records);
+            deleteQuery = deleteQuery.toNextPageQuery();
+        }
     }
 
     private void processStatsSaving(
