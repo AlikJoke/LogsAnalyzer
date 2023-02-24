@@ -13,7 +13,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-public record HttpArchiveBody(@NonNull JsonNode body) {
+public record HttpArchiveBody(@NonNull String originalHarName, @NonNull JsonNode body) {
 
     public HttpArchiveBody {
         if (body.get("log") == null || !(body.get("log").get("entries") instanceof ArrayNode)) {
@@ -40,7 +40,7 @@ public record HttpArchiveBody(@NonNull JsonNode body) {
                 .map(Pair::getLeft)
                 .forEach(entries::add);
 
-        return new HttpArchiveBody(bodyCopy);
+        return new HttpArchiveBody(this.originalHarName, bodyCopy);
     }
 
     @NonNull
@@ -68,7 +68,7 @@ public record HttpArchiveBody(@NonNull JsonNode body) {
 
         entries.removeAll().addAll(filteredRequests);
 
-        return new HttpArchiveBody(bodyCopy);
+        return new HttpArchiveBody(this.originalHarName, bodyCopy);
     }
 
     @NonNull

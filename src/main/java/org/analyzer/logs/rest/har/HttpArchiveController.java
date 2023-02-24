@@ -14,9 +14,11 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -110,10 +112,11 @@ public class HttpArchiveController extends ControllerBase {
 
     @PostMapping("/{id}" + PATH_APPLY)
     @NamedEndpoint(value = "ops.har", includeTo = HttpArchiveResource.class)
-    public JsonNode applyOps(
+    public ResponseEntity<?> applyOps(
             @PathVariable("id") String id,
-            @RequestBody(required = false) HttpArchiveRequestQuery query) {
-        return this.service.applyOperations(id, query).body();
+            @RequestBody(required = false) HttpArchiveRequestQuery query) throws IOException {
+        final var har = this.service.applyOperations(id, query);
+        return this.webUtils.prepareResponse(query.exportToFile(), har.body());
     }
 
     @DeleteMapping("/{id}")

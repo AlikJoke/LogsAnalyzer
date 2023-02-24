@@ -32,6 +32,7 @@ public class RequestSearchQuery implements SearchQuery {
     private final int pageSize;
     private final int pageNumber;
     private final Map<String, Sort.Direction> sorts;
+    private final String exportToFile;
 
     @JsonCreator
     public RequestSearchQuery(
@@ -40,13 +41,15 @@ public class RequestSearchQuery implements SearchQuery {
             @JsonProperty("post_filters") @Nullable Map<String, JsonNode> postFilters,
             @JsonProperty("page_size") @Nonnegative int pageSize,
             @JsonProperty("page_number") @Nonnegative int pageNumber,
-            @JsonProperty("sorts") @Nullable Map<String, Sort.Direction> sorts) {
+            @JsonProperty("sorts") @Nullable Map<String, Sort.Direction> sorts,
+            @JsonProperty("export_to_file") String exportToFile) {
         this.query = query;
         this.extendedFormat = extendedFormat;
         this.postFilters = postFilters;
         this.pageSize = pageSize;
         this.pageNumber = pageNumber;
         this.sorts = sorts;
+        this.exportToFile = exportToFile;
     }
 
     @NonNull
@@ -71,6 +74,6 @@ public class RequestSearchQuery implements SearchQuery {
     @NonNull
     @Override
     public SearchQuery toNextPageQuery() {
-        return new RequestSearchQuery(this.query, this.extendedFormat, this.postFilters, this.pageSize, this.pageNumber + 1, this.sorts);
+        return new RequestSearchQuery(this.query, this.extendedFormat, this.postFilters, this.pageSize, this.pageNumber + 1, this.sorts, this.exportToFile);
     }
 }

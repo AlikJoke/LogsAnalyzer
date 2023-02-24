@@ -171,14 +171,14 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
         }
 
         final var jsonBody = this.jsonConverter.convertFromFile(flatFiles.get(0));
-        return new HttpArchiveBody(jsonBody);
+        return new HttpArchiveBody(har.getName(), jsonBody);
     }
 
     private HttpArchiveBody findArchiveBody(final String harId) {
         final var har = this.httpArchiveRepository.findById(harId)
                                                     .orElseThrow(() -> new EntityNotFoundException(harId));
         final var bodyNode = this.jsonConverter.convert(har.getBody().getJson());
-        return new HttpArchiveBody(bodyNode);
+        return new HttpArchiveBody(har.getTitle(), bodyNode);
     }
 
     private Map<JsonNode, List<String>> groupLogRecordsByRequests(@NonNull HttpArchiveBody harBody, @Nullable SearchQuery searchQuery) {
