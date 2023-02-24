@@ -2,12 +2,10 @@ package org.analyzer.logs.service.std;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.NonNull;
 import org.analyzer.logs.dao.HttpArchiveRepository;
 import org.analyzer.logs.model.HttpArchiveBody;
 import org.analyzer.logs.model.HttpArchiveEntity;
-import org.analyzer.logs.rest.har.HttpArchiveGroupLogsByRequestsQuery;
 import org.analyzer.logs.service.*;
 import org.analyzer.logs.service.exceptions.EntityNotFoundException;
 import org.analyzer.logs.service.util.JsonConverter;
@@ -17,6 +15,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.bson.json.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
@@ -50,8 +49,9 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
     private List<String> traceIdHeaders;
 
     @Override
-    public void deleteAllByUserKey(@NonNull String userKey) {
-        this.httpArchiveRepository.deleteAllByUserKey(userKey);
+    public void deleteAll() {
+        final var user = this.userAccessor.get();
+        this.httpArchiveRepository.deleteAllByUserKey(user.getHash());
     }
 
     @Override
@@ -66,8 +66,18 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
 
     @NonNull
     @Override
-    public Optional<HttpArchiveEntity> findById(@NonNull String id) {
-        return this.httpArchiveRepository.findById(id);
+    public HttpArchiveEntity findById(@NonNull String id) {
+        final var entity = this.httpArchiveRepository.findById(id);
+        return entity
+                    .map(har -> har.setBodyNode(this.jsonConverter.convert(har.getBody().getJson())))
+                    .orElseThrow(() -> new EntityNotFoundException(id));
+    }
+
+    @NonNull
+    @Override
+    public List<HttpArchiveEntity> findAll(@NonNull Pageable pageable) {
+        final var user = this.userAccessor.get();
+        return this.httpArchiveRepository.findAllByUserKey(user.getHash(), pageable);
     }
 
     @NonNull
@@ -116,15 +126,7 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
     public Map<JsonNode, List<String>> groupLogRecordsByRequests(@NonNull String harId, @Nullable HttpArchiveOperationsQuery operationsQuery) {
         final var body = findArchiveBody(harId);
         final var resultBody = operationsQuery == null ? body : operationsQuery.applyTo(body);
-        return groupLogRecordsByRequests(resultBody, null);
-    }
-
-    @NonNull
-    @Override
-    public Map<JsonNode, List<String>> groupLogRecordsByRequests(@NonNull String harId, @NonNull HttpArchiveGroupLogsByRequestsQuery operationsQuery) {
-        final var body = findArchiveBody(harId);
-        final var resultBody = operationsQuery.applyTo(body);
-        return groupLogRecordsByRequests(resultBody, operationsQuery.additionalLogsSearchQuery());
+        return groupLogRecordsByRequests(resultBody, operationsQuery == null ? null : operationsQuery.additionalLogsSearchQuery());
     }
 
     @NonNull
@@ -132,15 +134,7 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
     public Map<JsonNode, List<String>> groupLogRecordsByRequests(@NonNull File harFileOrArchive, @Nullable HttpArchiveOperationsQuery operationsQuery) {
         final var body = findSingleArchiveBody(harFileOrArchive);
         final var resultBody = operationsQuery == null ? body : operationsQuery.applyTo(body);
-        return groupLogRecordsByRequests(resultBody, null);
-    }
-
-    @NonNull
-    @Override
-    public Map<JsonNode, List<String>> groupLogRecordsByRequests(@NonNull File harFileOrArchive, @NonNull HttpArchiveGroupLogsByRequestsQuery operationsQuery) {
-        final var body = findSingleArchiveBody(harFileOrArchive);
-        final var resultBody = operationsQuery.applyTo(body);
-        return groupLogRecordsByRequests(resultBody, operationsQuery.additionalLogsSearchQuery());
+        return groupLogRecordsByRequests(resultBody, operationsQuery == null ? null : operationsQuery.additionalLogsSearchQuery());
     }
 
     @NonNull
@@ -177,14 +171,14 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
         }
 
         final var jsonBody = this.jsonConverter.convertFromFile(flatFiles.get(0));
-        return new HttpArchiveBody((ObjectNode) jsonBody);
+        return new HttpArchiveBody(jsonBody);
     }
 
     private HttpArchiveBody findArchiveBody(final String harId) {
         final var har = this.httpArchiveRepository.findById(harId)
                                                     .orElseThrow(() -> new EntityNotFoundException(harId));
         final var bodyNode = this.jsonConverter.convert(har.getBody().getJson());
-        return new HttpArchiveBody((ObjectNode) bodyNode);
+        return new HttpArchiveBody(bodyNode);
     }
 
     private Map<JsonNode, List<String>> groupLogRecordsByRequests(@NonNull HttpArchiveBody harBody, @Nullable SearchQuery searchQuery) {

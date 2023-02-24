@@ -1,4 +1,4 @@
-package org.analyzer.logs.rest.records;
+package org.analyzer.logs.rest.util;
 
 import lombok.NonNull;
 import org.springframework.stereotype.Component;
@@ -13,7 +13,7 @@ import java.util.UUID;
 public class WebUtils {
 
     @NonNull
-    File createTempFile(@NonNull final MultipartFile multipartFile) {
+    public File createTempFile(@NonNull final MultipartFile multipartFile) {
         try {
             final var destDirPath = Files.createTempDirectory(UUID.randomUUID().toString());
             final var destDir = destDirPath.toFile();

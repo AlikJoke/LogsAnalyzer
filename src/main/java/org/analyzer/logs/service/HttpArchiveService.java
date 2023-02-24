@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.NonNull;
 import org.analyzer.logs.model.HttpArchiveBody;
 import org.analyzer.logs.model.HttpArchiveEntity;
-import org.analyzer.logs.rest.har.HttpArchiveGroupLogsByRequestsQuery;
+import org.springframework.data.domain.Pageable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -12,14 +12,13 @@ import java.io.File;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public interface HttpArchiveService {
 
     @Nonnull
     List<HttpArchiveEntity> create(@Nonnull File harFile);
 
-    void deleteAllByUserKey(@Nonnull String userKey);
+    void deleteAll();
 
     void deleteAllByUserKeyAndCreationDate(
             @NonNull String userKey,
@@ -28,7 +27,10 @@ public interface HttpArchiveService {
     void deleteById(@Nonnull String id);
 
     @Nonnull
-    Optional<HttpArchiveEntity> findById(@Nonnull String id);
+    HttpArchiveEntity findById(@Nonnull String id);
+
+    @Nonnull
+    List<HttpArchiveEntity> findAll(@Nonnull Pageable pageable);
 
     @Nonnull
     HttpArchiveBody applyOperations(@Nonnull String harId, @Nonnull HttpArchiveOperationsQuery operationsQuery);
@@ -46,11 +48,5 @@ public interface HttpArchiveService {
     Map<JsonNode, List<String>> groupLogRecordsByRequests(@Nonnull String harId, @Nullable HttpArchiveOperationsQuery operationsQuery);
 
     @Nonnull
-    Map<JsonNode, List<String>> groupLogRecordsByRequests(@Nonnull String harId, @Nonnull HttpArchiveGroupLogsByRequestsQuery operationsQuery);
-
-    @Nonnull
     Map<JsonNode, List<String>> groupLogRecordsByRequests(@Nonnull File har, @Nullable HttpArchiveOperationsQuery operationsQuery);
-
-    @Nonnull
-    Map<JsonNode, List<String>> groupLogRecordsByRequests(@Nonnull File har, @Nonnull HttpArchiveGroupLogsByRequestsQuery operationsQuery);
 }

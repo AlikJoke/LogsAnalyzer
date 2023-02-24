@@ -1,27 +1,40 @@
 package org.analyzer.logs.rest.har;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.NonNull;
-import lombok.ToString;
-import lombok.experimental.Accessors;
+import org.analyzer.logs.rest.records.RequestSearchQuery;
 import org.analyzer.logs.service.HttpArchiveOperationsQuery;
+import org.analyzer.logs.service.SearchQuery;
 import org.springframework.data.domain.Sort;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-@ToString
-@Getter
-@Accessors(fluent = true)
-@AllArgsConstructor(onConstructor = @__(@JsonCreator))
 public class HttpArchiveRequestQuery implements HttpArchiveOperationsQuery {
 
-    boolean applyDefaultSorting;
-    Map<String, Sort.Direction> sort;
-    Set<String> filteringKeys;
+    private final boolean applyDefaultSorting;
+    private final Map<String, Sort.Direction> sort;
+    private final Set<String> filteringKeys;
+    private final RequestSearchQuery additionalLogsSearchQuery;
+
+    @JsonCreator
+    public HttpArchiveRequestQuery(
+            @JsonProperty("apply_default_sorting") boolean applyDefaultSorting,
+            @JsonProperty("sort") Map<String, Sort.Direction> sort,
+            @JsonProperty("filtering_keys") Set<String> filteringKeys,
+            @JsonProperty("additional_logs_search_query") RequestSearchQuery additionalLogsSearchQuery) {
+        this.applyDefaultSorting = applyDefaultSorting;
+        this.sort = sort;
+        this.filteringKeys = filteringKeys;
+        this.additionalLogsSearchQuery = additionalLogsSearchQuery;
+    }
+
+    @Override
+    public boolean applyDefaultSorting() {
+        return this.applyDefaultSorting;
+    }
 
     @NonNull
     @Override
@@ -33,5 +46,11 @@ public class HttpArchiveRequestQuery implements HttpArchiveOperationsQuery {
     @Override
     public Set<String> filteringKeys() {
         return this.filteringKeys == null ? Collections.emptySet() : this.filteringKeys;
+    }
+
+    @NonNull
+    @Override
+    public SearchQuery additionalLogsSearchQuery() {
+        return this.additionalLogsSearchQuery;
     }
 }

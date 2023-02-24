@@ -2,7 +2,6 @@ package org.analyzer.logs.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.NonNull;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -14,7 +13,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-public record HttpArchiveBody(@NonNull ObjectNode body) {
+public record HttpArchiveBody(@NonNull JsonNode body) {
 
     public HttpArchiveBody {
         if (body.get("log") == null || !(body.get("log").get("entries") instanceof ArrayNode)) {

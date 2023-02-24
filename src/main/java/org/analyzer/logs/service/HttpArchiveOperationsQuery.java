@@ -4,6 +4,7 @@ import org.analyzer.logs.model.HttpArchiveBody;
 import org.springframework.data.domain.Sort;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,6 +17,9 @@ public interface HttpArchiveOperationsQuery {
 
     @Nonnull
     Set<String> filteringKeys();
+
+    @Nullable
+    SearchQuery additionalLogsSearchQuery();
 
     @Nonnull
     default HttpArchiveBody applyTo(@Nonnull HttpArchiveBody harBody) {
@@ -35,11 +39,5 @@ public interface HttpArchiveOperationsQuery {
                     ? result.toSortedByRequestsResponseTime(null)
                     : result
                 : result.toSortedByRequestsResponseTime(sortOrder);
-    }
-
-    interface GroupLogsByRequestsQuery extends HttpArchiveOperationsQuery {
-
-        @Nonnull
-        SearchQuery additionalLogsSearchQuery();
     }
 }

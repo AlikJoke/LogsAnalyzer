@@ -2,7 +2,6 @@ package org.analyzer.logs.dao;
 
 import lombok.NonNull;
 import org.analyzer.logs.model.HttpArchiveEntity;
-import org.analyzer.logs.model.UserSearchQueryEntity;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
@@ -16,7 +15,7 @@ public interface HttpArchiveRepository extends MongoRepository<HttpArchiveEntity
     void deleteAllByUserKey(@Nonnull String userKey);
 
     @Nonnull
-    List<UserSearchQueryEntity> findAllByUserKey(
+    List<HttpArchiveEntity> findAllByUserKey(
             @Nonnull String userKey,
             @Nonnull Pageable pageable);
 

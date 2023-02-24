@@ -1,9 +1,11 @@
 package org.analyzer.logs.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.*;
 import lombok.experimental.Accessors;
 import org.bson.json.JsonObject;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -32,4 +34,6 @@ public class HttpArchiveEntity {
     @Field("user_key")
     private String userKey;
     private String title;
+    @Transient
+    private JsonNode bodyNode;
 }

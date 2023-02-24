@@ -5,6 +5,7 @@ import org.analyzer.logs.rest.ControllerBase;
 import org.analyzer.logs.rest.RootEntrypointResource;
 import org.analyzer.logs.rest.hateoas.LinksCollector;
 import org.analyzer.logs.rest.hateoas.NamedEndpoint;
+import org.analyzer.logs.rest.util.WebUtils;
 import org.analyzer.logs.service.LogsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
