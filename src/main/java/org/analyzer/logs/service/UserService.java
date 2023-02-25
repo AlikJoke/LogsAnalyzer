@@ -5,6 +5,7 @@ import org.analyzer.logs.model.UserEntity;
 import javax.annotation.Nonnull;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface UserService {
 
@@ -13,6 +14,9 @@ public interface UserService {
 
     @Nonnull
     UserEntity disable(@Nonnull String username);
+
+    @Nonnull
+    UserEntity enable(@Nonnull String username);
 
     @Nonnull
     UserEntity update(@Nonnull UserEntity user);
@@ -31,6 +35,9 @@ public interface UserService {
 
     @Nonnull
     UserEntity findByUserHash(@Nonnull String userHash);
+
+    @Nonnull
+    Optional<UserEntity> findByTelegramId(@Nonnull Long telegramId);
 
     long findCount(boolean onlyActive);
 }

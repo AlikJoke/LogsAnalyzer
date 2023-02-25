@@ -6,6 +6,7 @@ import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.UserService;
 import org.analyzer.logs.service.exceptions.UserAlreadyDisabledException;
 import org.analyzer.logs.service.exceptions.UserAlreadyExistsException;
+import org.analyzer.logs.service.exceptions.UserNotDisabledException;
 import org.analyzer.logs.service.exceptions.UserNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class DefaultUserService implements UserService {
@@ -48,11 +50,27 @@ public class DefaultUserService implements UserService {
         final var user = this.userRepository.findById(username)
                                             .orElseThrow(() -> new UserNotFoundException(username));
 
-        if (!user.isActive()) {
+        if (!user.disable()) {
             throw new UserAlreadyDisabledException(username);
         }
 
-        user.disable();
+        return this.userRepository.save(user);
+    }
+
+    @Override
+    @Caching(put = {
+            @CachePut(value = USERS_CACHE, key = "#result.getUsername()"),
+            @CachePut(value = USERS_CACHE, key = "#result.getHash()")
+    })
+    @NonNull
+    public UserEntity enable(@NonNull String username) {
+        final var user = this.userRepository.findById(username)
+                .orElseThrow(() -> new UserNotFoundException(username));
+
+        if (!user.enable()) {
+            throw new UserNotDisabledException(username);
+        }
+
         return this.userRepository.save(user);
     }
 
@@ -102,6 +120,12 @@ public class DefaultUserService implements UserService {
     public UserEntity findByUserHash(@NonNull String userHash) {
         return this.userRepository.findByHash(userHash)
                                     .orElseThrow(() -> new UserNotFoundException(userHash));
+    }
+
+    @NonNull
+    @Override
+    public Optional<UserEntity> findByTelegramId(@NonNull Long telegramId) {
+        return this.userRepository.findByTelegramId(telegramId);
     }
 
     @Override

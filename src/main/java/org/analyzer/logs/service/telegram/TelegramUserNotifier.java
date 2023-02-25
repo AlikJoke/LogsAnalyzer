@@ -1,9 +1,9 @@
-package org.analyzer.logs.service.std;
+package org.analyzer.logs.service.telegram;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.analyzer.logs.service.UserNotifier;
-import org.analyzer.logs.config.scheduled.TelegramNotificationBotConfiguration;
+import org.analyzer.logs.config.telegram.TelegramBotConfiguration;
 import org.asynchttpclient.AsyncCompletionHandlerBase;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
@@ -21,12 +21,12 @@ import java.util.List;
 public class TelegramUserNotifier implements UserNotifier {
 
     @Autowired
-    private TelegramNotificationBotConfiguration telegramConfiguration;
+    private TelegramBotConfiguration telegramConfiguration;
     @Autowired
     private AsyncHttpClient httpClient;
 
     @Override
-    public void notify(@NonNull String message, @NonNull String userId) {
+    public void notify(@NonNull String message, @NonNull Long userId) {
         Arrays.stream(message.split("(?<=\\G.{4096})"))
                 .forEach(part ->
                                 this.httpClient
@@ -46,7 +46,7 @@ public class TelegramUserNotifier implements UserNotifier {
                 );
     }
 
-    private String buildOperationUrl(final String userToken, final String text) {
+    private String buildOperationUrl(final Long userToken, final String text) {
         return UriComponentsBuilder
                     .fromHttpUrl(this.telegramConfiguration.getOperationTemplate())
                     .queryParams(composeRequestParams(userToken, text))
@@ -55,10 +55,10 @@ public class TelegramUserNotifier implements UserNotifier {
     }
 
     private MultiValueMap<String, String> composeRequestParams(
-            final String userToken,
+            final Long userToken,
             final String message) {
         final MultiValueMap<String, String> params = new LinkedMultiValueMap<>(2);
-        params.put(this.telegramConfiguration.getUserTokenKey(), List.of(userToken));
+        params.put(this.telegramConfiguration.getUserTokenKey(), List.of(String.valueOf(userToken)));
         params.put(this.telegramConfiguration.getMessageKey(), List.of(message));
 
         return params;

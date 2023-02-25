@@ -5,6 +5,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.analyzer.logs.model.LogsStatisticsEntity;
+import org.analyzer.logs.model.NotificationSettings;
 import org.analyzer.logs.model.ScheduledIndexingSettings;
 import org.analyzer.logs.model.UserEntity;
 import org.analyzer.logs.service.CurrentUserAccessor;
@@ -54,6 +55,7 @@ public class NetworkDataIndexer implements Runnable {
 
     private UserEntity user;
     private ScheduledIndexingSettings indexingSettings;
+    private NotificationSettings notificationSettings;
 
     @Override
     @Timed(
@@ -110,39 +112,37 @@ public class NetworkDataIndexer implements Runnable {
 
         log.trace("Logs indexing for user {} completed: {}", this.user.getUsername(), statistics.getId());
 
-        final var notificationSettings = this.indexingSettings.getNotificationSettings();
-        if (!notificationSettings.isAggregationNotificationsEnabled()) {
+        if (!this.notificationSettings.isAggregationNotificationsEnabled()) {
             log.trace("Aggregation notifications for user {} disabled", this.user.getUsername());
             return;
         }
 
         final var statsJson = this.jsonConverter.convertToJson(statistics.getStats());
-        if (this.indexingSettings.getNotificationSettings().getNotifyToEmail() != null) {
-            this.mailNotifier.notifySuccess(statistics.getId(), statsJson, this.indexingSettings.getNotificationSettings());
+        if (this.notificationSettings.getNotifyToEmail() != null) {
+            this.mailNotifier.notifySuccess(statistics.getId(), statsJson, this.notificationSettings);
             log.info("Success mail notification for user {} sent", this.user.getUsername());
         }
 
-        if (this.indexingSettings.getNotificationSettings().getNotifyToTelegram() != null) {
-            this.telegramNotifier.notifySuccess(statistics.getId(), statsJson, this.indexingSettings.getNotificationSettings());
+        if (this.notificationSettings.getNotifyToTelegram() != null) {
+            this.telegramNotifier.notifySuccess(statistics.getId(), statsJson, this.notificationSettings);
             log.info("Success telegram notification for user {} sent", this.user.getUsername());
         }
     }
 
     private void onError(final Throwable ex) {
         log.error("Exception while indexing for user " + this.user.getUsername(), ex);
-        final var notificationSettings = this.indexingSettings.getNotificationSettings();
-        if (!notificationSettings.isErrorNotificationsEnabled()) {
+        if (!this.notificationSettings.isErrorNotificationsEnabled()) {
             log.trace("Error notifications for user {} disabled", this.user.getUsername());
             return;
         }
 
-        if (this.indexingSettings.getNotificationSettings().getNotifyToEmail() != null) {
-            this.mailNotifier.notifyError(ex.getMessage(), this.indexingSettings.getNotificationSettings());
+        if (this.notificationSettings.getNotifyToEmail() != null) {
+            this.mailNotifier.notifyError(ex.getMessage(), this.notificationSettings);
             log.info("Error mail notification for user {} sent", this.user.getUsername());
         }
 
-        if (this.indexingSettings.getNotificationSettings().getNotifyToTelegram() != null) {
-            this.telegramNotifier.notifyError(ex.getMessage(), this.indexingSettings.getNotificationSettings());
+        if (this.notificationSettings.getNotifyToTelegram() != null) {
+            this.telegramNotifier.notifyError(ex.getMessage(), this.notificationSettings);
             log.info("Error telegram notification for user {} sent", this.user.getUsername());
         }
     }

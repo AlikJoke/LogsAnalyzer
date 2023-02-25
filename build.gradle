@@ -34,6 +34,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.springframework:spring-aspects'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
+	implementation 'org.telegram:telegrambots:6.5.0'
+	implementation 'org.telegram:telegrambotsextensions:6.5.0'
 	implementation 'commons-io:commons-io:2.11.0'
 	implementation 'org.apache.commons:commons-compress:1.22'
 	implementation 'org.asynchttpclient:async-http-client:2.12.3'

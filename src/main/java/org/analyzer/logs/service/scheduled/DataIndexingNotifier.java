@@ -1,6 +1,6 @@
 package org.analyzer.logs.service.scheduled;
 
-import org.analyzer.logs.model.IndexingNotificationSettings;
+import org.analyzer.logs.model.NotificationSettings;
 
 import javax.annotation.Nonnull;
 
@@ -9,9 +9,9 @@ public interface DataIndexingNotifier {
     void notifySuccess(
             @Nonnull String indexingKey,
             @Nonnull String successMessage,
-            @Nonnull IndexingNotificationSettings notificationSettings);
+            @Nonnull NotificationSettings notificationSettings);
 
     void notifyError(
             @Nonnull String errorMessage,
-            @Nonnull IndexingNotificationSettings notificationSettings);
+            @Nonnull NotificationSettings notificationSettings);
 }

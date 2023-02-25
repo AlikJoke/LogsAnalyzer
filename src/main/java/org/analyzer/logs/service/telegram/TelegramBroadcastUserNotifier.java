@@ -1,4 +1,4 @@
-package org.analyzer.logs.service.std;
+package org.analyzer.logs.service.telegram;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;

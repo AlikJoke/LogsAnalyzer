@@ -20,8 +20,6 @@ public class ScheduledIndexingSettings {
     private String dateFormat;
     @Field("time_format")
     private String timeFormat;
-    @Field("notification_settings")
-    private IndexingNotificationSettings notificationSettings;
     @Field("network_settings")
     @NonNull
     private NetworkDataSettings networkSettings;

@@ -120,6 +120,7 @@ public class ScheduledDataIndexingTask {
         final var indexer = this.applicationContext.getBean(NetworkDataIndexer.class);
         indexer.setUser(user);
         indexer.setIndexingSettings(indexingSettings);
+        indexer.setNotificationSettings(user.getSettings().getNotificationSettings());
 
         return indexer;
     }

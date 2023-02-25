@@ -14,4 +14,6 @@ public class UserSettings {
     private long cleaningInterval;
     @Field("scheduled_indexing_settings")
     private List<ScheduledIndexingSettings> scheduledIndexingSettings;
+    @Field("notification_settings")
+    private NotificationSettings notificationSettings;
 }

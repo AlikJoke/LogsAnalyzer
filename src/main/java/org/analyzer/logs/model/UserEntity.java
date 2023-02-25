@@ -47,4 +47,13 @@ public class UserEntity {
 
         return false;
     }
+
+    public boolean enable() {
+        if (!this.active) {
+            this.active = true;
+            return true;
+        }
+
+        return false;
+    }
 }

@@ -2,7 +2,7 @@ package org.analyzer.logs.service.scheduled;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.analyzer.logs.model.IndexingNotificationSettings;
+import org.analyzer.logs.model.NotificationSettings;
 import org.analyzer.logs.service.UserNotifier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -15,7 +15,7 @@ public class DataIndexingTelegramNotifier implements DataIndexingNotifier {
     private UserNotifier userNotifier;
 
     @Override
-    public void notifySuccess(@NonNull String indexingKey, @NonNull String successMessage, @NonNull IndexingNotificationSettings notificationSettings) {
+    public void notifySuccess(@NonNull String indexingKey, @NonNull String successMessage, @NonNull NotificationSettings notificationSettings) {
         this.userNotifier.notify(
                 "**Logs indexing completed** __(%s)__\n".formatted(indexingKey) + "```" + successMessage + "```",
                 notificationSettings.getNotifyToTelegram()
@@ -23,7 +23,7 @@ public class DataIndexingTelegramNotifier implements DataIndexingNotifier {
     }
 
     @Override
-    public void notifyError(@NonNull String message, @NonNull IndexingNotificationSettings notificationSettings) {
+    public void notifyError(@NonNull String message, @NonNull NotificationSettings notificationSettings) {
         this.userNotifier.notify(
                 "**Logs indexing failed with error**\n" + "__" + message + "__",
                 notificationSettings.getNotifyToTelegram()

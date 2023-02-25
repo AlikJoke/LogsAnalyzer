@@ -21,7 +21,7 @@ import javax.net.ssl.SSLException;
 
 @Configuration
 @EnableScheduling
-@EnableConfigurationProperties({TelegramNotificationBotConfiguration.class, AsyncHttpRequestProperties.class})
+@EnableConfigurationProperties(AsyncHttpRequestProperties.class)
 public class ScheduledNetworkIndexingConfig implements SchedulingConfigurer {
 
     @Value("${logs.task.scheduled.executor.pool-size:2}")
