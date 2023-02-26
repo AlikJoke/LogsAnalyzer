@@ -1,7 +1,6 @@
 package org.analyzer.service.users.notifications.telegram.commands;
 
 import lombok.NonNull;
-import org.analyzer.config.telegram.TelegramBotConfiguration;
 import org.analyzer.entities.UserEntity;
 import org.analyzer.service.logs.LogRecordFormat;
 import org.analyzer.service.logs.LogsService;
@@ -9,25 +8,21 @@ import org.analyzer.service.users.notifications.telegram.TelegramCommandConversa
 import org.analyzer.service.users.notifications.telegram.TelegramUserConversationStore;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileUrlResource;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.bots.AbsSender;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.Optional;
 
 import static org.analyzer.service.users.notifications.telegram.commands.IndexLogsFileCommand.COMMAND_NAME;
 
 @Component(COMMAND_NAME)
-public class IndexLogsFileCommand extends ApplicationBotCommand implements TelegramCommandConversationChain {
+public class IndexLogsFileCommand extends BaseUploadingFileBotCommand implements TelegramCommandConversationChain {
+
+    static final String COMMAND_NAME = "index_logs_file";
 
     private static final String RECORD_PATTERN_STAGE = "logRecordPattern";
     private static final String RECORD_PATTERN_DATE_FORMAT_STAGE = "logRecordDateFormat";
@@ -37,14 +32,10 @@ public class IndexLogsFileCommand extends ApplicationBotCommand implements Teleg
     @Autowired
     private TelegramUserConversationStore userConversationStore;
     @Autowired
-    private TelegramBotConfiguration botConfiguration;
-    @Autowired
     private LogsService logsService;
 
-    static final String COMMAND_NAME = "index_logs_file";
-
     public IndexLogsFileCommand() {
-        super(COMMAND_NAME, "Upload file and index logs from this file", true);
+        super(COMMAND_NAME, "Upload file and index logs from this file");
     }
 
     @Override
@@ -75,17 +66,17 @@ public class IndexLogsFileCommand extends ApplicationBotCommand implements Teleg
             case RECORD_PATTERN_STAGE -> {
                 context.put(context.getLastStage(), message.getText());
                 context.setLastStage(RECORD_PATTERN_DATE_FORMAT_STAGE);
-                yield "Pass expected record's date format (or %s to use default date format):".formatted(SKIP_STAGE_STR_FORMATTED);
+                yield "Pass expected record's date format (or %s to use default date format or if records without date part):".formatted(SKIP_STAGE_STR_FORMATTED);
             }
             case RECORD_PATTERN_DATE_FORMAT_STAGE -> {
                 context.put(context.getLastStage(), message.getText());
                 context.setLastStage(RECORD_PATTERN_TIME_FORMAT_STAGE);
-                yield "Pass expected record's date format (or %s to use default date format  or if records without date part):".formatted(SKIP_STAGE_STR_FORMATTED);
+                yield "Pass expected record's time format (or %s to use default time format):".formatted(SKIP_STAGE_STR_FORMATTED);
             }
             case RECORD_PATTERN_TIME_FORMAT_STAGE -> {
                 context.put(context.getLastStage(), message.getText());
                 context.setLastStage(UPLOADING_FILE_STAGE);
-                yield "Pass expected record's time format (or %s to use default time format):".formatted(SKIP_STAGE_STR_FORMATTED);
+                yield "Send logs file to me.";
             }
             case UPLOADING_FILE_STAGE -> {
                 this.userConversationStore.clearUserCommandContext(userId);
@@ -94,7 +85,7 @@ public class IndexLogsFileCommand extends ApplicationBotCommand implements Teleg
             default -> "<b>Unsupported stage of command</b>";
         };
 
-        return Optional.ofNullable(createReplyMessage(message.getChatId(), nextMsgText));
+        return Optional.of(createReplyMessage(message.getChatId(), nextMsgText));
     }
 
     private String handleFileUploadingStage(
@@ -157,19 +148,5 @@ public class IndexLogsFileCommand extends ApplicationBotCommand implements Teleg
                 return resultDateFormat;
             }
         };
-    }
-
-    private File downloadFile(final AbsSender sender, final String uploadedFileId) {
-
-        final var uploadedFile = new GetFile(uploadedFileId);
-        try {
-            final var file = sender.execute(uploadedFile);
-            final var fileUrl = file.getFileUrl(botConfiguration.getToken());
-
-            final var fileUrlResource = new FileUrlResource(new URL(fileUrl));
-            return fileUrlResource.getFile();
-        } catch (TelegramApiException | IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
