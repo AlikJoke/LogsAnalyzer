@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -73,7 +72,7 @@ public class TimestampGapPostFilter implements PostFilter {
 
     private List<LogRecordEntity> compareWithFilter(final List<LogRecordEntity> elements) {
         if (elements.size() < 2) {
-            return Collections.emptyList();
+            return List.of();
         }
 
         final var record1 = elements.get(0);
@@ -85,7 +84,7 @@ public class TimestampGapPostFilter implements PostFilter {
         final var diffMillis = millis2 - millis1;
 
         final var skip = this.predicateOperation.compute(diffMillis, this.gapInMillis);
-        return skip ? Collections.emptyList() : elements;
+        return skip ? List.of() : elements;
     }
 
     private long getMillisFromDate(final LocalDate date) {

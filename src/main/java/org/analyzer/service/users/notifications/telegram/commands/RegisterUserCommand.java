@@ -54,7 +54,7 @@ public class RegisterUserCommand extends ApplicationBotCommand implements Telegr
 
         this.userConversationStore.updateLastCommandContext(user.getId(), context);
 
-        return Optional.of(createReplyMessage(chat.getId(), "Pass your application username:"));
+        return Optional.of(createReplyMessage(chat.getId(), "Enter your application username:"));
     }
 
     @Override
@@ -68,7 +68,7 @@ public class RegisterUserCommand extends ApplicationBotCommand implements Telegr
         }
 
         if (message.getText() == null || StringUtils.isWhitespace(message.getText())) {
-            return Optional.of(createReplyMessage(message.getChatId(), "<b>Passed text must be not empty.<b>"));
+            return Optional.of(createReplyMessage(message.getChatId(), "<b>Entered text must be not empty.<b>"));
         }
 
         context.put(context.getLastStage(), message.getText());
@@ -76,11 +76,11 @@ public class RegisterUserCommand extends ApplicationBotCommand implements Telegr
         final var nextMsg = switch (context.getLastStage()) {
             case USERNAME_STAGE -> {
                 context.setLastStage(PASSWORD_STAGE);
-                yield "Pass your password:";
+                yield "Enter your password:";
             }
             case PASSWORD_STAGE -> {
                 context.setLastStage(EMAIL_STAGE);
-                yield "Pass your e-mail (or %s to register without e-mail):".formatted(SKIP_STAGE_STR_FORMATTED);
+                yield "Enter your e-mail (or %s to register without e-mail):".formatted(SKIP_STAGE_STR_FORMATTED);
             }
             case EMAIL_STAGE -> {
                 final var email = SKIP_STAGE_STR.equals(context.getAttributeAsString(EMAIL_STAGE)) ? null : context.getAttributeAsString("email");

@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.logging.LogLevel;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,7 +126,7 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
 
         result.put(
                 StdMapLogsStatistics.ALL_RECORDS_COUNT,
-                this.aggregatorsFactory.create(CountLogsAggregator.NAME, new Count(Collections.emptyMap()))
+                this.aggregatorsFactory.create(CountLogsAggregator.NAME, new Count(Map.of()))
         );
 
         result.put(
@@ -142,12 +141,12 @@ public class DefaultLogsAnalyzer implements LogsAnalyzer {
 
         result.put(
                 StdMapLogsStatistics.RECORDS_FREQUENCY_BY_CATEGORY,
-                this.aggregatorsFactory.create(FrequencyLogsAggregator.NAME, new Frequency("category", 1, Collections.emptyMap(), Integer.MAX_VALUE))
+                this.aggregatorsFactory.create(FrequencyLogsAggregator.NAME, new Frequency("category", 1, Map.of(), Integer.MAX_VALUE))
         );
 
         result.put(
                 StdMapLogsStatistics.RECORDS_FREQUENCY_BY_THREAD,
-                this.aggregatorsFactory.create(FrequencyLogsAggregator.NAME, new Frequency("thread", 1, Collections.emptyMap(), Integer.MAX_VALUE))
+                this.aggregatorsFactory.create(FrequencyLogsAggregator.NAME, new Frequency("thread", 1, Map.of(), Integer.MAX_VALUE))
         );
 
         result.put(

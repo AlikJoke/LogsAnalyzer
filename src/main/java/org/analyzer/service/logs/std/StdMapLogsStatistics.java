@@ -6,7 +6,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -211,7 +210,7 @@ public class StdMapLogsStatistics extends HashMap<String, Object> implements Map
     }
 
     private <T> T getStatByKey(final String key, final boolean single) {
-        final Object value = super.getOrDefault(key, single ? null : Collections.emptyList());
+        final Object value = super.getOrDefault(key, single ? null : List.of());
         @SuppressWarnings("unchecked")
         final T result = (T) value;
         return result;

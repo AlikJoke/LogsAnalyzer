@@ -41,7 +41,7 @@ public class IndexLogsFileCommand extends BaseUploadingFileBotCommand implements
     @Override
     protected Optional<SendMessage> executeCommand(AbsSender absSender, User user, Chat chat, UserEntity userContext, String[] arguments) {
 
-        final var msg = createReplyMessage(chat.getId(), "Pass expected log records pattern (or %s to use default patterns set):".formatted(SKIP_STAGE_STR_FORMATTED));
+        final var msg = createReplyMessage(chat.getId(), "Enter expected log records pattern (or %s to use default patterns set):".formatted(SKIP_STAGE_STR_FORMATTED));
 
         final var context = this.userConversationStore.createUserCommandContext(user.getId(), COMMAND_NAME);
         context.setLastStage(RECORD_PATTERN_STAGE);
@@ -66,12 +66,12 @@ public class IndexLogsFileCommand extends BaseUploadingFileBotCommand implements
             case RECORD_PATTERN_STAGE -> {
                 context.put(context.getLastStage(), message.getText());
                 context.setLastStage(RECORD_PATTERN_DATE_FORMAT_STAGE);
-                yield "Pass expected record's date format (or %s to use default date format or if records without date part):".formatted(SKIP_STAGE_STR_FORMATTED);
+                yield "Enter expected record's date format (or %s to use default date format or if records without date part):".formatted(SKIP_STAGE_STR_FORMATTED);
             }
             case RECORD_PATTERN_DATE_FORMAT_STAGE -> {
                 context.put(context.getLastStage(), message.getText());
                 context.setLastStage(RECORD_PATTERN_TIME_FORMAT_STAGE);
-                yield "Pass expected record's time format (or %s to use default time format):".formatted(SKIP_STAGE_STR_FORMATTED);
+                yield "Enter expected record's time format (or %s to use default time format):".formatted(SKIP_STAGE_STR_FORMATTED);
             }
             case RECORD_PATTERN_TIME_FORMAT_STAGE -> {
                 context.put(context.getLastStage(), message.getText());

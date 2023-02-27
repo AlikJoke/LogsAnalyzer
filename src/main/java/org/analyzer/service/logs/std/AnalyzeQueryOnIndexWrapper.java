@@ -9,7 +9,6 @@ import org.springframework.data.domain.Sort;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nullable;
-import java.util.Collections;
 import java.util.Map;
 
 public final class AnalyzeQueryOnIndexWrapper implements AnalyzeQuery {
@@ -29,7 +28,7 @@ public final class AnalyzeQueryOnIndexWrapper implements AnalyzeQuery {
     @NonNull
     @Override
     public Map<String, JsonNode> aggregations() {
-        return Collections.emptyMap();
+        return Map.of();
     }
 
     @Override
@@ -69,7 +68,7 @@ public final class AnalyzeQueryOnIndexWrapper implements AnalyzeQuery {
     @NonNull
     @Override
     public Map<String, JsonNode> postFilters() {
-        return Collections.emptyMap();
+        return Map.of();
     }
 
     @Override
@@ -91,7 +90,7 @@ public final class AnalyzeQueryOnIndexWrapper implements AnalyzeQuery {
     @NonNull
     @Override
     public Map<String, Sort.Direction> sorts() {
-        return Collections.emptyMap();
+        return Map.of();
     }
 
     @NonNull

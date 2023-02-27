@@ -4,16 +4,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import lombok.NonNull;
 import org.analyzer.dao.HttpArchiveRepository;
-import org.analyzer.service.users.CurrentUserAccessor;
-import org.analyzer.service.logs.LogsService;
-import org.analyzer.service.logs.SearchQuery;
-import org.analyzer.service.har.HttpArchiveAnalyzer;
-import org.analyzer.service.har.HttpArchiveBody;
 import org.analyzer.entities.HttpArchiveEntity;
 import org.analyzer.service.exceptions.EntityNotFoundException;
+import org.analyzer.service.har.HttpArchiveAnalyzer;
+import org.analyzer.service.har.HttpArchiveBody;
 import org.analyzer.service.har.HttpArchiveOperationsQuery;
 import org.analyzer.service.har.HttpArchiveService;
+import org.analyzer.service.logs.LogsService;
+import org.analyzer.service.logs.SearchQuery;
 import org.analyzer.service.logs.std.SimpleSearchQuery;
+import org.analyzer.service.users.CurrentUserAccessor;
 import org.analyzer.service.util.JsonConverter;
 import org.analyzer.service.util.UnzipperUtil;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -183,7 +183,7 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
 
     private HttpArchiveBody findArchiveBody(final String harId) {
         final var har = this.httpArchiveRepository.findById(harId)
-                                                    .orElseThrow(() -> new EntityNotFoundException(harId));
+                                                    .orElseThrow(() -> new EntityNotFoundException("HAR not found by id: " + harId));
         final var bodyNode = this.jsonConverter.convert(har.getBody().getJson());
         return new HttpArchiveBody(har.getTitle(), bodyNode);
     }
@@ -224,8 +224,8 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
 
             final var requestSearchQuery = new SimpleSearchQuery(
                     query.toString(),
-                    searchQuery == null ? Collections.emptyMap() : searchQuery.postFilters(),
-                    searchQuery == null ? Collections.emptyMap() : searchQuery.sorts()
+                    searchQuery == null ? Map.of() : searchQuery.postFilters(),
+                    searchQuery == null ? Map.of() : searchQuery.sorts()
             );
 
             final List<String> logs = new ArrayList<>(this.logsService.searchByQuery(requestSearchQuery));

@@ -3,6 +3,7 @@ package org.analyzer.service.users.notifications.telegram.commands;
 import lombok.NonNull;
 import org.analyzer.entities.UserEntity;
 import org.analyzer.service.exceptions.EntityNotFoundException;
+import org.analyzer.service.har.HttpArchiveBody;
 import org.analyzer.service.har.HttpArchiveOperationsQuery;
 import org.analyzer.service.har.HttpArchiveService;
 import org.analyzer.service.logs.SearchQuery;
@@ -25,15 +26,18 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.analyzer.service.users.notifications.telegram.commands.AnalyzeHarFileCommand.COMMAND_NAME;
+import static org.analyzer.service.users.notifications.telegram.commands.ApplyOperationsToHarCommand.COMMAND_NAME;
 
 @Component(COMMAND_NAME)
-public class AnalyzeHarFileCommand extends BaseUploadingFileBotCommand implements TelegramCommandConversationChain {
+public class ApplyOperationsToHarCommand extends BaseUploadingFileBotCommand implements TelegramCommandConversationChain {
 
-    static final String COMMAND_NAME = "analyze_har";
+    static final String COMMAND_NAME = "apply_har_ops";
 
     private static final String FILTERS_STAGE = "filteringKeys";
+    private static final String SORTING_STAGE = "sorting";
     private static final String SPECIFY_HAR_STAGE = "specifyHAR";
+
+    private static final String DEFAULT_SORTING_KEY = "default";
 
     @Autowired
     private TelegramUserConversationStore userConversationStore;
@@ -42,8 +46,8 @@ public class AnalyzeHarFileCommand extends BaseUploadingFileBotCommand implement
     @Autowired
     private JsonConverter jsonConverter;
 
-    public AnalyzeHarFileCommand() {
-        super(COMMAND_NAME, "Analyze HAR");
+    public ApplyOperationsToHarCommand() {
+        super(COMMAND_NAME, "Apply operations to HAR");
     }
 
     @Override
@@ -81,13 +85,21 @@ public class AnalyzeHarFileCommand extends BaseUploadingFileBotCommand implement
                     yield Optional.empty();
                 }
 
+                context.setLastStage(SORTING_STAGE);
+                final var msgText = ("Enter sorting for requests from HAR in format <sorting field>:<sorting direction> " +
+                        "(to use the default sort enter <i>'%s'</i> or enter %s to not use sorting):")
+                        .formatted(DEFAULT_SORTING_KEY, SKIP_STAGE_STR_FORMATTED);
+                yield Optional.of(createReplyMessage(message.getChatId(), msgText));
+            }
+            case SORTING_STAGE -> {
+                context.put(context.getLastStage(), message.getText());
                 context.setLastStage(SPECIFY_HAR_STAGE);
                 final var msgText = "Upload HAR file or enter already uploaded HAR key:";
                 yield Optional.of(createReplyMessage(message.getChatId(), msgText));
             }
             case SPECIFY_HAR_STAGE -> {
                 this.userConversationStore.clearUserCommandContext(userId);
-                final var replyMsg = handleHarAnalyzingStage(absSender, context, message);
+                final var replyMsg = handleTerminalOperation(absSender, context, message);
                 replyMsg.setReplyToMessageId(message.getMessageId());
 
                 yield Optional.of(replyMsg);
@@ -96,14 +108,14 @@ public class AnalyzeHarFileCommand extends BaseUploadingFileBotCommand implement
         };
     }
 
-    private SendMessage handleHarAnalyzingStage(
+    private SendMessage handleTerminalOperation(
             final AbsSender absSender,
             final TelegramUserConversationStore.CommandContext context,
             final Message message) {
 
         final var wasUploadFile = message.getDocument() == null || StringUtils.isEmpty(message.getDocument().getFileId());
         if (StringUtils.isEmpty(message.getText()) && !wasUploadFile) {
-            return createReplyMessage(message.getChatId(), "<b>Expected file or already uploaded HAR key for HAR analyzing command.<b>");
+            return createReplyMessage(message.getChatId(), "<b>Expected file or already uploaded HAR key command.<b>");
         }
 
         String resultText;
@@ -112,23 +124,23 @@ public class AnalyzeHarFileCommand extends BaseUploadingFileBotCommand implement
             final var result =
                     wasUploadFile
                             ? processUploadedFile(absSender, message, operationsQuery)
-                            : this.httpArchiveService.analyze(message.getText(), operationsQuery);
+                            : this.httpArchiveService.applyOperations(message.getText(), operationsQuery);
 
-            resultText = "Result of analyzing:\n<code>" + this.jsonConverter.convertToJson(result) + "</code>";
+            resultText = "Result of operations:\n<code>" + result.body().toPrettyString() + "</code>";
         } catch (EntityNotFoundException ex) {
-            resultText = "Analyzing failed with error:\n<code>" + ex.getMessage() + "</code>";
+            resultText = "Applying of operations failed with error:\n<code>" + ex.getMessage() + "</code>";
         }
 
         return createReplyMessage(message.getChatId(), resultText);
     }
 
-    private Map<String, Object> processUploadedFile(
+    private HttpArchiveBody processUploadedFile(
             final AbsSender absSender,
             final Message message,
             final HttpArchiveOperationsQuery operationsQuery) {
         final var uploadedFile = downloadFile(absSender, message.getDocument().getFileId());
         try {
-            return this.httpArchiveService.analyze(uploadedFile, operationsQuery);
+            return this.httpArchiveService.applyOperations(uploadedFile, operationsQuery);
         } finally {
             uploadedFile.delete();
         }
@@ -138,20 +150,27 @@ public class AnalyzeHarFileCommand extends BaseUploadingFileBotCommand implement
 
         @SuppressWarnings("unchecked")
         final Set<String> filteringKeys = (Set<String>) context.get(FILTERS_STAGE);
-        if (filteringKeys == null || filteringKeys.isEmpty()) {
-            return null;
+        final var sorting = context.getAttributeAsString(SORTING_STAGE);
+        final var sortingParts = sorting.split(":");
+        final Map<String, Sort.Direction> targetSort;
+        if (sortingParts.length != 2) {
+            targetSort = Map.of();
+        } else {
+            targetSort = Sort.Direction.fromOptionalString(sortingParts[1].toUpperCase())
+                                        .map(value -> Map.of(sortingParts[0], value))
+                                        .orElseGet(Map::of);
         }
 
         return new HttpArchiveOperationsQuery() {
             @Override
             public boolean applyDefaultSorting() {
-                return false;
+                return DEFAULT_SORTING_KEY.equals(sorting);
             }
 
             @NonNull
             @Override
             public Map<String, Sort.Direction> sort() {
-                return Map.of();
+                return targetSort;
             }
 
             @NonNull

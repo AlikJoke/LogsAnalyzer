@@ -7,7 +7,6 @@ import org.analyzer.service.util.JsonConverter;
 import org.springframework.data.domain.Sort;
 
 import javax.annotation.Nonnegative;
-import java.util.Collections;
 import java.util.Map;
 
 public class SimpleSearchQuery implements SearchQuery {
@@ -22,7 +21,7 @@ public class SimpleSearchQuery implements SearchQuery {
         this(searchQuery.query(), searchQuery.pageNumber(), searchQuery.postFilters(), searchQuery.sorts());
     }
     public SimpleSearchQuery(@NonNull String query) {
-        this(query, Collections.emptyMap(), Collections.emptyMap());
+        this(query, Map.of(), Map.of());
     }
 
     public SimpleSearchQuery(

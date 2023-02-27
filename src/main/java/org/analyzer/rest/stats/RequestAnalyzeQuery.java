@@ -17,7 +17,6 @@ import org.springframework.data.domain.Sort;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nullable;
-import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
@@ -52,7 +51,7 @@ public class RequestAnalyzeQuery extends RequestSearchQuery implements AnalyzeQu
     @NonNull
     @Override
     public Map<String, JsonNode> aggregations() {
-        return aggregations == null ? Collections.emptyMap() : aggregations;
+        return aggregations == null ? Map.of() : aggregations;
     }
 
     @NonNull

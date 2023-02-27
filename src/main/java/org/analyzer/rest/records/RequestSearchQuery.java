@@ -16,7 +16,6 @@ import org.springframework.data.domain.Sort;
 
 import javax.annotation.Nonnegative;
 import javax.annotation.Nullable;
-import java.util.Collections;
 import java.util.Map;
 
 @Getter
@@ -55,7 +54,7 @@ public class RequestSearchQuery implements SearchQuery {
     @NonNull
     @Override
     public Map<String, Sort.Direction> sorts() {
-        return sorts == null ? Collections.emptyMap() : sorts;
+        return sorts == null ? Map.of() : sorts;
     }
 
     @NonNull
@@ -68,7 +67,7 @@ public class RequestSearchQuery implements SearchQuery {
     @NonNull
     @Override
     public Map<String, JsonNode> postFilters() {
-        return postFilters == null ? Collections.emptyMap() : postFilters;
+        return postFilters == null ? Map.of() : postFilters;
     }
 
     @NonNull

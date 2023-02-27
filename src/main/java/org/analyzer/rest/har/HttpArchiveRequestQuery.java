@@ -8,7 +8,6 @@ import org.analyzer.service.har.HttpArchiveOperationsQuery;
 import org.analyzer.service.logs.SearchQuery;
 import org.springframework.data.domain.Sort;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,13 +41,13 @@ public class HttpArchiveRequestQuery implements HttpArchiveOperationsQuery {
     @NonNull
     @Override
     public Map<String, Sort.Direction> sort() {
-        return this.sort == null ? Collections.emptyMap() : this.sort;
+        return this.sort == null ? Map.of() : this.sort;
     }
 
     @NonNull
     @Override
     public Set<String> filteringKeys() {
-        return this.filteringKeys == null ? Collections.emptySet() : this.filteringKeys;
+        return this.filteringKeys == null ? Set.of() : this.filteringKeys;
     }
 
     @NonNull
