@@ -9,6 +9,7 @@ import org.analyzer.service.users.notifications.telegram.TelegramUserConversatio
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -52,7 +53,7 @@ public class IndexLogsFileCommand extends BaseUploadingFileBotCommand implements
     }
 
     @Override
-    public Optional<SendMessage> onMessageReceived(
+    public Optional<PartialBotApiMethod<?>> onMessageReceived(
             @NonNull AbsSender absSender,
             @NonNull Long userId,
             @NonNull Message message) {

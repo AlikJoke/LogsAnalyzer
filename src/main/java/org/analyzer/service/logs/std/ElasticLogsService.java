@@ -16,6 +16,7 @@ import org.analyzer.service.users.CurrentUserAccessor;
 import org.analyzer.service.util.JsonConverter;
 import org.analyzer.service.util.LongRunningTaskExecutor;
 import org.analyzer.service.util.UnzipperUtil;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -28,6 +29,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -120,6 +122,24 @@ public class ElasticLogsService implements LogsService {
                 .stream()
                 .map(LogRecordEntity::getSource)
                 .toList();
+    }
+
+    @NonNull
+    @Override
+    public File searchAndExportByQuery(@NonNull SearchQuery query) {
+        try {
+            SearchQuery pageQuery = query;
+            List<String> records;
+            final File logsFile = File.createTempFile(UUID.randomUUID().toString(), null);
+            while (!(records = this.searchByQuery(pageQuery)).isEmpty()) {
+                FileUtils.writeLines(logsFile, StandardCharsets.UTF_8.displayName(), records, true);
+                pageQuery = pageQuery.toNextPageQuery();
+            }
+
+            return logsFile;
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     @NonNull

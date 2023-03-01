@@ -6,6 +6,9 @@ import org.analyzer.service.users.notifications.telegram.TelegramCommandConversa
 import org.analyzer.service.users.notifications.telegram.TelegramUserConversationStore;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.extensions.bots.commandbot.TelegramLongPollingCommandBot;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -81,9 +84,15 @@ public class LogsAnalyzerBot extends TelegramLongPollingCommandBot {
         return options;
     }
 
-    private void sendMessage(final SendMessage message) {
+    private void sendMessage(final PartialBotApiMethod<?> message) {
         try {
-            execute(message);
+            if (message instanceof BotApiMethod<?> msg) {
+                execute(msg);
+            } else if (message instanceof SendDocument msg) {
+                execute(msg);
+            } else {
+                throw new UnsupportedOperationException("Unsupported message type: " + message);
+            }
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }

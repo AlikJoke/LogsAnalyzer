@@ -22,6 +22,9 @@ public interface LogsService {
     List<String> searchByQuery(@Nonnull SearchQuery query);
 
     @Nonnull
+    File searchAndExportByQuery(@Nonnull SearchQuery query);
+
+    @Nonnull
     MapLogsStatistics analyze(@Nonnull AnalyzeQuery query);
 
     @Nonnull
