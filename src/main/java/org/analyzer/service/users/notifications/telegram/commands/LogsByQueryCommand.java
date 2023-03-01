@@ -24,12 +24,12 @@ abstract class LogsByQueryCommand extends ApplicationBotCommand implements Teleg
 
     static final String QUERY_STAGE = "query";
     static final String QUERY_FORMAT_STAGE = "queryFormat";
-    static final String EXPORT_FILENAME_STAGE = "exportFilename";
+    static final String TERMINAL_STAGE = "terminal";
     static final String SORTS_STAGE = "sorts";
     static final String POST_FILTERS_STAGE = "postFilters";
 
     @Autowired
-    private TelegramUserConversationStore userConversationStore;
+    protected TelegramUserConversationStore userConversationStore;
     @Autowired
     private JsonConverter jsonConverter;
 
@@ -93,7 +93,7 @@ abstract class LogsByQueryCommand extends ApplicationBotCommand implements Teleg
                 final var nextMsg = ("Enter post filters for logs in format <post filter id>:<post filter settings json> (to stop entering the post filters, enter a %s):").formatted(SKIP_STAGE_STR_FORMATTED);
                 yield createReplyMessage(message.getChatId(), nextMsg);
             }
-            case EXPORT_FILENAME_STAGE -> {
+            case TERMINAL_STAGE -> {
                 this.userConversationStore.clearUserCommandContext(userId);
                 yield processTerminalStage(message, context);
             }

@@ -7,8 +7,6 @@ import org.analyzer.rest.hateoas.LinksCollector;
 import org.analyzer.rest.hateoas.NamedEndpoint;
 import org.analyzer.rest.util.WebUtils;
 import org.analyzer.service.logs.LogsService;
-import org.analyzer.service.logs.SearchQuery;
-import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.FileSystemResource;
@@ -21,12 +19,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 @RestController
 @RequestMapping(LogsController.PATH_BASE)
@@ -82,14 +76,7 @@ public class LogsController extends ControllerBase {
     @ResponseStatus(HttpStatus.OK)
     @NamedEndpoint(value = "export.logs", includeTo = RootEntrypointResource.class)
     public ResponseEntity<Resource> exportToFile(@RequestBody RequestSearchQuery query) throws IOException {
-        SearchQuery pageQuery = query;
-        List<String> records;
-        final File logsFile = File.createTempFile(UUID.randomUUID().toString(), null);
-        while (!(records = this.service.searchByQuery(pageQuery)).isEmpty()) {
-            FileUtils.writeLines(logsFile, StandardCharsets.UTF_8.displayName(), records, true);
-            pageQuery = pageQuery.toNextPageQuery();
-        }
-
+        final var logsFile = this.service.searchAndExportByQuery(query);
         final var targetFilename = StringUtils.hasLength(query.exportToFile()) ? query.exportToFile() : "data.log";
         return this.webUtils.prepareResponse(targetFilename, new FileSystemResource(logsFile));
     }

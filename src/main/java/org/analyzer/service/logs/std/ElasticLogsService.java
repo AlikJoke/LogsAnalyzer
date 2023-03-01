@@ -131,6 +131,8 @@ public class ElasticLogsService implements LogsService {
             SearchQuery pageQuery = query;
             List<String> records;
             final File logsFile = File.createTempFile(UUID.randomUUID().toString(), null);
+            logsFile.deleteOnExit();
+
             while (!(records = this.searchByQuery(pageQuery)).isEmpty()) {
                 FileUtils.writeLines(logsFile, StandardCharsets.UTF_8.displayName(), records, true);
                 pageQuery = pageQuery.toNextPageQuery();
