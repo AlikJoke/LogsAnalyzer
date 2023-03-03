@@ -31,7 +31,7 @@ abstract class LogsByQueryCommand extends ApplicationBotCommand implements Teleg
     @Autowired
     protected TelegramUserConversationStore userConversationStore;
     @Autowired
-    private JsonConverter jsonConverter;
+    protected JsonConverter jsonConverter;
 
     protected LogsByQueryCommand(@NonNull String commandIdentifier, @Nullable String description) {
         super(commandIdentifier, description, true);
@@ -106,7 +106,7 @@ abstract class LogsByQueryCommand extends ApplicationBotCommand implements Teleg
                     yield null;
                 }
 
-                context.put(context.getLastStage(), parsePostFilters(postFilters));
+                context.put(context.getLastStage(), parseSettingsMap(postFilters));
                 yield processNonTerminalStage(message, context);
             }
             default -> processNonTerminalStage(message, context);
@@ -125,15 +125,15 @@ abstract class LogsByQueryCommand extends ApplicationBotCommand implements Teleg
             @NonNull TelegramUserConversationStore.CommandContext context
     );
 
-    private Map<String, JsonNode> parsePostFilters(final Set<String> postFilters) {
+    protected Map<String, JsonNode> parseSettingsMap(final Set<String> settings) {
 
-        return postFilters
+        return settings
                 .stream()
-                .map(pf -> pf.split(":"))
+                .map(s -> s.split(":"))
                 .collect(
                         Collectors.toMap(
-                                pf -> pf[0],
-                                pf -> convertStringJsonPartsToNode(Arrays.copyOfRange(pf, 1, pf.length))
+                                s -> s[0],
+                                s -> convertStringJsonPartsToNode(Arrays.copyOfRange(s, 1, s.length))
                         )
                 );
     }

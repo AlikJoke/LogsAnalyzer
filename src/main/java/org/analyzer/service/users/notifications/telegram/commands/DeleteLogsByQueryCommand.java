@@ -58,7 +58,11 @@ public class DeleteLogsByQueryCommand extends LogsByQueryCommand implements Tele
         final var sortsMap = (Map<String, Sort.Direction>) context.get(SORTS_STAGE);
 
         final var searchQuery = new RequestSearchQuery(query, extendedFormat, postFiltersMap, 0, 0, sortsMap, null);
-        this.logsService.deleteByQuery(searchQuery);
+        try {
+            this.logsService.deleteByQuery(searchQuery);
+        } catch (Exception ex) {
+            return createReplyMessage(userMessage.getChatId(), "<b>Unable to delete logs by query: </b>" + ex.getMessage());
+        }
 
         return createReplyMessage(userMessage.getChatId(), "<b>Logs by query deleted from storage.</b>");
     }

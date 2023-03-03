@@ -57,12 +57,16 @@ public class SearchLogsByQueryCommand extends LogsByQueryCommand implements Tele
 
         final var searchQuery = new RequestSearchQuery(query, extendedFormat, postFiltersMap, 0, 0, sortsMap, filename);
 
-        final var resultFile = this.logsService.searchAndExportByQuery(searchQuery);
-        final var resultMessage = new SendDocument();
-        resultMessage.setChatId(userMessage.getChatId());
-        resultMessage.setReplyToMessageId(userMessage.getMessageId());
-        resultMessage.setDocument(new InputFile(resultFile, searchQuery.exportToFile()));
+        try {
+            final var resultFile = this.logsService.searchAndExportByQuery(searchQuery);
+            final var resultMessage = new SendDocument();
+            resultMessage.setChatId(userMessage.getChatId());
+            resultMessage.setReplyToMessageId(userMessage.getMessageId());
+            resultMessage.setDocument(new InputFile(resultFile, searchQuery.exportToFile()));
 
-        return resultMessage;
+            return resultMessage;
+        } catch (Exception ex) {
+            return createReplyMessage(userMessage.getChatId(), "<b>Unable to search in logs by query: </b>" + ex.getMessage());
+        }
     }
 }
