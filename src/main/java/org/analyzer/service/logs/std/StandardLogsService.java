@@ -4,8 +4,8 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
 import lombok.NonNull;
-import org.analyzer.dao.LogRecordRepository;
 import org.analyzer.dao.LogsStatisticsRepository;
+import org.analyzer.dao.LogsStorage;
 import org.analyzer.entities.LogRecordEntity;
 import org.analyzer.entities.LogsStatisticsEntity;
 import org.analyzer.entities.UserEntity;
@@ -20,9 +20,6 @@ import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
-import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.query.StringQuery;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
@@ -36,20 +33,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 @Service
-public class ElasticLogsService implements LogsService {
+public class StandardLogsService implements LogsService {
 
     private static final String STATISTICS_CACHE = "statistics";
 
     @Autowired
-    private ElasticsearchTemplate template;
-    @Autowired
-    private LogRecordRepository logRecordRepository;
+    private LogsStorage logsStorage;
     @Autowired
     private LogRecordsParser parser;
     @Autowired
     private UnzipperUtil zipUtil;
-    @Autowired
-    private SearchQueryParser<StringQuery> queryParser;
     @Autowired
     private PostFiltersSequenceBuilder postFiltersSequenceBuilder;
     @Autowired
@@ -101,7 +94,7 @@ public class ElasticLogsService implements LogsService {
                 .thenApply(v -> uuidKey)
                 .whenComplete((result, ex) -> {
             if (ex != null) {
-                this.logRecordRepository.deleteAllByIdRegex(uuidKey);
+                this.logsStorage.deleteAllByIdRegex(uuidKey);
             }
         });
     }
@@ -204,7 +197,7 @@ public class ElasticLogsService implements LogsService {
     public void deleteByQuery(@NonNull SearchQuery deleteQuery) {
         List<LogRecordEntity> records;
         while (!(records = searchByFilterQuery(deleteQuery)).isEmpty()) {
-            this.logRecordRepository.deleteAll(records);
+            this.logsStorage.deleteAll(records);
             deleteQuery = deleteQuery.toNextPageQuery();
         }
     }
@@ -238,16 +231,12 @@ public class ElasticLogsService implements LogsService {
     private List<LogRecordEntity> searchByFilterQuery(@Nonnull SearchQuery searchQuery) {
 
         final var user = this.userAccessor.get();
-        final var query = this.queryParser.parse(searchQuery, user.getHash());
         (searchQuery.extendedFormat() ? extendedSearchRequestsCounter : simpleSearchRequestsCounter).increment();
 
         final var postFilters = this.postFiltersSequenceBuilder.build(searchQuery.postFilters());
 
-        final var logRecords =
-                template.search(query, LogRecordEntity.class)
-                        .stream()
-                        .map(SearchHit::getContent)
-                        .toList();
+        final var storageQuery = new LogsStorage.StorageQuery(searchQuery, user.getHash());
+        final var logRecords = this.logsStorage.searchByQuery(storageQuery);
 
         return postFilters
                 .stream()
@@ -279,7 +268,7 @@ public class ElasticLogsService implements LogsService {
             while (packageIterator.hasNext()) {
                 final var recordsPackage = packageIterator.next();
 
-                this.logRecordRepository.saveAll(recordsPackage);
+                this.logsStorage.saveAll(recordsPackage);
                 this.indexedRecordsCounter.increment(recordsPackage.size());
                 this.elasticIndexRequestsCounter.increment();
             }

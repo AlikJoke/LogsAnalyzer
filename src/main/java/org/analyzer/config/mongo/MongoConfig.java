@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
+import static org.analyzer.LogsAnalyzerApplication.BOX_MODE;
 import static org.analyzer.LogsAnalyzerApplication.RUN_MODE_PROPERTY;
 
 @Configuration
@@ -30,7 +31,7 @@ public class MongoConfig {
     }
 
     @Bean(initMethod = "start", destroyMethod = "stop")
-    @ConditionalOnProperty(name = RUN_MODE_PROPERTY, havingValue = "box")
+    @ConditionalOnProperty(name = RUN_MODE_PROPERTY, havingValue = BOX_MODE)
     public MongodExecutable embeddedMongoServer(MongoProperties mongoProperties) {
         final var dataPath = new UserHome(this.embeddedDataPath);
         final var storage = new Storage(

@@ -1,7 +1,7 @@
 package org.analyzer.service.management.std;
 
 import lombok.NonNull;
-import org.analyzer.dao.LogRecordRepository;
+import org.analyzer.dao.LogsStorage;
 import org.analyzer.entities.LogRecordEntity;
 import org.analyzer.service.management.LogsManagementService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,14 +15,14 @@ import java.util.Map;
 @Service
 public class ElasticLogsManagementService implements LogsManagementService {
 
-    private final LogRecordRepository logsRepository;
+    private final LogsStorage logsStorage;
     private final IndexOperations indexOps;
 
     @Autowired
     public ElasticLogsManagementService(
             @NonNull ElasticsearchTemplate template,
-            @NonNull LogRecordRepository logsRepository) {
-        this.logsRepository = logsRepository;
+            @NonNull LogsStorage logsStorage) {
+        this.logsStorage = logsStorage;
         this.indexOps = template.indexOps(LogRecordEntity.class);
     }
 
@@ -54,7 +54,7 @@ public class ElasticLogsManagementService implements LogsManagementService {
                 .getInformation()
                 .forEach(inf -> {
                     result.put("index-name", inf.getName());
-                    result.put("data-count", this.logsRepository.count());
+                    result.put("data-count", this.logsStorage.allCount());
 
                     if (inf.getMapping() != null) {
                         result.putAll(inf.getMapping());

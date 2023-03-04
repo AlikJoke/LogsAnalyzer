@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
-import static org.analyzer.LogsAnalyzerApplication.RUN_MODE_PROPERTY;
+import static org.analyzer.LogsAnalyzerApplication.*;
 import static org.springframework.security.web.header.writers.ClearSiteDataHeaderWriter.Directive.COOKIES;
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
@@ -106,13 +106,13 @@ public class SecurityConfig {
     }
 
     @Bean
-    @ConditionalOnProperty(name = RUN_MODE_PROPERTY, havingValue = "box")
+    @ConditionalOnProperty(name = RUN_MODE_PROPERTY, havingValue = BOX_MODE)
     public MapSessionRepository sessionRepositoryInMemory() {
         return new MapSessionRepository(new ConcurrentHashMap<>());
     }
 
     @Bean
-    @ConditionalOnProperty(name = RUN_MODE_PROPERTY, havingValue = "distributed", matchIfMissing = true)
+    @ConditionalOnProperty(name = RUN_MODE_PROPERTY, havingValue = DISTRIBUTED_MODE, matchIfMissing = true)
     public RedisSessionRepository sessionRepositoryRedis(RedisOperations<String, Object> redisOperations) {
         return new RedisSessionRepository(redisOperations);
     }

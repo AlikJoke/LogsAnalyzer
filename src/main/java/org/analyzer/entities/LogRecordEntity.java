@@ -7,6 +7,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import javax.annotation.Nonnull;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.function.Function;
@@ -41,8 +42,8 @@ public class LogRecordEntity {
     private String traceId;
     private String record;
 
-    @NonNull
-    public static Function<LogRecordEntity, Object> field2FieldValueFunction(@NonNull final String fieldName) {
+    @Nonnull
+    public static Function<LogRecordEntity, Object> field2FieldValueFunction(@Nonnull final String fieldName) {
         return switch (fieldName) {
             case "thread", "thread.keyword" -> LogRecordEntity::getThread;
             case "category", "category.keyword" -> LogRecordEntity::getCategory;

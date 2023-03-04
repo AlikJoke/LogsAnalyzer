@@ -1,4 +1,4 @@
-package org.analyzer.service.logs.std;
+package org.analyzer.service.logs.elastic;
 
 import lombok.NonNull;
 import org.analyzer.service.logs.SearchQuery;
@@ -10,12 +10,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.query.StringQuery;
 import org.springframework.data.elasticsearch.core.query.StringQueryBuilder;
-import org.springframework.stereotype.Component;
 
 /**
  * See <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax">...</a>
  */
-@Component
 public class ElasticSearchQueryParser implements SearchQueryParser<StringQuery> {
 
     private static final String QUERY_STRING_BODY_TEMPLATE = """
