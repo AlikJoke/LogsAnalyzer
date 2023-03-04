@@ -175,18 +175,16 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
                         break;
                     }
 
-                    lastRecord = LogRecordEntity
-                                        .builder()
-                                            .id(logKeysFactory.createLogRecordKey(this.logKey, ++this.offset))
-                                            .time(parseTime(this.timeFormatter, matcher))
-                                            .date(parseDate(this.dateFormatter, matcher))
-                                            .level(matcher.group("level"))
-                                            .thread(matcher.group("thread"))
-                                            .traceId(matcher.group("traceId"))
-                                            .category(matcher.group("category"))
-                                            .source(this.lastLine)
-                                            .record(matcher.group("text"))
-                                        .build();
+                    lastRecord = new LogRecordEntity()
+                                            .setId(logKeysFactory.createLogRecordKey(this.logKey, ++this.offset))
+                                            .setTime(parseTime(this.timeFormatter, matcher))
+                                            .setDate(parseDate(this.dateFormatter, matcher))
+                                            .setLevel(matcher.group("level"))
+                                            .setThread(matcher.group("thread"))
+                                            .setTraceId(matcher.group("traceId"))
+                                            .setCategory(matcher.group("category"))
+                                            .setSource(this.lastLine)
+                                            .setRecord(matcher.group("text"));
 
                     result.add(lastRecord);
                 } else if (lastRecord != null) {

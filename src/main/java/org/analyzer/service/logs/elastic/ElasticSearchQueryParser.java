@@ -11,6 +11,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.query.StringQuery;
 import org.springframework.data.elasticsearch.core.query.StringQueryBuilder;
 
+import static org.analyzer.entities.LogRecordEntity.toStorageFieldName;
+
 /**
  * See <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax">...</a>
  */
@@ -37,7 +39,7 @@ public class ElasticSearchQueryParser implements SearchQueryParser<StringQuery> 
                 }
             }""";
 
-    @Value("${elasticsearch.default.max_results:1000}")
+    @Value("${logs.analyzer.search.default.max_results}")
     private int maxResultsDefault;
     @Autowired
     private JsonConverter jsonConverter;
@@ -53,12 +55,12 @@ public class ElasticSearchQueryParser implements SearchQueryParser<StringQuery> 
         final var sort = query.sorts()
                 .entrySet()
                 .stream()
-                .map(e -> Sort.by(e.getValue(), e.getKey()))
+                .map(e -> Sort.by(e.getValue(), toStorageFieldName(e.getKey())))
                 .reduce(Sort::and)
                 .orElse(
                         Sort.by(
-                                Sort.Order.asc("date").nullsLast(),
-                                Sort.Order.asc("time").nullsLast()
+                                Sort.Order.asc(toStorageFieldName("date")).nullsLast(),
+                                Sort.Order.asc(toStorageFieldName("time")).nullsLast()
                         )
                 );
 

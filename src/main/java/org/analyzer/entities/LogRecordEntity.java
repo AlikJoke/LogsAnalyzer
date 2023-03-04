@@ -1,6 +1,7 @@
 package org.analyzer.entities;
 
 import lombok.*;
+import lombok.experimental.Accessors;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -15,8 +16,11 @@ import java.util.function.Function;
 @Document(indexName = "logs")
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Builder
+@Accessors(chain = true)
+@NoArgsConstructor
 public class LogRecordEntity {
+
+    private static final String FIELD_SUFFIX = ".keyword";
 
     @Id
     @EqualsAndHashCode.Include
@@ -44,16 +48,26 @@ public class LogRecordEntity {
 
     @Nonnull
     public static Function<LogRecordEntity, Object> field2FieldValueFunction(@Nonnull final String fieldName) {
-        return switch (fieldName) {
-            case "thread", "thread.keyword" -> LogRecordEntity::getThread;
-            case "category", "category.keyword" -> LogRecordEntity::getCategory;
-            case "record", "record.keyword" -> LogRecordEntity::getRecord;
-            case "date", "date.keyword" -> LogRecordEntity::getDate;
-            case "time", "time.keyword" -> LogRecordEntity::getTime;
-            case "trace_id", "trace_id.keyword" -> LogRecordEntity::getTraceId;
-            case "level", "level.keyword" -> LogRecordEntity::getLevel;
-            case "id", "id.keyword" -> LogRecordEntity::getId;
+        return switch (toEntityFieldName(fieldName)) {
+            case "thread" -> LogRecordEntity::getThread;
+            case "category" -> LogRecordEntity::getCategory;
+            case "record" -> LogRecordEntity::getRecord;
+            case "date" -> LogRecordEntity::getDate;
+            case "time" -> LogRecordEntity::getTime;
+            case "trace_id" -> LogRecordEntity::getTraceId;
+            case "level" -> LogRecordEntity::getLevel;
+            case "id" -> LogRecordEntity::getId;
             default -> throw new IllegalArgumentException("Unsupported field: " + fieldName);
         };
+    }
+
+    @Nonnull
+    public static String toStorageFieldName(@NonNull final String field) {
+        return field.endsWith(FIELD_SUFFIX) ? field : field + FIELD_SUFFIX;
+    }
+
+    @Nonnull
+    public static String toEntityFieldName(@NonNull final String field) {
+        return field.endsWith(FIELD_SUFFIX) ? field.replace(FIELD_SUFFIX, "") : field;
     }
 }

@@ -10,7 +10,7 @@ public interface LogsStorage {
 
     void deleteAllByIdRegex(@Nonnull String id);
 
-    void deleteAll(@Nonnull List<LogRecordEntity> records);
+    void deleteByQuery(@Nonnull StorageQuery query);
 
     void saveAll(@Nonnull List<LogRecordEntity> records);
 

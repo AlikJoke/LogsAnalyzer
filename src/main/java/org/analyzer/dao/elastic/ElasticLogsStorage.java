@@ -27,8 +27,15 @@ public class ElasticLogsStorage implements LogsStorage {
     }
 
     @Override
-    public void deleteAll(@NonNull List<LogRecordEntity> records) {
-        this.repository.deleteAll(records);
+    public void deleteByQuery(@NonNull StorageQuery query) {
+        var pageQuery = query;
+        List<LogRecordEntity> records;
+        while (!(records = searchByQuery(pageQuery)).isEmpty()) {
+            this.repository.deleteAll(records);
+
+            final var searchQuery = pageQuery.query();
+            pageQuery = new StorageQuery(searchQuery.toNextPageQuery(), query.userKey());
+        }
     }
 
     @Override

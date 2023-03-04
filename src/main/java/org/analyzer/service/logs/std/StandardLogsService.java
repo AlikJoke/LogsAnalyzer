@@ -94,7 +94,8 @@ public class StandardLogsService implements LogsService {
                 .thenApply(v -> uuidKey)
                 .whenComplete((result, ex) -> {
             if (ex != null) {
-                this.logsStorage.deleteAllByIdRegex(uuidKey);
+                final var userIndexingKey = this.logKeysFactory.createUserIndexingKey(userEntity.getHash(), uuidKey);
+                this.logsStorage.deleteAllByIdRegex(userIndexingKey);
             }
         });
     }
@@ -195,11 +196,8 @@ public class StandardLogsService implements LogsService {
 
     @Override
     public void deleteByQuery(@NonNull SearchQuery deleteQuery) {
-        List<LogRecordEntity> records;
-        while (!(records = searchByFilterQuery(deleteQuery)).isEmpty()) {
-            this.logsStorage.deleteAll(records);
-            deleteQuery = deleteQuery.toNextPageQuery();
-        }
+        final var user = this.userAccessor.get();
+        this.logsStorage.deleteByQuery(new LogsStorage.StorageQuery(deleteQuery, user.getHash()));
     }
 
     private void processStatsSaving(
