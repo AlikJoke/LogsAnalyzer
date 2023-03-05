@@ -32,7 +32,7 @@ public class InfoWebEndpointExtension {
     public WebEndpointResponse<Map<String, Object>> info() {
         final Map<String, Object> info = this.delegate.info();
 
-        info.put("elasticsearch",
+        info.put("search-subsystem",
                 this.logsManagementService.existsIndex()
                         ? this.logsManagementService.indexInfo()
                         : Map.of("index-exists", false)

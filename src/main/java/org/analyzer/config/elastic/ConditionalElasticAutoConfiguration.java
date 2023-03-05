@@ -5,6 +5,8 @@ import org.analyzer.dao.LogsStorage;
 import org.analyzer.dao.elastic.ElasticLogsStorage;
 import org.analyzer.service.logs.SearchQueryParser;
 import org.analyzer.service.logs.elastic.ElasticSearchQueryParser;
+import org.analyzer.service.management.LogsManagementService;
+import org.analyzer.service.management.elastic.ElasticLogsManagementService;
 import org.elasticsearch.client.RestClientBuilder;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -53,5 +55,12 @@ public class ConditionalElasticAutoConfiguration {
     @Bean
     public LogsStorage elasticLogsStorage() {
         return new ElasticLogsStorage();
+    }
+
+    @Bean
+    public LogsManagementService elasticLogsManagementService(
+            LogsStorage logsStorage,
+            ElasticsearchTemplate template) {
+        return new ElasticLogsManagementService(template, logsStorage);
     }
 }

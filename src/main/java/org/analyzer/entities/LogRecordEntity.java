@@ -57,6 +57,7 @@ public class LogRecordEntity {
             case "trace_id" -> LogRecordEntity::getTraceId;
             case "level" -> LogRecordEntity::getLevel;
             case "id" -> LogRecordEntity::getId;
+            case "source" -> LogRecordEntity::getSource;
             default -> throw new IllegalArgumentException("Unsupported field: " + fieldName);
         };
     }

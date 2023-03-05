@@ -1,4 +1,4 @@
-package org.analyzer.service.management.std;
+package org.analyzer.service.management.mongodb;
 
 import lombok.NonNull;
 import org.analyzer.dao.LogsStatisticsRepository;

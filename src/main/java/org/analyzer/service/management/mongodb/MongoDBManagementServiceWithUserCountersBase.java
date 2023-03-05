@@ -1,4 +1,4 @@
-package org.analyzer.service.management.std;
+package org.analyzer.service.management.mongodb;
 
 import lombok.Data;
 import lombok.NonNull;

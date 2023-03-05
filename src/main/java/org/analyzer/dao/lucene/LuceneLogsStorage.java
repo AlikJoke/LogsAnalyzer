@@ -43,6 +43,7 @@ public class LuceneLogsStorage implements LogsStorage {
         final var prefixQuery = new PrefixQuery(new Term(toStorageFieldName("id"), id));
         try {
             this.indexWriter.deleteDocuments(prefixQuery);
+            this.indexWriter.commit();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -61,7 +62,17 @@ public class LuceneLogsStorage implements LogsStorage {
 
     @Override
     public void saveAll(@NonNull List<LogRecordEntity> records) {
-        // TODO
+
+        final var documents = records
+                                .stream()
+                                .map(this.logRecordBuilder::buildDocument)
+                                .toList();
+        try {
+            this.indexWriter.addDocuments(documents);
+            this.indexWriter.commit();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -90,7 +101,7 @@ public class LuceneLogsStorage implements LogsStorage {
             final List<LogRecordEntity> result = new ArrayList<>();
             for (int i = offset; i < scoreDocs.length; i++) {
                 final var recordDoc = storedFields.document(scoreDocs[i].doc);
-                result.add(this.logRecordBuilder.build(recordDoc));
+                result.add(this.logRecordBuilder.buildEntity(recordDoc));
             }
 
             return result;
@@ -110,9 +121,11 @@ public class LuceneLogsStorage implements LogsStorage {
             return new Sort(sortFields.toArray(new SortField[0]));
         }
 
+        final var dateField = toStorageFieldName("date");
+        final var timeField = toStorageFieldName("time");
         return new Sort(
-                new SortField(toStorageFieldName("date"), this.logRecordFieldMetadata.getSortFieldType("date"), true),
-                new SortField(toStorageFieldName("time"), this.logRecordFieldMetadata.getSortFieldType("time"), true)
+                new SortField(dateField, this.logRecordFieldMetadata.getSortFieldType(dateField), true),
+                new SortField(timeField, this.logRecordFieldMetadata.getSortFieldType(timeField), true)
         );
     }
 }

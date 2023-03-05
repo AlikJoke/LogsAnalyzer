@@ -5,8 +5,11 @@ import org.analyzer.dao.lucene.LuceneIndexSearcherFactory;
 import org.analyzer.dao.lucene.LuceneLogRecordBuilder;
 import org.analyzer.dao.lucene.LuceneLogRecordFieldMetadata;
 import org.analyzer.dao.lucene.LuceneLogsStorage;
+import org.analyzer.management.LuceneHealthIndicator;
 import org.analyzer.service.logs.SearchQueryParser;
 import org.analyzer.service.logs.lucene.LuceneSearchQueryParser;
+import org.analyzer.service.management.LogsManagementService;
+import org.analyzer.service.management.lucene.LuceneLogsManagementService;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.ConcurrentMergeScheduler;
 import org.apache.lucene.index.IndexWriter;
@@ -82,5 +85,15 @@ public class ConditionalLuceneAutoConfiguration {
     @Bean
     public LuceneLogRecordBuilder luceneLogRecordBuilder() {
         return new LuceneLogRecordBuilder();
+    }
+
+    @Bean
+    public LogsManagementService luceneLogsManagementService() {
+        return new LuceneLogsManagementService();
+    }
+
+    @Bean
+    public LuceneHealthIndicator luceneHealthIndicator() {
+        return new LuceneHealthIndicator();
     }
 }

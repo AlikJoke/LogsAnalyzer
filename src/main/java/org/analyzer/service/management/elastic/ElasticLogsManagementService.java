@@ -1,4 +1,4 @@
-package org.analyzer.service.management.std;
+package org.analyzer.service.management.elastic;
 
 import lombok.NonNull;
 import org.analyzer.dao.LogsStorage;
@@ -7,12 +7,10 @@ import org.analyzer.service.management.LogsManagementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.IndexOperations;
-import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@Service
 public class ElasticLogsManagementService implements LogsManagementService {
 
     private final LogsStorage logsStorage;
