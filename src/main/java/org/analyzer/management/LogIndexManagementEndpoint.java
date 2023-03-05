@@ -1,5 +1,6 @@
 package org.analyzer.management;
 
+import org.analyzer.service.exceptions.UnsupportedApplicationOperationException;
 import org.analyzer.service.management.LogsManagementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.annotation.*;
@@ -19,7 +20,7 @@ public class LogIndexManagementEndpoint {
         return switch (operation) {
             case "exists" -> Map.of("index-exists", this.managementService.existsIndex());
             case "information" -> readInformation();
-            default -> throw new UnsupportedOperationException(operation);
+            default -> throw new UnsupportedApplicationOperationException(operation);
         };
     }
 
@@ -36,7 +37,7 @@ public class LogIndexManagementEndpoint {
                 this.managementService.refreshIndex();
                 yield true;
             }
-            default -> throw new UnsupportedOperationException(operation);
+            default -> throw new UnsupportedApplicationOperationException(operation);
         };
     }
 
@@ -46,6 +47,6 @@ public class LogIndexManagementEndpoint {
             return this.managementService.dropIndex();
         }
 
-        throw new UnsupportedOperationException(operation);
+        throw new UnsupportedApplicationOperationException(operation);
     }
 }

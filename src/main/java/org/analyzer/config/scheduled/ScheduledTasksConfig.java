@@ -5,9 +5,12 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import lombok.NonNull;
+import org.analyzer.service.scheduled.ScheduledDataCleaningTask;
+import org.analyzer.service.scheduled.ScheduledDataIndexingTask;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Dsl;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,10 +22,12 @@ import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 
 import javax.net.ssl.SSLException;
 
+import static org.analyzer.LogsAnalyzerApplication.MASTER_NODE_PROPERTY;
+
 @Configuration
 @EnableScheduling
 @EnableConfigurationProperties(AsyncHttpRequestProperties.class)
-public class ScheduledNetworkIndexingConfig implements SchedulingConfigurer {
+public class ScheduledTasksConfig implements SchedulingConfigurer {
 
     @Value("${logs.task.scheduled.executor.pool-size:2}")
     private int poolSize;
@@ -78,6 +83,18 @@ public class ScheduledNetworkIndexingConfig implements SchedulingConfigurer {
         threadPoolTaskExecutor.setThreadFactory(Thread.ofVirtual().factory());
         threadPoolTaskExecutor.setWaitForTasksToCompleteOnShutdown(true);
         return threadPoolTaskExecutor;
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = MASTER_NODE_PROPERTY, havingValue = "true")
+    public ScheduledDataCleaningTask scheduledDataCleaningTask() {
+        return new ScheduledDataCleaningTask();
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = MASTER_NODE_PROPERTY, havingValue = "true")
+    public ScheduledDataIndexingTask scheduledDataIndexingTask() {
+        return new ScheduledDataIndexingTask();
     }
 
     @Override

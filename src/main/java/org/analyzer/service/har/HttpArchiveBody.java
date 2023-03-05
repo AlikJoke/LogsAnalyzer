@@ -3,6 +3,7 @@ package org.analyzer.service.har;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import lombok.NonNull;
+import org.analyzer.i18n.MessageHelper;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Sort;
@@ -17,7 +18,7 @@ public record HttpArchiveBody(@NonNull String originalHarName, @NonNull JsonNode
 
     public HttpArchiveBody {
         if (body.get("log") == null || !(body.get("log").get("entries") instanceof ArrayNode)) {
-            throw new IllegalArgumentException("Unsupported HAR body: " + body);
+            throw new IllegalArgumentException(MessageHelper.getMessage("org.analyzer.unsupported.har.body", body.toPrettyString()));
         }
     }
 

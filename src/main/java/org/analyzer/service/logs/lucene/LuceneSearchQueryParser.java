@@ -1,7 +1,7 @@
 package org.analyzer.service.logs.lucene;
 
 import lombok.NonNull;
-import org.analyzer.service.exceptions.UnsupportedSearchQueryFormat;
+import org.analyzer.service.exceptions.UnsupportedSearchQueryFormatException;
 import org.analyzer.service.logs.SearchQuery;
 import org.analyzer.service.logs.SearchQueryParser;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -20,7 +20,7 @@ public class LuceneSearchQueryParser implements SearchQueryParser<Query> {
     @Override
     public Query parse(@NonNull SearchQuery query, @NonNull String userKey) {
         if (query.extendedFormat()) {
-            throw new UnsupportedSearchQueryFormat("Extended query format doesn't supports in box mode");
+            throw new UnsupportedSearchQueryFormatException();
         }
 
         try (final var analyzer = new StandardAnalyzer()) {

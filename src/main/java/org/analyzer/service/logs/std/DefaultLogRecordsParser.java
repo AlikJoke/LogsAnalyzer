@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import lombok.NonNull;
 import org.analyzer.entities.LogRecordEntity;
+import org.analyzer.service.exceptions.UnsupportedLogRecordFormatException;
 import org.analyzer.service.logs.LogKeysFactory;
 import org.analyzer.service.logs.LogRecordFormat;
 import org.analyzer.service.logs.LogRecordsParser;
@@ -192,7 +193,7 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
                     lastRecord.setSource(lastRecord.getSource() + separatedLine);
                     lastRecord.setRecord(lastRecord.getRecord() + separatedLine);
                 } else {
-                    throw new RuntimeException("Unsupported log record format: " + this.lastLine);
+                    throw new UnsupportedLogRecordFormatException(this.lastLine);
                 }
 
             } while ((this.lastLine = readNextLine()) != null);

@@ -4,7 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.analyzer.service.exceptions.EntityNotFoundException;
-import org.analyzer.service.exceptions.UnsupportedSearchQueryFormat;
+import org.analyzer.service.exceptions.UnsupportedSearchQueryFormatException;
 import org.analyzer.service.exceptions.UserAlreadyDisabledException;
 import org.analyzer.service.exceptions.UserAlreadyExistsException;
 import org.springframework.http.*;
@@ -62,7 +62,7 @@ public class ControllerBase {
                 .body(new ExceptionResource(exceptionToString(ex)));
     }
 
-    @ExceptionHandler({UserAlreadyDisabledException.class, UserAlreadyExistsException.class, UnsupportedSearchQueryFormat.class})
+    @ExceptionHandler({UserAlreadyDisabledException.class, UserAlreadyExistsException.class, UnsupportedSearchQueryFormatException.class})
     protected ResponseEntity<ExceptionResource> userOperationsHandler(RuntimeException ex) {
         log.error("", ex);
         return ResponseEntity

@@ -1,6 +1,7 @@
 package org.analyzer.management;
 
 import lombok.NonNull;
+import org.analyzer.service.exceptions.UnsupportedApplicationOperationException;
 import org.analyzer.service.management.UsersManagementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.annotation.DeleteOperation;
@@ -41,7 +42,7 @@ public class UserCollectionManagementEndpoint extends MongoDBCollectionManagemen
                 return true;
             }
 
-            throw new UnsupportedOperationException("Username not specified");
+            throw new UnsupportedApplicationOperationException("Username not specified");
         }
 
         return super.delete(operation);

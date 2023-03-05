@@ -1,6 +1,7 @@
 package org.analyzer.management;
 
 import lombok.NonNull;
+import org.analyzer.service.exceptions.UnsupportedApplicationOperationException;
 import org.analyzer.service.management.MongoDBManagementService;
 import org.springframework.boot.actuate.endpoint.annotation.DeleteOperation;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
@@ -23,7 +24,7 @@ abstract class MongoDBCollectionManagementEndpoint<T extends MongoDBManagementSe
         return switch (operation) {
             case "exists" -> Map.of("collection-exists", this.managementService.existsCollection());
             case "information" -> this.managementService.indexesInfo();
-            default -> throw new UnsupportedOperationException(operation);
+            default -> throw new UnsupportedApplicationOperationException(operation);
         };
     }
 
@@ -34,13 +35,13 @@ abstract class MongoDBCollectionManagementEndpoint<T extends MongoDBManagementSe
             return;
         }
 
-        throw new UnsupportedOperationException(operation);
+        throw new UnsupportedApplicationOperationException(operation);
     }
 
     @DeleteOperation
     public boolean delete(@Selector(match = Selector.Match.ALL_REMAINING) String[] operation) {
         if (operation == null || operation.length == 0) {
-            throw new UnsupportedOperationException("Operation not specified");
+            throw new UnsupportedApplicationOperationException("");
         }
 
         if ("drop".equals(operation[0])) {
@@ -48,6 +49,6 @@ abstract class MongoDBCollectionManagementEndpoint<T extends MongoDBManagementSe
             return true;
         }
 
-        throw new UnsupportedOperationException(StringUtils.arrayToDelimitedString(operation, "/"));
+        throw new UnsupportedApplicationOperationException(StringUtils.arrayToDelimitedString(operation, "/"));
     }
 }

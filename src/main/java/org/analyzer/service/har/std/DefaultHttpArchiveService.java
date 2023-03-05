@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import lombok.NonNull;
 import org.analyzer.dao.HttpArchiveRepository;
 import org.analyzer.entities.HttpArchiveEntity;
+import org.analyzer.i18n.MessageHelper;
 import org.analyzer.service.exceptions.EntityNotFoundException;
+import org.analyzer.service.exceptions.UnsupportedSearchQueryFormatException;
 import org.analyzer.service.har.HttpArchiveAnalyzer;
 import org.analyzer.service.har.HttpArchiveBody;
 import org.analyzer.service.har.HttpArchiveOperationsQuery;
@@ -77,7 +79,7 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
         final var entity = this.httpArchiveRepository.findById(id);
         return entity
                     .map(har -> har.setBodyNode(this.jsonConverter.convert(har.getBody().getJson())))
-                    .orElseThrow(() -> new EntityNotFoundException(id));
+                    .orElseThrow(() -> new EntityNotFoundException(MessageHelper.getMessage("org.analyzer.har.not.found", id)));
     }
 
     @NonNull
@@ -106,7 +108,7 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
     public Map<String, Object> analyze(@NonNull File harFileOrArchive, @Nullable HttpArchiveOperationsQuery operationsQuery) {
         final var flatFiles = this.unzipperUtil.flat(harFileOrArchive);
         if (flatFiles.isEmpty()) {
-            throw new IllegalStateException("Files to analyze not found");
+            throw new IllegalStateException(MessageHelper.getMessage("org.analyzer.target.files.not.found", harFileOrArchive.getName()));
         }
 
         final Map<String, Object> resultByFiles = new HashMap<>(flatFiles.size(), 1);
@@ -149,7 +151,7 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
     public List<HttpArchiveEntity> create(@NonNull File harFileOrArchive) {
         final var flatFiles = this.unzipperUtil.flat(harFileOrArchive);
         if (flatFiles.isEmpty()) {
-            throw new IllegalStateException("Files to analyze not found");
+            throw new IllegalStateException(MessageHelper.getMessage("org.analyzer.target.files.not.found", harFileOrArchive.getName()));
         }
 
         final List<HttpArchiveEntity> entitiesToSave = new ArrayList<>(flatFiles.size());
@@ -172,9 +174,9 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
     private HttpArchiveBody findSingleArchiveBody(final File har) {
         final var flatFiles = this.unzipperUtil.flat(har);
         if (flatFiles.isEmpty()) {
-            throw new IllegalStateException("HAR file not found");
+            throw new IllegalStateException(MessageHelper.getMessage("org.analyzer.target.files.not.found", har.getName()));
         } else if (flatFiles.size() > 1) {
-            throw new IllegalStateException("Found more than 1 HAR file");
+            throw new IllegalStateException(MessageHelper.getMessage("org.analyzer.found.multiple.files", har.getName()));
         }
 
         final var jsonBody = this.jsonConverter.convertFromFile(flatFiles.get(0));
@@ -182,16 +184,15 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
     }
 
     private HttpArchiveBody findArchiveBody(final String harId) {
-        final var har = this.httpArchiveRepository.findById(harId)
-                                                    .orElseThrow(() -> new EntityNotFoundException("HAR not found by id: " + harId));
-        final var bodyNode = this.jsonConverter.convert(har.getBody().getJson());
+        final var har = findById(harId);this.httpArchiveRepository.findById(harId);
+        final var bodyNode = har.getBodyNode();
         return new HttpArchiveBody(har.getTitle(), bodyNode);
     }
 
     private Map<JsonNode, List<String>> groupLogRecordsByRequests(@NonNull HttpArchiveBody harBody, @Nullable SearchQuery searchQuery) {
 
         if (searchQuery != null && searchQuery.extendedFormat()) {
-            throw new UnsupportedOperationException("Extended query format not supported for grouping logs");
+            throw new UnsupportedSearchQueryFormatException();
         }
 
         final var entries = (ArrayNode) harBody.getFieldValueByPath("log", "entries").orElseThrow();

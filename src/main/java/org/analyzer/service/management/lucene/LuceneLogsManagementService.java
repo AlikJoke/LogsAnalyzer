@@ -3,6 +3,7 @@ package org.analyzer.service.management.lucene;
 import lombok.NonNull;
 import org.analyzer.config.lucene.LuceneConfiguration;
 import org.analyzer.dao.LogsStorage;
+import org.analyzer.service.exceptions.UnsupportedApplicationOperationException;
 import org.analyzer.service.management.LogsManagementService;
 import org.apache.lucene.index.IndexWriter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ public class LuceneLogsManagementService implements LogsManagementService {
 
     @Override
     public boolean createIndex() {
-        throw new UnsupportedOperationException("Index will be created automatically if needed");
+        throw new UnsupportedApplicationOperationException("create-index-lucene");
     }
 
     @Override
@@ -37,7 +38,7 @@ public class LuceneLogsManagementService implements LogsManagementService {
 
     @Override
     public void refreshIndex() {
-        throw new UnsupportedOperationException("Refresh not supported by Lucene");
+        throw new UnsupportedOperationException("refresh-index-lucene");
     }
 
     @Override

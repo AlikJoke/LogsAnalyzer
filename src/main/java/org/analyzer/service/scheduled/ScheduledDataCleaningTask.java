@@ -6,12 +6,10 @@ import org.analyzer.service.users.UserDataStorageCleaner;
 import org.analyzer.service.users.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
-@Component
 public class ScheduledDataCleaningTask {
 
     @Autowired

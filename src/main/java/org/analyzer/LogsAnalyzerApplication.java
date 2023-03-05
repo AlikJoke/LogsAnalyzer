@@ -20,7 +20,9 @@ import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 })
 public class LogsAnalyzerApplication {
 
+	public static final String MASTER_NODE_PROPERTY = "logs.analyzer.master.node";
 	public static final String RUN_MODE_PROPERTY = "logs.analyzer.run.mode";
+
 	public static final String BOX_MODE = "box";
 	public static final String DISTRIBUTED_MODE = "distributed";
 
