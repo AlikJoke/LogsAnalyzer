@@ -35,7 +35,7 @@ import static org.analyzer.service.har.HttpArchiveBody.getFieldValueByPath;
 @Service
 public class DefaultHttpArchiveService implements HttpArchiveService {
 
-    private static final LocalDate emptyDate = LocalDate.ofInstant(Instant.EPOCH, ZoneId.systemDefault());
+    private static final LocalDate emptyDate = LocalDate.ofInstant(Instant.EPOCH, ZoneOffset.UTC);
     private static final String BY_INTERVAL_QUERY =
             "(_exists_:date.keyword AND date.keyword:[%s TO %s] OR date.keyword:%s) AND time.keyword:[%s TO %s]";
 
@@ -205,10 +205,10 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
                             traceId -> query.append("trace_id.keyword:").append(traceId),
                             () -> {
                                 final var interval = getRequestExecutionInterval(request);
-                                final var startIntervalDate = LocalDate.ofInstant(interval.getLeft(), ZoneId.systemDefault());
-                                final var endIntervalDate = LocalDate.ofInstant(interval.getRight(), ZoneId.systemDefault());
-                                final var startIntervalTime = LocalTime.ofInstant(interval.getLeft(), ZoneId.systemDefault());
-                                final var endIntervalTime = LocalTime.ofInstant(interval.getRight(), ZoneId.systemDefault());
+                                final var startIntervalDate = LocalDate.ofInstant(interval.getLeft(), ZoneOffset.UTC);
+                                final var endIntervalDate = LocalDate.ofInstant(interval.getRight(), ZoneOffset.UTC);
+                                final var startIntervalTime = LocalTime.ofInstant(interval.getLeft(), ZoneOffset.UTC);
+                                final var endIntervalTime = LocalTime.ofInstant(interval.getRight(), ZoneOffset.UTC);
 
                                 final var formattedIntervalQuery =
                                         BY_INTERVAL_QUERY.formatted(

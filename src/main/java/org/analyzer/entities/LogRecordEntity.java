@@ -42,7 +42,6 @@ public class LogRecordEntity {
     private String source;
     private String category;
     private String thread;
-    @Field("trace_id")
     private String traceId;
     private String record;
 
@@ -54,7 +53,7 @@ public class LogRecordEntity {
             case "record" -> LogRecordEntity::getRecord;
             case "date" -> LogRecordEntity::getDate;
             case "time" -> LogRecordEntity::getTime;
-            case "trace_id" -> LogRecordEntity::getTraceId;
+            case "traceId" -> LogRecordEntity::getTraceId;
             case "level" -> LogRecordEntity::getLevel;
             case "id" -> LogRecordEntity::getId;
             case "source" -> LogRecordEntity::getSource;

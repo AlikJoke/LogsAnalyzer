@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Set;
 
 @RestController
@@ -49,7 +49,7 @@ public class UserSearchQueriesController extends ControllerBase {
             @RequestParam(value = "from", required = false) LocalDateTime fromParam,
             @RequestParam(value = "to", required = false) LocalDateTime toParam) {
         final var from = fromParam == null
-                ? LocalDateTime.ofInstant(Instant.EPOCH, ZoneId.systemDefault())
+                ? LocalDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC)
                 : fromParam;
         final var to = toParam == null ? LocalDateTime.now() : toParam;
         final var queries = this.userQueryService.findAll(from, to)

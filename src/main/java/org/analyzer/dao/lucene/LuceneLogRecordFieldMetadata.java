@@ -6,7 +6,9 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.search.SortField;
+import org.springframework.data.annotation.Transient;
 
+import java.lang.reflect.Modifier;
 import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +25,12 @@ public class LuceneLogRecordFieldMetadata {
         final Map<String, Class<? extends Field>> tempAll = new HashMap<>(fields.length, 1);
         final Map<String, SortField.Type> tempSortFields = new HashMap<>(fields.length, 1);
         for (final var field : fields) {
+            if (Modifier.isStatic(field.getModifiers())
+                    || Modifier.isTransient(field.getModifiers())
+                    || field.isAnnotationPresent(Transient.class)) {
+                continue;
+            }
+
             final var storageField = toStorageFieldName(field.getName());
             final var isLongFieldType = TemporalAccessor.class.isAssignableFrom(field.getType()) || Long.class == field.getType();
             tempAll.put(storageField, isLongFieldType ? LongField.class : TextField.class);

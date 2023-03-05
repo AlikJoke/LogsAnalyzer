@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
@@ -37,9 +37,9 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
      * Pattern for format like '2023-01-01 10:00:02,213 INFO  [org.example.SomeClass1] (thread-1) Any text'
      */
     private static final Pattern defaultRecordPattern =
-            Pattern.compile("^(((?<date>\\d{4}-\\d{2}-\\d{2})\\s)?(?<time>\\d{2}:\\d{2}:\\d{2}[0-9,.]*?))\\s*(?<level>[A-Za-z]*)\\s*\\[(?<category>[A-Za-z0-9._]*)]\\s*\\((?<thread>[A-Za-z0-9.,\\-_\\s]*)\\)\\s*(?<text>[\\S\\s]*)(\\n?)$");
+            Pattern.compile("^(((?<date>\\d{4}-\\d{2}-\\d{2})\\s)?(?<time>\\d{2}:\\d{2}:\\d{2}[0-9,.]*?))\\s*(?<traceId>(^$)?)(?<level>[A-Za-z]*)\\s*\\[(?<category>[A-Za-z0-9._]*)]\\s*\\((?<thread>[A-Za-z0-9.,\\-_\\s]*)\\)\\s*(?<text>[\\S\\s]*)(\\n?)$");
 
-    private static final LocalDate emptyDate = LocalDate.ofInstant(Instant.EPOCH, ZoneId.systemDefault());
+    private static final LocalDate emptyDate = LocalDate.ofInstant(Instant.EPOCH, ZoneOffset.UTC);
 
     private static final DateTimeFormatter defaultDateFormatter = DateTimeFormatter.ISO_DATE;
     private static final DateTimeFormatter defaultTimeFormatter

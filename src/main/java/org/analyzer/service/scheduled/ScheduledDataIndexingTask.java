@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +42,7 @@ public class ScheduledDataIndexingTask {
     @Autowired
     private MeterRegistry meterRegistry;
 
-    private volatile LocalDateTime lastScanInfoTime = LocalDateTime.ofInstant(Instant.EPOCH, ZoneId.systemDefault());
+    private volatile LocalDateTime lastScanInfoTime = LocalDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC);
     private final Map<UserEntity, Map<String, ScheduledFuture<?>>> settingsFuturesByUser = new ConcurrentHashMap<>();
 
     @PostConstruct

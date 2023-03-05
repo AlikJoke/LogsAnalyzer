@@ -14,6 +14,7 @@ public class LuceneHealthIndicator extends AbstractHealthIndicator {
     protected void doHealthCheck(Health.Builder builder) throws Exception {
         if (!this.indexWriter.isOpen()) {
             builder.down();
+            return;
         }
 
         final var indexFiles = this.indexWriter.getDirectory().listAll();

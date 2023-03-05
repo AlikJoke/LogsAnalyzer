@@ -13,7 +13,7 @@ import static org.analyzer.entities.LogRecordEntity.toStorageFieldName;
 
 public class LuceneSearchQueryParser implements SearchQueryParser<Query> {
 
-    private static final String QUERY_TEMPLATE = "(%s) AND (id.keyword:%s#*)";
+    private static final String QUERY_TEMPLATE = "(%s) AND (id.keyword:%s#)";
     private static final String SOURCE_KEYWORD = toStorageFieldName("source");
 
     @NonNull
@@ -25,6 +25,8 @@ public class LuceneSearchQueryParser implements SearchQueryParser<Query> {
 
         try (final var analyzer = new StandardAnalyzer()) {
             final var parser = new QueryParser(SOURCE_KEYWORD, analyzer);
+            parser.setAllowLeadingWildcard(true);
+            parser.setDefaultOperator(QueryParser.Operator.AND);
             return parser.parse(QUERY_TEMPLATE.formatted(query.query(), userKey));
         } catch (ParseException e) {
             throw new RuntimeException(e);
