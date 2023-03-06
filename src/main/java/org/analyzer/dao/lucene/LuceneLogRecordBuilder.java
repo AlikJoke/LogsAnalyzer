@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Optional;
 
 import static org.analyzer.entities.LogRecordEntity.field2FieldValueFunction;
 import static org.analyzer.entities.LogRecordEntity.toStorageFieldName;
@@ -21,10 +20,10 @@ public class LuceneLogRecordBuilder {
     @NonNull
     public Document buildDocument(@NonNull LogRecordEntity entity) {
         final var doc = new Document();
-        this.logRecordFieldMetadata.getStorageFields().forEach((field, type) -> {
-            tryCreateField(field, type, entity)
-                    .ifPresent(doc::add);
-        });
+        this.logRecordFieldMetadata.getStorageFields()
+                                    .forEach((field, type) ->
+                                            tryAddFieldToDocument(field, type, entity, doc)
+                                    );
 
         return doc;
     }
@@ -39,22 +38,23 @@ public class LuceneLogRecordBuilder {
                     .setLevel(getStringFieldValue(document, "level"))
                     .setThread(getStringFieldValue(document, "thread"))
                     .setTraceId(getStringFieldValue(document, "traceId"))
+                    .setSpanId(getStringFieldValue(document, "spanId"))
                     .setCategory(getStringFieldValue(document, "category"))
                     .setSource(getStringFieldValue(document, "source"))
                     .setRecord(getStringFieldValue(document, "record"));
     }
 
-    @NonNull
-    private Optional<IndexableField> tryCreateField(
-            @NonNull final String field,
-            @NonNull final Class<? extends Field> type,
-            @NonNull final LogRecordEntity logRecord) {
+    private void tryAddFieldToDocument(
+            final String field,
+            final Class<? extends Field> type,
+            final LogRecordEntity logRecord,
+            final Document document) {
         final var valueFunc = field2FieldValueFunction(field);
         final var value = valueFunc.apply(logRecord);
         final var storageField = toStorageFieldName(field);
 
         if (value == null) {
-            return Optional.empty();
+            return;
         }
 
         final IndexableField result;
@@ -72,7 +72,7 @@ public class LuceneLogRecordBuilder {
             throw new IllegalArgumentException("Unsupported field type: " + type);
         }
 
-        return Optional.of(result);
+        document.add(result);
     }
 
     private LocalDate parseDate(final Document document) {

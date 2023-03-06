@@ -16,8 +16,10 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.analyzer.entities.LogRecordEntity.toStorageFieldName;
 
@@ -43,7 +45,7 @@ public class LuceneLogsStorage implements LogsStorage {
         final var prefixQuery = new PrefixQuery(new Term(toStorageFieldName("id"), id));
         try {
             this.indexWriter.deleteDocuments(prefixQuery);
-            this.indexWriter.commit();
+            flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -54,21 +56,28 @@ public class LuceneLogsStorage implements LogsStorage {
         final var parsedQuery = this.queryParser.parse(query.query(), query.userKey());
         try {
             this.indexWriter.deleteDocuments(parsedQuery);
-            this.indexWriter.commit();
+            flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void saveAll(@NonNull List<LogRecordEntity> records) {
-
+    public void saveAll(@NonNull Collection<LogRecordEntity> records) {
         final var documents = records
                                 .stream()
                                 .map(this.logRecordBuilder::buildDocument)
-                                .toList();
+                                .collect(Collectors.toList());
         try {
             this.indexWriter.addDocuments(documents);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void flush() {
+        try {
             this.indexWriter.commit();
         } catch (IOException e) {
             throw new RuntimeException(e);

@@ -10,6 +10,7 @@ import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.query.StringQuery;
 
+import java.util.Collection;
 import java.util.List;
 
 public class ElasticLogsStorage implements LogsStorage {
@@ -39,8 +40,13 @@ public class ElasticLogsStorage implements LogsStorage {
     }
 
     @Override
-    public void saveAll(@NonNull List<LogRecordEntity> records) {
+    public void saveAll(@NonNull Collection<LogRecordEntity> records) {
         this.repository.saveAll(records);
+    }
+
+    @Override
+    public void flush() {
+
     }
 
     @Override

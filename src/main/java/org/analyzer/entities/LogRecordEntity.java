@@ -43,6 +43,7 @@ public class LogRecordEntity {
     private String category;
     private String thread;
     private String traceId;
+    private String spanId;
     private String record;
 
     @Nonnull
@@ -54,6 +55,7 @@ public class LogRecordEntity {
             case "date" -> LogRecordEntity::getDate;
             case "time" -> LogRecordEntity::getTime;
             case "traceId" -> LogRecordEntity::getTraceId;
+            case "spanId" -> LogRecordEntity::getSpanId;
             case "level" -> LogRecordEntity::getLevel;
             case "id" -> LogRecordEntity::getId;
             case "source" -> LogRecordEntity::getSource;

@@ -16,13 +16,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
+import org.springframework.scheduling.concurrent.ForkJoinPoolFactoryBean;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 
 import javax.net.ssl.SSLException;
+import java.util.concurrent.ThreadPoolExecutor;
 
-import static org.analyzer.LogsAnalyzerApplication.MASTER_NODE_PROPERTY;
+import static org.analyzer.LogsAnalyzerApplication.*;
 
 @Configuration
 @EnableScheduling
@@ -64,7 +66,34 @@ public class ScheduledTasksConfig implements SchedulingConfigurer {
     }
 
     @Bean
-    public ThreadPoolTaskScheduler threadPoolTaskScheduler(){
+    @IndexingTasksPool
+    @ConditionalOnProperty(name = RUN_MODE_PROPERTY, havingValue = DISTRIBUTED_MODE, matchIfMissing = true)
+    public ThreadPoolTaskExecutor indexingThreadPoolDistributed(
+            @Value("${logs.analyzer.indexing.threads}") int poolSize,
+            @Value("${logs.analyzer.indexing.queue:100}") int queueCapacity) {
+        final var threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
+        threadPoolTaskExecutor.setMaxPoolSize(poolSize);
+        threadPoolTaskExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        threadPoolTaskExecutor.setCorePoolSize(poolSize / 2);
+        threadPoolTaskExecutor.setThreadNamePrefix("indexing-tasks-pool");
+        threadPoolTaskExecutor.setThreadFactory(Thread.ofVirtual().factory());
+        threadPoolTaskExecutor.setQueueCapacity(queueCapacity);
+        threadPoolTaskExecutor.setWaitForTasksToCompleteOnShutdown(true);
+        return threadPoolTaskExecutor;
+    }
+
+    @Bean
+    @IndexingTasksPool
+    @ConditionalOnProperty(name = RUN_MODE_PROPERTY, havingValue = BOX_MODE)
+    public ForkJoinPoolFactoryBean indexingThreadPoolBox(@Value("${logs.analyzer.indexing.threads}") int poolSize) {
+        final var threadPoolTaskExecutor = new ForkJoinPoolFactoryBean();
+        threadPoolTaskExecutor.setParallelism(poolSize);
+
+        return threadPoolTaskExecutor;
+    }
+
+    @Bean
+    public ThreadPoolTaskScheduler threadPoolTaskScheduler() {
         final var threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
         threadPoolTaskScheduler.setPoolSize(this.poolSize);
         threadPoolTaskScheduler.setThreadNamePrefix("scheduled-tasks-pool");
@@ -75,9 +104,11 @@ public class ScheduledTasksConfig implements SchedulingConfigurer {
     }
 
     @Bean
+    @LongRunningTasksPool
     public ThreadPoolTaskExecutor threadPoolTaskExecutor(@Value("${logs.task.executor.pool-size:8}") final int poolSize){
         final var threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
         threadPoolTaskExecutor.setMaxPoolSize(poolSize);
+        threadPoolTaskExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         threadPoolTaskExecutor.setCorePoolSize(poolSize / 4);
         threadPoolTaskExecutor.setThreadNamePrefix("long-running-tasks-pool");
         threadPoolTaskExecutor.setThreadFactory(Thread.ofVirtual().factory());

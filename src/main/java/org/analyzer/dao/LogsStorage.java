@@ -4,6 +4,7 @@ import org.analyzer.entities.LogRecordEntity;
 import org.analyzer.service.logs.SearchQuery;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.List;
 
 public interface LogsStorage {
@@ -12,7 +13,9 @@ public interface LogsStorage {
 
     void deleteByQuery(@Nonnull StorageQuery query);
 
-    void saveAll(@Nonnull List<LogRecordEntity> records);
+    void saveAll(@Nonnull Collection<LogRecordEntity> records);
+
+    void flush();
 
     long allCount();
 

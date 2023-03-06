@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.NonNull;
+import org.analyzer.config.scheduled.LongRunningTasksPool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
@@ -19,7 +20,7 @@ public class LongRunningTaskExecutor {
 
     @Autowired
     public LongRunningTaskExecutor(
-            @NonNull final ThreadPoolTaskExecutor taskExecutorDelegate,
+            @NonNull @LongRunningTasksPool final ThreadPoolTaskExecutor taskExecutorDelegate,
             @NonNull final MeterRegistry meterRegistry) {
         this.taskExecutorDelegate = taskExecutorDelegate;
         this.longRunningTasksCounter = Counter.builder("long-running-tasks")

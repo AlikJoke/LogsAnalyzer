@@ -38,7 +38,7 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
      * Pattern for format like '2023-01-01 10:00:02,213 INFO  [org.example.SomeClass1] (thread-1) Any text'
      */
     private static final Pattern defaultRecordPattern =
-            Pattern.compile("^(((?<date>\\d{4}-\\d{2}-\\d{2})\\s)?(?<time>\\d{2}:\\d{2}:\\d{2}[0-9,.]*?))\\s*(?<traceId>(^$)?)(?<level>[A-Za-z]*)\\s*\\[(?<category>[A-Za-z0-9._]*)]\\s*\\((?<thread>[A-Za-z0-9.,\\-_\\s]*)\\)\\s*(?<text>[\\S\\s]*)(\\n?)$");
+            Pattern.compile("^(((?<date>\\d{4}-\\d{2}-\\d{2})\\s)?(?<time>\\d{2}:\\d{2}:\\d{2}[0-9,.]*?))\\s*(?<traceId>(^$)?)(?<spanId>(^$)?)(?<level>[A-Za-z]*)\\s*\\[(?<category>[A-Za-z0-9._]*)]\\s*\\((?<thread>[A-Za-z0-9.,\\-_\\s]*)\\)\\s*(?<text>[\\S\\s]*)(\\n?)$");
 
     private static final LocalDate emptyDate = LocalDate.ofInstant(Instant.EPOCH, ZoneOffset.UTC);
 
@@ -129,7 +129,7 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
 
     private class LazyLogRecordsPackageIterator implements LogRecordsPackageIterator {
 
-        private static final int PACKAGE_SIZE = 1_000;
+        private static final int PACKAGE_SIZE = 2_000;
 
         private final String logKey;
         private final Pattern pattern;
@@ -160,7 +160,7 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
         }
 
         @Override
-        public List<LogRecordEntity> next() {
+        public Collection<LogRecordEntity> next() {
             if (this.lastLine == null) {
                 throw new NoSuchElementException();
             }
@@ -183,12 +183,14 @@ public class DefaultLogRecordsParser implements LogRecordsParser {
                                             .setLevel(matcher.group("level"))
                                             .setThread(matcher.group("thread"))
                                             .setTraceId(matcher.group("traceId"))
+                                            .setSpanId(matcher.group("spanId"))
                                             .setCategory(matcher.group("category"))
                                             .setSource(this.lastLine)
                                             .setRecord(matcher.group("text"));
 
                     result.add(lastRecord);
                 } else if (lastRecord != null) {
+
                     final var separatedLine = System.lineSeparator() + this.lastLine;
                     lastRecord.setSource(lastRecord.getSource() + separatedLine);
                     lastRecord.setRecord(lastRecord.getRecord() + separatedLine);

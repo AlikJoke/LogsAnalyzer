@@ -61,22 +61,20 @@ public class StandardLogsService implements LogsService {
     private JsonConverter jsonConverter;
     @Autowired
     private UserQueriesService currentUserQueryService;
+    @Autowired
+    private LogRecordsIndexer logRecordsIndexer;
 
-    private Counter indexedRecordsCounter;
     private Counter indexedFilesCounter;
     private Counter simpleSearchRequestsCounter;
     private Counter extendedSearchRequestsCounter;
     private Counter logsAnalyzeCounter;
-    private Counter elasticIndexRequestsCounter;
 
     @PostConstruct
     private void init() {
-        this.indexedRecordsCounter = createMeterCounter("logs.indexed.records", "All logs indexed records count", null);
         this.indexedFilesCounter = createMeterCounter("logs.indexed.files", "All indexed logs files count", null);
         this.simpleSearchRequestsCounter = createMeterCounter("logs.simple.search.requests", "All simple search requests count", "simple");
         this.extendedSearchRequestsCounter = createMeterCounter("logs.extended.search.requests", "All extended search requests count", "extended");
         this.logsAnalyzeCounter = createMeterCounter("logs.analyze.requests", "All logs analyze requests count", null);
-        this.elasticIndexRequestsCounter = createMeterCounter("logs.index.requests", "All logs index requests to elastic count", null);
     }
 
     @Override
@@ -263,13 +261,17 @@ public class StandardLogsService implements LogsService {
         try (final var userContext = this.userAccessor.as(user);
              final var packageIterator = this.parser.parse(this.logKeysFactory.createIndexedLogFileKey(userIndexingKey, file.getName()), file, recordFormat)) {
 
+            final List<CompletableFuture<Void>> indexingFuture = new ArrayList<>();
             while (packageIterator.hasNext()) {
                 final var recordsPackage = packageIterator.next();
-
-                this.logsStorage.saveAll(recordsPackage);
-                this.indexedRecordsCounter.increment(recordsPackage.size());
-                this.elasticIndexRequestsCounter.increment();
+                indexingFuture.add(this.logRecordsIndexer.index(recordsPackage));
             }
+
+            CompletableFuture
+                    .allOf(indexingFuture.toArray(new CompletableFuture[0]))
+                    .join();
+
+            this.logsStorage.flush();
 
             final var analyzeQuery = new AnalyzeQueryOnIndexWrapper(indexingKey);
             analyze(analyzeQuery);

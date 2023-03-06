@@ -55,6 +55,8 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
     private CurrentUserAccessor userAccessor;
     @Value("${logs.analyzer.har.trace-id.headers:x-trace-id,trace-id}.split(',')")
     private List<String> traceIdHeaders;
+    @Value("${logs.analyzer.har.span-id.headers:x-span-id,span-id}.split(',')")
+    private List<String> spanIdHeaders;
 
     @Override
     public void deleteAll() {
@@ -203,7 +205,12 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
             final var query = new StringBuilder(baseQuery);
             findTraceIdHeader(request)
                     .ifPresentOrElse(
-                            traceId -> query.append("trace_id.keyword:").append(traceId),
+                            traceId -> query.append("traceId.keyword:")
+                                            .append(traceId)
+                                            .append(findSpanIdHeader(request)
+                                                        .map(spanId -> "spanId.keyword:" + spanId)
+                                                        .orElse("")
+                                            ),
                             () -> {
                                 final var interval = getRequestExecutionInterval(request);
                                 final var startIntervalDate = LocalDate.ofInstant(interval.getLeft(), ZoneOffset.UTC);
@@ -239,6 +246,14 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
     }
 
     private Optional<String> findTraceIdHeader(final JsonNode request) {
+        return findRequestHeader(request, this.traceIdHeaders);
+    }
+
+    private Optional<String> findSpanIdHeader(final JsonNode request) {
+        return findRequestHeader(request, this.spanIdHeaders);
+    }
+
+    private Optional<String> findRequestHeader(final JsonNode request, final List<String> possibleHeaderNames) {
         final var headers = getFieldValueByPath(request, "response", "headers")
                                 .map(ArrayNode.class::cast)
                                 .orElse(null);
@@ -250,7 +265,7 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
             if (getFieldValueByPath(header, "name")
                     .map(JsonNode::asText)
                     .map(String::toLowerCase)
-                    .filter(this.traceIdHeaders::contains)
+                    .filter(possibleHeaderNames::contains)
                     .isPresent()) {
                 return getFieldValueByPath(header, "value").map(JsonNode::asText);
             }
