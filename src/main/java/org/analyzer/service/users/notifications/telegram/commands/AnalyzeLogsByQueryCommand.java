@@ -46,8 +46,8 @@ public class AnalyzeLogsByQueryCommand extends LogsByQueryCommand implements Tel
             @NonNull Message userMessage,
             @NonNull TelegramUserConversationStore.CommandContext context) {
         if (POST_FILTERS_STAGE.equals(context.getLastStage())) {
-            final var nextMsg = ("Enter aggregations for logs in format <aggregation id>:<aggregation settings json> (to stop entering the aggregations, enter a %s):").formatted(SKIP_STAGE_STR_FORMATTED);
-            context.setLastStage(POST_FILTERS_STAGE);
+            final var nextMsg = ("Enter aggregations for logs in format \"aggregation id\":\"aggregation settings json\" (to stop entering the aggregations, enter a %s):").formatted(SKIP_STAGE_STR_FORMATTED);
+            context.setLastStage(AGGREGATIONS_STAGE);
             return createReplyMessage(userMessage.getChatId(), nextMsg);
         } else if (AGGREGATIONS_STAGE.equalsIgnoreCase(context.getLastStage())) {
             @SuppressWarnings("unchecked")
@@ -75,7 +75,7 @@ public class AnalyzeLogsByQueryCommand extends LogsByQueryCommand implements Tel
 
         final var query = context.getAttributeAsString(QUERY_STAGE);
         final var extendedFormat = "extended".equalsIgnoreCase(context.getAttributeAsString(QUERY_FORMAT_STAGE));
-        final var filename = context.getAttributeAsString(TERMINAL_STAGE);
+        final var filename = userMessage.getText();
         @SuppressWarnings("unchecked")
         final var postFiltersMap = (Map<String, JsonNode>) context.get(POST_FILTERS_STAGE);
         @SuppressWarnings("unchecked")
@@ -87,13 +87,13 @@ public class AnalyzeLogsByQueryCommand extends LogsByQueryCommand implements Tel
         final var searchQuery = new RequestAnalyzeQuery(query, extendedFormat, postFiltersMap, sortsMap, aggregationsMap, save, 0, 0, filename);
 
         try {
-            final var result = this.logsService.analyze(searchQuery);
+            final var result = executeInUserContext(userMessage.getChatId(), () -> this.logsService.analyze(searchQuery));
             final var resultFile = createResultFile(result, save ? filename : UUID.randomUUID() + ".txt");
 
             final var resultMessage = new SendDocument();
             resultMessage.setChatId(userMessage.getChatId());
             resultMessage.setReplyToMessageId(userMessage.getMessageId());
-            resultMessage.setDocument(new InputFile(resultFile, searchQuery.exportToFile()));
+            resultMessage.setDocument(new InputFile(resultFile, searchQuery.analyzeResultName()));
 
             return resultMessage;
         } catch (Exception ex) {

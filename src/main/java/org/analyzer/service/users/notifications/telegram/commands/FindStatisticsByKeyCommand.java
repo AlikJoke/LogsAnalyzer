@@ -57,7 +57,7 @@ public class FindStatisticsByKeyCommand extends ApplicationBotCommand implements
             return Optional.of(createReplyMessage(message.getChatId(), "<b>Entered text must be not empty.<b>"));
         }
 
-        final var stats = this.logsService.findStatisticsByKey(message.getText()).orElse(null);
+        final var stats = executeInUserContext(userId, () -> this.logsService.findStatisticsByKey(message.getText()).orElse(null));
         return stats == null
                     ? Optional.of(createStatsNotFoundMessage(message))
                     : Optional.of(createStatsFileResultMessage(stats, message));

@@ -81,7 +81,7 @@ public class UploadHarFileCommand extends BaseUploadingFileBotCommand implements
 
         final var uploadedFile = downloadFile(absSender, message.getDocument().getFileId());
         try {
-            final var createdHar = this.harService.create(uploadedFile);
+            final var createdHar = executeInUserContext(message.getChatId(), () -> this.harService.create(uploadedFile));
 
             final var createdHarIds = createdHar
                                         .stream()

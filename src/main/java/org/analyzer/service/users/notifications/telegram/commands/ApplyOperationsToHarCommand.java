@@ -87,7 +87,7 @@ public class ApplyOperationsToHarCommand extends BaseUploadingFileBotCommand imp
                 }
 
                 context.setLastStage(SORTING_STAGE);
-                final var msgText = ("Enter sorting for requests from HAR in format <sorting field>:<sorting direction> " +
+                final var msgText = ("Enter sorting for requests from HAR in format \"sorting field\":\"sorting direction\" " +
                         "(to use the default sort enter <i>'%s'</i> or enter %s to not use sorting):")
                         .formatted(DEFAULT_SORTING_KEY, SKIP_STAGE_STR_FORMATTED);
                 yield Optional.of(createReplyMessage(message.getChatId(), msgText));
@@ -141,7 +141,7 @@ public class ApplyOperationsToHarCommand extends BaseUploadingFileBotCommand imp
             final HttpArchiveOperationsQuery operationsQuery) {
         final var uploadedFile = downloadFile(absSender, message.getDocument().getFileId());
         try {
-            return this.httpArchiveService.applyOperations(uploadedFile, operationsQuery);
+            return executeInUserContext(message.getChatId(), () -> this.httpArchiveService.applyOperations(uploadedFile, operationsQuery));
         } finally {
             uploadedFile.delete();
         }

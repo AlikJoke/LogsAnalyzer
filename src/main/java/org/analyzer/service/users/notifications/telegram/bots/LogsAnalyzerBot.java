@@ -1,6 +1,7 @@
 package org.analyzer.service.users.notifications.telegram.bots;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.analyzer.config.telegram.TelegramBotConfiguration;
 import org.analyzer.service.users.notifications.telegram.TelegramCommandConversationChain;
 import org.analyzer.service.users.notifications.telegram.TelegramUserConversationStore;
@@ -14,6 +15,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.ExponentialBackOff;
 
+@Slf4j
 public class LogsAnalyzerBot extends TelegramLongPollingCommandBot {
 
     private final TelegramUserConversationStore userConversationStore;
@@ -57,6 +59,7 @@ public class LogsAnalyzerBot extends TelegramLongPollingCommandBot {
                         .ifPresent(this::sendMessage);
             }
         } catch (Exception ex) {
+            log.error("", ex);
             sendMessage(SendMessage.builder()
                                         .chatId(update.getMessage().getChatId())
                                         .text(ex.getMessage())

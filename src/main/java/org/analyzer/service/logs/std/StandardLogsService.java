@@ -149,7 +149,7 @@ public class StandardLogsService implements LogsService {
             final var partStats = this.logsAnalyzer.analyze(recordsToAnalyzePart, analyzeQuery);
             stats = stats == null ? partStats : stats.joinWith(partStats);
 
-            searchQuery = analyzeQuery.toNextPageQuery();
+            searchQuery = searchQuery.toNextPageQuery();
             pageNumber = recordsToAnalyzePart.isEmpty() ? -1 : pageNumber + 1;
         } while (pageNumber != -1);
 
@@ -183,7 +183,7 @@ public class StandardLogsService implements LogsService {
 
     @NonNull
     @Override
-    @CacheEvict(allEntries = true)
+    @CacheEvict(value = STATISTICS_CACHE, allEntries = true)
     public List<String> deleteAllStatisticsByCreationDate(@NonNull LocalDateTime beforeDate) {
         final var user = this.userAccessor.get();
         return this.statisticsRepository.deleteAllByUserKeyAndCreationDateBefore(user.getHash(), beforeDate)

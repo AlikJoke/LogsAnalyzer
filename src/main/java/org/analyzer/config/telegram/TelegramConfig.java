@@ -10,6 +10,7 @@ import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand;
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.helpCommand.HelpCommand;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.meta.generics.BotSession;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 import java.util.List;
@@ -20,13 +21,11 @@ import static org.analyzer.LogsAnalyzerApplication.MASTER_NODE_PROPERTY;
 @EnableConfigurationProperties(TelegramBotConfiguration.class)
 public class TelegramConfig {
 
-    @Bean
+    @Bean(destroyMethod = "stop")
     @ConditionalOnProperty(name = MASTER_NODE_PROPERTY, havingValue = "true")
-    public TelegramBotsApi telegramBotsApi(LogsAnalyzerBot logsAnalyzerBot) throws TelegramApiException {
+    public BotSession telegramBotsApi(LogsAnalyzerBot logsAnalyzerBot) throws TelegramApiException {
         final var api = new TelegramBotsApi(DefaultBotSession.class);
-        api.registerBot(logsAnalyzerBot);
-
-        return api;
+        return api.registerBot(logsAnalyzerBot);
     }
 
     @Bean

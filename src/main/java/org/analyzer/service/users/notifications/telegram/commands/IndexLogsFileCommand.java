@@ -77,7 +77,7 @@ public class IndexLogsFileCommand extends BaseUploadingFileBotCommand implements
             case RECORD_PATTERN_TIME_FORMAT_STAGE -> {
                 context.put(context.getLastStage(), message.getText());
                 context.setLastStage(UPLOADING_FILE_STAGE);
-                yield "Send logs file to me.";
+                yield "Send logs file to me (max size of file via bot must be less than 20mb).";
             }
             case UPLOADING_FILE_STAGE -> {
                 this.userConversationStore.clearUserCommandContext(userId);
@@ -100,21 +100,23 @@ public class IndexLogsFileCommand extends BaseUploadingFileBotCommand implements
 
         final var uploadedFile = downloadFile(absSender, message.getDocument().getFileId());
         final var logRecordFormat = createLogRecordFormatFromContext(context);
-        this.logsService.index(uploadedFile, logRecordFormat)
-                .whenComplete((indexingKey, ex) -> {
-                    uploadedFile.delete();
+        executeInUserContext(message.getChatId(),
+                () -> this.logsService.index(uploadedFile, logRecordFormat)
+                        .whenComplete((indexingKey, ex) -> {
+                            uploadedFile.delete();
 
-                    final String resultMsgText;
-                    if (ex != null) {
-                        resultMsgText = "Indexing process completed with error: " + ex.getMessage();
-                    } else {
-                        resultMsgText = "Indexing process completed successfully, indexing key: " + indexingKey;
-                    }
+                            final String resultMsgText;
+                            if (ex != null) {
+                                resultMsgText = "Indexing process completed with error: " + ex.getMessage();
+                            } else {
+                                resultMsgText = "Indexing process completed successfully, indexing key: " + indexingKey;
+                            }
 
-                    final var resultMsg = createReplyMessage(message.getChatId(), resultMsgText);
-                    resultMsg.setReplyToMessageId(message.getMessageId());
-                    sendMessage(absSender, resultMsg);
-                });
+                            final var resultMsg = createReplyMessage(message.getChatId(), resultMsgText);
+                            resultMsg.setReplyToMessageId(message.getMessageId());
+                            sendMessage(absSender, resultMsg);
+                        })
+        );
 
         return "Indexing process starts, when it completes you will be notified.";
     }

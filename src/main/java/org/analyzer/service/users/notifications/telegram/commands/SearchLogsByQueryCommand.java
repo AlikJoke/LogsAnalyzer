@@ -35,6 +35,7 @@ public class SearchLogsByQueryCommand extends LogsByQueryCommand implements Tele
             @NonNull Message userMessage,
             @NonNull TelegramUserConversationStore.CommandContext context) {
         if (POST_FILTERS_STAGE.equals(context.getLastStage())) {
+            context.setLastStage(TERMINAL_STAGE);
             final var nextMsg = "Enter file name to export command results:";
             return createReplyMessage(userMessage.getChatId(), nextMsg);
         }
@@ -49,7 +50,7 @@ public class SearchLogsByQueryCommand extends LogsByQueryCommand implements Tele
 
         final var query = context.getAttributeAsString(QUERY_STAGE);
         final var extendedFormat = "extended".equalsIgnoreCase(context.getAttributeAsString(QUERY_FORMAT_STAGE));
-        final var filename = context.getAttributeAsString(TERMINAL_STAGE);
+        final var filename = userMessage.getText();
         @SuppressWarnings("unchecked")
         final var postFiltersMap = (Map<String, JsonNode>) context.get(POST_FILTERS_STAGE);
         @SuppressWarnings("unchecked")
@@ -58,7 +59,11 @@ public class SearchLogsByQueryCommand extends LogsByQueryCommand implements Tele
         final var searchQuery = new RequestSearchQuery(query, extendedFormat, postFiltersMap, 0, 0, sortsMap, filename);
 
         try {
-            final var resultFile = this.logsService.searchAndExportByQuery(searchQuery);
+            final var resultFile = executeInUserContext(userMessage.getChatId(), () -> this.logsService.searchAndExportByQuery(searchQuery));
+            if (resultFile.length() == 0) {
+                return createReplyMessage(userMessage.getChatId(), "<b>Logs not found by query.</b>");
+            }
+
             final var resultMessage = new SendDocument();
             resultMessage.setChatId(userMessage.getChatId());
             resultMessage.setReplyToMessageId(userMessage.getMessageId());

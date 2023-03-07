@@ -34,7 +34,10 @@ public class DefaultUserDataStorageCleaner implements UserDataStorageCleaner {
         try (final var userContext = this.userAccessor.as(user)) {
             final var indexingKeys = this.logsService.deleteAllStatisticsByCreationDate(deleteOlderThan);
 
-            this.logsService.deleteByQuery(createSearchQueryToDelete(user, indexingKeys));
+            if (!indexingKeys.isEmpty()) {
+                this.logsService.deleteByQuery(createSearchQueryToDelete(user, indexingKeys));
+            }
+
             this.httpArchiveService.deleteAllByCreationDate(deleteOlderThan);
         }
     }

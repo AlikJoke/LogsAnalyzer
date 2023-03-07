@@ -62,17 +62,17 @@ abstract class LogsByQueryCommand extends ApplicationBotCommand implements Teleg
             return Optional.of(createReplyMessage(message.getChatId(), "<b>Entered text must be not empty.<b>"));
         }
 
-        context.put(context.getLastStage(), message.getText());
-
         final PartialBotApiMethod<?> result = switch (context.getLastStage()) {
             case QUERY_FORMAT_STAGE -> {
+                context.put(context.getLastStage(), message.getText());
                 context.setLastStage(QUERY_STAGE);
                 final var nextMsg = "Enter raw query:";
                 yield createReplyMessage(message.getChatId(), nextMsg);
             }
             case QUERY_STAGE -> {
+                context.put(context.getLastStage(), message.getText());
                 context.setLastStage(SORTS_STAGE);
-                final var msgText = ("Enter sorts for logs in format <sorting field>:<sorting direction> " +
+                final var msgText = ("Enter sorts for logs in format \"sorting field\":\"sorting direction\" " +
                         "(to stop entering the sorts, enter a %s):").formatted(SKIP_STAGE_STR_FORMATTED);
 
                 final var nextMsg = ("Enter sorts of logs (to stop entering the sorts, enter a %s):").formatted(SKIP_STAGE_STR_FORMATTED);
@@ -90,7 +90,7 @@ abstract class LogsByQueryCommand extends ApplicationBotCommand implements Teleg
                 context.put(context.getLastStage(), parseSorts(sortKeys));
                 context.setLastStage(POST_FILTERS_STAGE);
 
-                final var nextMsg = ("Enter post filters for logs in format <post filter id>:<post filter settings json> (to stop entering the post filters, enter a %s):").formatted(SKIP_STAGE_STR_FORMATTED);
+                final var nextMsg = ("Enter post filters for logs in format \"post filter id\":\"post filter settings json\" (to stop entering the post filters, enter a %s):").formatted(SKIP_STAGE_STR_FORMATTED);
                 yield createReplyMessage(message.getChatId(), nextMsg);
             }
             case TERMINAL_STAGE -> {

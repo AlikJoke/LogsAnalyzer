@@ -15,6 +15,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 @Slf4j
 abstract class ApplicationBotCommand extends BotCommand {
@@ -66,6 +67,28 @@ abstract class ApplicationBotCommand extends BotCommand {
         } catch (TelegramApiException e) {
             log.error("", e);
             throw new RuntimeException(e);
+        }
+    }
+
+    protected void executeInUserContext(
+            final Long telegramUserId,
+            final Runnable commandAction) {
+        executeInUserContext(telegramUserId, () -> {
+            commandAction.run();
+            return null;
+        });
+    }
+
+    protected <T> T executeInUserContext(
+            final Long telegramUserId,
+            final Supplier<T> commandAction) {
+        final var userEntity = this.userService.findByTelegramId(telegramUserId);
+        if (userEntity.isEmpty()) {
+            throw new IllegalStateException("<b>This command requires user authentication. Use /" + RegisterUserCommand.COMMAND_NAME + " command.</b>");
+        }
+
+        try (final var userContext = this.userAccessor.as(userEntity.get())) {
+            return commandAction.get();
         }
     }
 

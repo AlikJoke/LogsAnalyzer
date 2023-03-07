@@ -88,7 +88,7 @@ public class AnalyzeHarFileCommand extends BaseUploadingFileBotCommand implement
             }
             case SPECIFY_HAR_STAGE -> {
                 this.userConversationStore.clearUserCommandContext(userId);
-                final var replyMsg = handleHarAnalyzingStage(absSender, context, message);
+                final var replyMsg = executeInUserContext(userId, () -> handleHarAnalyzingStage(absSender, context, message));
                 replyMsg.setReplyToMessageId(message.getMessageId());
 
                 yield Optional.of(replyMsg);

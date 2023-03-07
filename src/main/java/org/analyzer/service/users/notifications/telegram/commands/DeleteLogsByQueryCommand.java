@@ -33,6 +33,7 @@ public class DeleteLogsByQueryCommand extends LogsByQueryCommand implements Tele
             @NonNull Message userMessage,
             @NonNull TelegramUserConversationStore.CommandContext context) {
         if (POST_FILTERS_STAGE.equals(context.getLastStage())) {
+            context.setLastStage(TERMINAL_STAGE);
             final var nextMsg = "Confirm deletion of logs (enter %s to cancel or any another string to confirm):".formatted(SKIP_STAGE_STR_FORMATTED);
             return createReplyMessage(userMessage.getChatId(), nextMsg);
         }
@@ -45,7 +46,7 @@ public class DeleteLogsByQueryCommand extends LogsByQueryCommand implements Tele
             @NonNull Message userMessage,
             @NonNull TelegramUserConversationStore.CommandContext context) {
 
-        final var confirmation = context.getAttributeAsString(TERMINAL_STAGE);
+        final var confirmation = userMessage.getText();
         if (SKIP_STAGE_STR.equals(confirmation)) {
             return createReplyMessage(userMessage.getChatId(), "Deletion cancelled.");
         }
@@ -59,7 +60,7 @@ public class DeleteLogsByQueryCommand extends LogsByQueryCommand implements Tele
 
         final var searchQuery = new RequestSearchQuery(query, extendedFormat, postFiltersMap, 0, 0, sortsMap, null);
         try {
-            this.logsService.deleteByQuery(searchQuery);
+            executeInUserContext(userMessage.getChatId(), () -> this.logsService.deleteByQuery(searchQuery));
         } catch (Exception ex) {
             return createReplyMessage(userMessage.getChatId(), "<b>Unable to delete logs by query: </b>" + ex.getMessage());
         }
