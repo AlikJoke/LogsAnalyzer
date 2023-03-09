@@ -3,7 +3,6 @@ package org.analyzer.entities;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.*;
 import lombok.experimental.Accessors;
-import org.bson.json.JsonObject;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -29,7 +28,7 @@ public class HttpArchiveEntity {
     @NonNull
     @ToString.Exclude
     @Field
-    private JsonObject body;
+    private org.bson.Document body;
     @NonNull
     @Field("user_key")
     private String userKey;

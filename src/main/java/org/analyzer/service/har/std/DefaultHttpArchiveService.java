@@ -20,7 +20,7 @@ import org.analyzer.service.util.JsonConverter;
 import org.analyzer.service.util.UnzipperUtil;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.bson.json.JsonObject;
+import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
@@ -80,7 +80,7 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
     public HttpArchiveEntity findById(@NonNull String id) {
         final var entity = this.httpArchiveRepository.findById(id);
         return entity
-                    .map(har -> har.setBodyNode(this.jsonConverter.convert(har.getBody().getJson())))
+                    .map(har -> har.setBodyNode(this.jsonConverter.convert(har.getBody().get("json", String.class))))
                     .orElseThrow(() -> new EntityNotFoundException(MessageHelper.getMessage("org.analyzer.har.not.found", id)));
     }
 
@@ -162,7 +162,7 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
             final var jsonBodyAsString = this.jsonConverter.convertToJson(jsonBody);
             final var archiveEntity = new HttpArchiveEntity()
                                             .setId(UUID.randomUUID().toString())
-                                            .setBody(new JsonObject(jsonBodyAsString))
+                                            .setBody(Document.parse(jsonBodyAsString))
                                             .setCreated(LocalDateTime.now())
                                             .setTitle(file.getName())
                                             .setUserKey(this.userAccessor.get().getHash());
@@ -186,7 +186,7 @@ public class DefaultHttpArchiveService implements HttpArchiveService {
     }
 
     private HttpArchiveBody findArchiveBody(final String harId) {
-        final var har = findById(harId);this.httpArchiveRepository.findById(harId);
+        final var har = findById(harId);
         final var bodyNode = har.getBodyNode();
         return new HttpArchiveBody(har.getTitle(), bodyNode);
     }

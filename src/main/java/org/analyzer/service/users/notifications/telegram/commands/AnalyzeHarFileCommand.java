@@ -14,17 +14,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 
 import javax.annotation.Nullable;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.io.ByteArrayInputStream;
+import java.util.*;
 
 import static org.analyzer.service.users.notifications.telegram.commands.AnalyzeHarFileCommand.COMMAND_NAME;
 
@@ -89,7 +89,6 @@ public class AnalyzeHarFileCommand extends BaseUploadingFileBotCommand implement
             case SPECIFY_HAR_STAGE -> {
                 this.userConversationStore.clearUserCommandContext(userId);
                 final var replyMsg = executeInUserContext(userId, () -> handleHarAnalyzingStage(absSender, context, message));
-                replyMsg.setReplyToMessageId(message.getMessageId());
 
                 yield Optional.of(replyMsg);
             }
@@ -97,30 +96,44 @@ public class AnalyzeHarFileCommand extends BaseUploadingFileBotCommand implement
         };
     }
 
-    private SendMessage handleHarAnalyzingStage(
+    private PartialBotApiMethod<Message> handleHarAnalyzingStage(
             final AbsSender absSender,
             final TelegramUserConversationStore.CommandContext context,
             final Message message) {
 
-        final var wasUploadFile = message.getDocument() == null || StringUtils.isEmpty(message.getDocument().getFileId());
+        final var wasUploadFile = message.getDocument() != null && !StringUtils.isEmpty(message.getDocument().getFileId());
         if (StringUtils.isEmpty(message.getText()) && !wasUploadFile) {
             return createReplyMessage(message.getChatId(), "<b>Expected file or already uploaded HAR key for HAR analyzing command.<b>");
         }
 
-        String resultText;
         final var operationsQuery = createOperationsQueryFromContext(context);
         try {
             final var result =
                     wasUploadFile
                             ? processUploadedFile(absSender, message, operationsQuery)
                             : this.httpArchiveService.analyze(message.getText(), operationsQuery);
-
-            resultText = "Result of analyzing:\n<code>" + this.jsonConverter.convertToJson(result) + "</code>";
+            final var filename = (message.getText() == null ? UUID.randomUUID().toString() : message.getText()) + ".har";
+            return createFileWithResults(message, result, filename);
         } catch (EntityNotFoundException ex) {
-            resultText = "Analyzing failed with error:\n<code>" + ex.getMessage() + "</code>";
-        }
+            final var resultMsg = createReplyMessage(message.getChatId(), "Analyzing failed with error:\n<code>" + ex.getMessage() + "</code>");
+            resultMsg.setReplyToMessageId(message.getMessageId());
 
-        return createReplyMessage(message.getChatId(), resultText);
+            return resultMsg;
+        }
+    }
+
+    private SendDocument createFileWithResults(
+            final Message userMessage,
+            final Map<String, Object> resultsMap,
+            final String resultFilename) {
+
+        final var resultMessage = new SendDocument();
+        resultMessage.setChatId(userMessage.getChatId());
+        resultMessage.setReplyToMessageId(userMessage.getMessageId());
+        final var resultBytes = this.jsonConverter.writeAsBytes(resultsMap);
+        resultMessage.setDocument(new InputFile(new ByteArrayInputStream(resultBytes), resultFilename));
+
+        return resultMessage;
     }
 
     private Map<String, Object> processUploadedFile(

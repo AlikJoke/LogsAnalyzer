@@ -1,5 +1,6 @@
 package org.analyzer.service.users.notifications.telegram.commands;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import lombok.NonNull;
 import org.analyzer.entities.HttpArchiveEntity;
 import org.analyzer.entities.UserEntity;
@@ -88,6 +89,12 @@ public class UploadHarFileCommand extends BaseUploadingFileBotCommand implements
                                         .map(HttpArchiveEntity::getId)
                                         .collect(Collectors.joining(", "));
             return "HAR uploaded to application, key of created HAR: " + createdHarIds;
+        } catch (RuntimeException ex) {
+            if (ex.getCause() instanceof JsonParseException) {
+                return "<b>Unable to process uploaded HAR, cause:</b> " + ex.getMessage();
+            }
+
+            throw ex;
         } finally {
             uploadedFile.delete();
         }

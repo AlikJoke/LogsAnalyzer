@@ -15,17 +15,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 
 import javax.annotation.Nullable;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.io.ByteArrayInputStream;
+import java.util.*;
 
 import static org.analyzer.service.users.notifications.telegram.commands.ApplyOperationsToHarCommand.COMMAND_NAME;
 
@@ -101,7 +101,6 @@ public class ApplyOperationsToHarCommand extends BaseUploadingFileBotCommand imp
             case SPECIFY_HAR_STAGE -> {
                 this.userConversationStore.clearUserCommandContext(userId);
                 final var replyMsg = handleTerminalOperation(absSender, context, message);
-                replyMsg.setReplyToMessageId(message.getMessageId());
 
                 yield Optional.of(replyMsg);
             }
@@ -109,30 +108,44 @@ public class ApplyOperationsToHarCommand extends BaseUploadingFileBotCommand imp
         };
     }
 
-    private SendMessage handleTerminalOperation(
+    private PartialBotApiMethod<Message> handleTerminalOperation(
             final AbsSender absSender,
             final TelegramUserConversationStore.CommandContext context,
             final Message message) {
 
-        final var wasUploadFile = message.getDocument() == null || StringUtils.isEmpty(message.getDocument().getFileId());
+        final var wasUploadFile = message.getDocument() != null && !StringUtils.isEmpty(message.getDocument().getFileId());
         if (StringUtils.isEmpty(message.getText()) && !wasUploadFile) {
             return createReplyMessage(message.getChatId(), "<b>Expected file or already uploaded HAR key command.<b>");
         }
 
-        String resultText;
         final var operationsQuery = createOperationsQueryFromContext(context);
         try {
             final var result =
                     wasUploadFile
                             ? processUploadedFile(absSender, message, operationsQuery)
                             : this.httpArchiveService.applyOperations(message.getText(), operationsQuery);
-
-            resultText = "Result of operations:\n<code>" + result.body().toPrettyString() + "</code>";
+            final var filename = (message.getText() == null ? UUID.randomUUID().toString() : message.getText()) + ".har";
+            return createFileWithResults(message, result, filename);
         } catch (EntityNotFoundException ex) {
-            resultText = "Applying of operations failed with error:\n<code>" + ex.getMessage() + "</code>";
-        }
+            final var resultMsg = createReplyMessage(message.getChatId(), "Applying of operations failed with error:\n<code>" + ex.getMessage() + "</code>");
+            resultMsg.setReplyToMessageId(message.getMessageId());
 
-        return createReplyMessage(message.getChatId(), resultText);
+            return resultMsg;
+        }
+    }
+
+    private SendDocument createFileWithResults(
+            final Message userMessage,
+            final HttpArchiveBody body,
+            final String resultFilename) {
+
+        final var resultMessage = new SendDocument();
+        resultMessage.setChatId(userMessage.getChatId());
+        resultMessage.setReplyToMessageId(userMessage.getMessageId());
+        final var resultBytes = this.jsonConverter.writeAsBytes(body.body());
+        resultMessage.setDocument(new InputFile(new ByteArrayInputStream(resultBytes), resultFilename));
+
+        return resultMessage;
     }
 
     private HttpArchiveBody processUploadedFile(
@@ -177,7 +190,7 @@ public class ApplyOperationsToHarCommand extends BaseUploadingFileBotCommand imp
             @NonNull
             @Override
             public Set<String> filteringKeys() {
-                return filteringKeys;
+                return filteringKeys == null ? Collections.emptySet() : filteringKeys;
             }
 
             @Nullable

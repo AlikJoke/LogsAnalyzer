@@ -60,7 +60,7 @@ public class JsonConverter {
 
     public byte[] writeAsBytes(@NonNull Object object) {
         try {
-            return mapper.writeValueAsBytes(object);
+            return this.writer.writeValueAsBytes(object);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
