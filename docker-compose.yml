@@ -1,0 +1,13 @@
+services:
+  logs-analyzer:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      logs.analyzer.master.node: false
+      logs.analyzer.run.mode: box
+      spring.data.mongodb.embedded.data.path: /mongodb-emb/data
+      logs.analyzer.lucene.index.storage-path: /lucene/data
+    volumes:
+      - /mongodb-emb/data
+      - /lucene/data

@@ -2,7 +2,7 @@ FROM gradle:8.0.2-jdk19
 RUN mkdir -p /app
 WORKDIR /app
 COPY build.gradle /app
-COPY src /app/src
+COPY /src /app/src
 RUN gradle bootJar --exclude-task :test --no-daemon
 
 FROM openjdk:19
