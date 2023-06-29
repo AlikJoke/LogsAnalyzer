@@ -11,3 +11,4 @@ services:
     volumes:
       - /mongodb-emb/data
       - /lucene/data
+    mem_limit: 2G

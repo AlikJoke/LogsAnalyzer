@@ -1,0 +1,45 @@
+services:
+  logs-analyzer:
+    build: .
+    ports:
+      - "8080:8080"
+    hostname: la
+    environment:
+      logs.analyzer.master.node: true
+      logs.analyzer.run.mode: distributed
+      spring.data.elasticsearch.cluster-name: docker-cluster
+      spring.elasticsearch.uris: http://elastic:9200
+      spring.data.mongodb.host: mongodb
+      spring.data.redis.host: redis
+    restart: on-failure:2
+    mem_limit: 4G
+    links:
+      - elastic
+      - mongodb
+      - redis
+    depends_on:
+      - elastic
+      - redis
+      - mongodb
+  elastic:
+    image: elasticsearch:8.8.1
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    hostname: elastic
+    environment:
+      - "xpack.security.enabled=false"
+      - "discovery.type=single-node"
+    mem_limit: 8G
+  mongodb:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    mem_limit: 2G
+    hostname: mongodb
+  redis:
+    image: redis:7.0.11
+    ports:
+      - "6379:6379"
+    hostname: redis
+    mem_limit: 1G
